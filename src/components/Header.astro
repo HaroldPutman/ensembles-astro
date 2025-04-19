@@ -1,0 +1,188 @@
+---
+const menuItems = [
+  { href: '/about', label: 'About' },
+  { href: '/classes', label: 'Classes' },
+  { href: '/gallery', label: 'Gallery' },
+  { href: '/get-involved', label: 'Get Involved' },
+];
+---
+
+<header class="header">
+  <div class="header-container">
+    <a href="/" class="logo" aria-label="Home">
+      <img src="/src/assets/ensembles-black-logo.svg" alt="Ensembles Logo" class="logo-image">
+    </a>
+
+    <nav class="nav">
+      <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
+      <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </label>
+
+      <ul class="nav-menu">
+        {menuItems.map(({ href, label }) => (
+          <li>
+            <a 
+              href={href}
+              aria-current={Astro.url.pathname === href ? 'page' : undefined}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+  }
+
+  .header-container {
+    position: relative;
+    z-index: 1001;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+    color: black;
+  }
+
+  .logo-image {
+    height: 3rem;
+    width: auto;
+    display: block;
+  }
+
+  .nav-menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 2rem;
+  }
+
+  .nav-menu a {
+    color: black;
+    text-decoration: none;
+    padding: 0.5rem;
+    transition: background-color 0.3s;
+    border-radius: 4px;
+  }
+
+  .nav-menu a:hover,
+  .nav-menu a:focus {
+    background-color: #f5f5f5;
+  }
+
+  .nav-menu a[aria-current="page"] {
+    font-weight: bold;
+  }
+
+  .nav-toggle,
+  .nav-toggle-label {
+    display: none;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .nav-toggle-label {
+      display: block;
+      cursor: pointer;
+      padding: 1rem;
+    }
+
+    .nav-toggle-label span {
+      display: block;
+      width: 25px;
+      height: 2px;
+      background-color: black;
+      margin: 5px 0;
+      transition: transform 0.3s, opacity 0.3s;
+    }
+
+    .nav-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      gap: 0;
+      background: white;
+      transform: translateY(-100%);
+      opacity: 1;
+      visibility: hidden;
+      transition: transform 0.3s, visibility 0.3s;
+      box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-menu li {
+      width: 100%;
+      border-top: 1px solid #eee;
+    }
+
+    .nav-menu a {
+      display: block;
+      padding: 1rem;
+    }
+
+    .nav-toggle:checked ~ .nav-menu {
+      transform: translateY(0);
+      visibility: visible;
+    }
+
+    /* Hamburger animation */
+    .nav-toggle:checked ~ .nav-toggle-label span:nth-child(1) {
+      transform: rotate(45deg) translate(4px, 4px);
+    }
+
+    .nav-toggle:checked ~ .nav-toggle-label span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .nav-toggle:checked ~ .nav-toggle-label span:nth-child(3) {
+      transform: rotate(-45deg) translate(6px, -6px);
+    }
+
+    .logo-image {
+      height: 2.3rem;
+    }
+    .header-container {
+        padding: 0.5rem 1rem;
+    }
+
+  }
+
+  /* Focus styles for accessibility */
+  .nav-menu a:focus,
+  .nav-toggle-label:focus-within {
+    outline: 2px solid #000;
+    outline-offset: 2px;
+  }
+
+  /* Reduce motion if preferred */
+  @media (prefers-reduced-motion: reduce) {
+    .nav-menu,
+    .nav-menu a,
+    .nav-toggle-label span {
+      transition: none;
+    }
+  }
+
+</style> 
