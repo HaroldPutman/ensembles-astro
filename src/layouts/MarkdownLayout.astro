@@ -1,0 +1,87 @@
+---
+import Layout from './Layout.astro';
+const { frontmatter } = Astro.props;
+---
+
+<Layout title={frontmatter.title}>
+  <div class="container">
+    <article class="markdown-content">
+      <slot />
+    </article>
+  </div>
+</Layout>
+
+<style>
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .markdown-content {
+    margin-top: 4rem; /* Account for fixed header */
+  }
+
+  /* Style markdown content */
+  .markdown-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+  }
+
+  .markdown-content h2 {
+    font-size: 1.75rem;
+    color: #333;
+    margin: 2rem 0 1rem;
+  }
+
+  .markdown-content h3 {
+    font-size: 1.25rem;
+    color: #444;
+    margin: 1.5rem 0 1rem;
+  }
+
+  .markdown-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .markdown-content ul, 
+  .markdown-content ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .markdown-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .markdown-content a {
+    color: #0066cc;
+    text-decoration: none;
+  }
+
+  .markdown-content a:hover {
+    text-decoration: underline;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .container {
+      padding: 1rem;
+    }
+
+    .markdown-content h1 {
+      font-size: 2rem;
+    }
+
+    .markdown-content h2 {
+      font-size: 1.5rem;
+    }
+
+    .markdown-content h3 {
+      font-size: 1.2rem;
+    }
+  }
+</style> 
