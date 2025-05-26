@@ -16,9 +16,9 @@ const menuItems = [
     <nav class="nav">
       <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
       <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle menu">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span class="menu-line"></span>
+        <span class="menu-text sofia-sans-extra-condensed-menu">MENU</span>
+        <span class="menu-line"></span>
       </label>
 
       <ul class="nav-menu">
@@ -103,18 +103,43 @@ const menuItems = [
   /* Mobile styles */
   @media (max-width: 768px) {
     .nav-toggle-label {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
       cursor: pointer;
-      padding: 1rem;
+      padding: 0.5rem 1rem;
     }
 
-    .nav-toggle-label span {
+    .menu-line {
       display: block;
-      width: 25px;
+      width: 34px;
       height: 2px;
       background-color: black;
-      margin: 5px 0;
-      transition: transform 0.3s, opacity 0.3s;
+      transition: transform 0.3s;
+    }
+
+    .menu-text {
+      font-family: "Arial Narrow", Arial, sans-serif;
+  		font-optical-sizing: auto;
+      font-size: 0.75rem;
+      font-weight: 800;
+      opacity: 1;
+    }
+
+
+    /* Animation for the menu lines */
+    .nav-toggle:checked ~ .nav-toggle-label .menu-line:first-child {
+      transform-origin: center;
+      transform: scaleX(1.2) rotate(54deg) translate(10px, 8px);
+    }
+
+    .nav-toggle:checked ~ .nav-toggle-label .menu-text {
+      opacity: 0;
+    }
+    .nav-toggle:checked ~ .nav-toggle-label .menu-line:last-child {
+      transform-origin: center;
+      transform: scaleX(1.2) rotate(-54deg) translate(10px, -8px);
     }
 
     .nav-menu {
@@ -145,19 +170,6 @@ const menuItems = [
     .nav-toggle:checked ~ .nav-menu {
       transform: translateY(0);
       visibility: visible;
-    }
-
-    /* Hamburger animation */
-    .nav-toggle:checked ~ .nav-toggle-label span:nth-child(1) {
-      transform: rotate(45deg) translate(4px, 4px);
-    }
-
-    .nav-toggle:checked ~ .nav-toggle-label span:nth-child(2) {
-      opacity: 0;
-    }
-
-    .nav-toggle:checked ~ .nav-toggle-label span:nth-child(3) {
-      transform: rotate(-45deg) translate(6px, -6px);
     }
 
     .logo-image {
