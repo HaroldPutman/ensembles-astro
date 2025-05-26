@@ -50,7 +50,6 @@ const menuItems = [
 
   .header-container {
     position: relative;
-    z-index: 1001;
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
@@ -62,7 +61,10 @@ const menuItems = [
   .logo {
     font-size: 1.5rem;
     color: black;
+    z-index: 1;
+    background-color: white;
   }
+
 
   .logo-image {
     height: 3rem;
@@ -98,6 +100,9 @@ const menuItems = [
   .nav-toggle,
   .nav-toggle-label {
     display: none;
+    position: relative;
+    z-index: 1;
+    background-color: white;
   }
 
   /* Mobile styles */
@@ -150,10 +155,10 @@ const menuItems = [
       flex-direction: column;
       gap: 0;
       background: white;
-      transform: translateY(-100%);
-      opacity: 1;
+      transform: translateY(-110%);
+      opacity: 0;
       visibility: hidden;
-      transition: transform 0.3s, visibility 0.3s;
+      transition: transform 0.5s, opacity 0.5s;
       box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
     }
 
@@ -164,21 +169,26 @@ const menuItems = [
 
     .nav-menu a {
       display: block;
+  
       padding: 1rem;
     }
 
     .nav-toggle:checked ~ .nav-menu {
       transform: translateY(0);
       visibility: visible;
+      opacity: 1;
     }
 
     .logo-image {
       height: 2.3rem;
     }
     .header-container {
-        padding: 0.5rem 1rem;
+        padding: 0 1rem;
     }
 
+    .logo {
+      padding: 0.5rem 0;
+    }
   }
 
   /* Focus styles for accessibility */
