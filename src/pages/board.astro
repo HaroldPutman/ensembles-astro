@@ -1,0 +1,73 @@
+---
+import { getCollection, render} from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import StaffBio from '../components/StaffBio.astro';
+
+const board = await getCollection('board');
+const sortedBoard = board.sort((a: CollectionEntry<'board'>, b: CollectionEntry<'board'>) => {
+  if (a.data.position === 'Executive Director') return -1;
+  if (b.data.position === 'Executive Director') return 1;
+  return a.id.localeCompare(b.id);
+});
+
+// Render markdown content for each board member
+const renderedBoard = await Promise.all(
+  sortedBoard.map(async (member: CollectionEntry<'board'>) => {
+    const { Content } = await render(member);
+    return {
+      ...member,
+      Content
+    };
+  })
+);
+---
+
+<Layout>
+  <div class="board-page">
+    <h1>Board of Directors</h1>
+    
+    <div class="board-members">
+      {renderedBoard.map((member) => (
+        <StaffBio
+          name={member.data.name}
+          position={member.data.position}
+          image={member.data.image}
+        >
+          <member.Content />
+        </StaffBio>
+      ))}
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .board-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+    color: #333;
+  }
+
+  .board-members {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .board-page {
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+  }
+</style>

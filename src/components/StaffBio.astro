@@ -1,0 +1,68 @@
+---
+interface Props {
+  name: string;
+  position: string;
+  image: string;
+}
+
+const { name, position, image } = Astro.props;
+---
+
+<article class="staff-bio">
+  <div class="bio-image">
+    <img src={image} alt={name}/>
+  </div>
+  <div class="bio-content">
+    <h2>{name}</h2>
+    <h3>{position}</h3>
+    <div class="content">
+      <slot />
+    </div>
+  </div>
+</article>
+
+<style>
+  .staff-bio {
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+  
+  @media (max-width: 768px) {
+    .staff-bio {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .bio-image img {
+    width: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem 0;
+    color: #333;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    margin: 0 0 1rem 0;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .content {
+    line-height: 1.6;
+  }
+
+  .content :global(p) {
+    margin: 0 0 1rem 0;
+  }
+
+  .content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+</style> 
