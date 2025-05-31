@@ -9,21 +9,17 @@ const currentYear = new Date().getFullYear();
             <p class="copyright">
               © {currentYear} Ensembles, Inc. All rights reserved.
             </p>
-            <div class="legal-links">
+            <p class="footer-text">
+                Ensembles, Inc. is a registered 501(c)(3) organization based in Charlestown, IN
+              </p>
+              <div class="legal-links">
               <a href="/privacy-policy" class="footer-link">Privacy Policy</a>
               <span class="separator">|</span>
               <a href="/terms-of-use" class="footer-link">Terms of Use</a>
             </div>
           </div>
-
-          <div class="footer-section">
-            <p class="footer-text">
-              Ensembles, Inc. is a registered 501(c)(3) organization based in Charlestown, IN
-            </p>
-          </div>
     
         <div class="footer-section">
-        <h2 class="footer-heading">Contact</h2>
         <a href="/contact" class="footer-link">Contact Us</a>
         <a 
           href="https://facebook.com/charlestownensembles" 
@@ -105,7 +101,7 @@ const currentYear = new Date().getFullYear();
 
   .footer-content {
     display: grid;
-    grid-template-columns: 2fr 3fr 1fr 2fr;
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 2rem;
   }
 

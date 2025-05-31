@@ -24,7 +24,7 @@ const renderedBoard = await Promise.all(
 ---
 
 <Layout>
-  <div class="board-page">
+  <section>
     <h1>Board of Directors</h1>
     
     <div class="board-members">
@@ -38,15 +38,10 @@ const renderedBoard = await Promise.all(
         </StaffBio>
       ))}
     </div>
-  </div>
+  </section>
 </Layout>
 
 <style>
-  .board-page {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-  }
 
   h1 {
     margin-bottom: 3rem;
@@ -60,14 +55,4 @@ const renderedBoard = await Promise.all(
     gap: 2rem;
   }
 
-  @media (max-width: 768px) {
-    .board-page {
-      padding: 1rem;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 2rem;
-    }
-  }
 </style>
