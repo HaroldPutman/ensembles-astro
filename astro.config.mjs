@@ -11,4 +11,8 @@ export default defineConfig({
     },
 
   integrations: [mdx()],
+
+  vite: {
+    envPrefix: ['PUBLIC_', 'BREVO_'],
+  },
 });

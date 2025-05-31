@@ -35,11 +35,60 @@ const currentYear = new Date().getFullYear();
         </a>
       </div>
 
-
-
+      <div class="footer-section newsletter">
+        <h2 class="footer-heading">Stay Updated</h2>
+        <p class="footer-text">Subscribe to our newsletter for the latest updates and events.</p>
+        <form id="newsletter-form" class="newsletter-form">
+          <div class="form-group">
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              required
+              class="newsletter-input"
+            />
+            <button type="submit" class="newsletter-button">Subscribe</button>
+          </div>
+          <div id="form-message" class="form-message"></div>
+        </form>
+      </div>
     </div>
   </div>
 </footer>
+
+<script>
+  const form = document.getElementById('newsletter-form');
+  const messageDiv = document.getElementById('form-message');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = (document.getElementById('email') as HTMLInputElement).value;
+    
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+    
+      if (response.ok) {
+        messageDiv!.textContent = 'Thank you for subscribing!';
+        messageDiv!.className = 'form-message success';
+        form.reset();
+      } else {
+        throw new Error(data.message || 'Something went wrong');
+      }
+    } catch (error) {
+      messageDiv!.textContent = error instanceof Error ? error.message : 'Failed to subscribe. Please try again.';
+      messageDiv!.className = 'form-message error';
+    }
+  });
+</script>
 
 <style>
   .footer {
@@ -56,7 +105,7 @@ const currentYear = new Date().getFullYear();
 
   .footer-content {
     display: grid;
-    grid-template-columns: 2fr 3fr 1fr;
+    grid-template-columns: 2fr 3fr 1fr 2fr;
     gap: 2rem;
   }
 
@@ -106,6 +155,51 @@ const currentYear = new Date().getFullYear();
     color: #666;
   }
 
+  .newsletter-form {
+    width: 100%;
+  }
+
+  .form-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .newsletter-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+
+  .newsletter-button {
+    padding: 0.75rem 1.5rem;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+  }
+
+  .newsletter-button:hover {
+    background-color: #444;
+  }
+
+  .form-message {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .form-message.success {
+    color: #2e7d32;
+  }
+
+  .form-message.error {
+    color: #c62828;
+  }
+
   /* Mobile styles */
   @media (max-width: 768px) {
     .footer {
@@ -124,10 +218,20 @@ const currentYear = new Date().getFullYear();
     .legal-links {
       justify-content: center;
     }
+
+    .form-group {
+      flex-direction: column;
+    }
+
+    .newsletter-button {
+      width: 100%;
+    }
   }
 
   /* Focus styles for accessibility */
-  .footer-link:focus {
+  .footer-link:focus,
+  .newsletter-input:focus,
+  .newsletter-button:focus {
     outline: 2px solid #000;
     outline-offset: 2px;
   }
