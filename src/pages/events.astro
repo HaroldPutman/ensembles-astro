@@ -1,0 +1,86 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import ClassCard from '../components/ClassCard.astro';
+
+const events = await getCollection('events');
+
+// Sort events by start date
+const sortedEvents = events.sort((a: CollectionEntry<'events'>, b: CollectionEntry<'events'>) => {
+  return new Date(a.data.dtstart).getTime() - new Date(b.data.dtstart).getTime();
+});
+
+// Render markdown content for each board member
+const renderedEvents = await Promise.all(
+  sortedEvents.map(async (event: CollectionEntry<'events'>) => {
+    const { Content } = await render(event);
+    return {
+      ...event,
+      Content
+    };
+  })
+);
+---
+
+
+<Layout>
+  <section>
+    <h1>Classes</h1>
+    {renderedEvents.map((event) => (
+      <ClassCard
+        name={event.data.name}
+        image={event.data.image}
+        dtstart={event.data.dtstart}
+        dtend={event.data.dtend}
+        ageMin={event.data.ageMin}
+        ageMax={event.data.ageMax}
+        cost={event.data.cost}
+        instructors={event.data.instructors}
+      >
+        <event.Content />
+      </ClassCard>
+    ))}
+  </section>
+</Layout>
+
+<style>
+  h1 {
+    margin-bottom: 3rem;
+    font-size: 2.5rem;
+    color: #333;
+  }
+
+  .event-group {
+    margin-bottom: 4rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+    color: #444;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #eee;
+  }
+
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .events-grid {
+      grid-template-columns: 1fr;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+    }
+  }
+</style> 

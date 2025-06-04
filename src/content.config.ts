@@ -14,7 +14,22 @@ const board = defineCollection({
     }),
 });
 
-// tpuch 
+const events = defineCollection({
+    loader: glob({ pattern: '**/*.mdx', base: './collections/events' }),
+    schema: z.object({
+        name: z.string(),
+        instructors: z.array(z.string()),
+        dtstart: z.string(),
+        dtend: z.string(),
+        rrule: z.string(),
+        cost: z.number().optional(),
+        kind: z.enum(['class', 'group', 'event']),
+        ageMin: z.number().optional(),
+        ageMax: z.number().optional(),
+        sizeMax: z.number().optional(),
+        image: z.string().optional(),
+    }),
+});
 
 // 4. Export a single `collections` object to register your collection(s)
-export const collections = { board };
+export const collections = { board, events };
