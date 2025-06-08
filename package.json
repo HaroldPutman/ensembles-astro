@@ -11,6 +11,7 @@
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
     "astro": "^5.8.0",
-    "dayjs": "^1.11.13"
+    "dayjs": "^1.11.13",
+    "sib-api-v3-sdk": "^8.5.0"
   }
 }
