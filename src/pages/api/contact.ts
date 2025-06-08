@@ -1,14 +1,11 @@
 import type { APIRoute } from 'astro';
-import SibApiV3Sdk from 'sib-api-v3-sdk';
+import * as Brevo from '@getbrevo/brevo';
 
 export const prerender = false;
 
 // Initialize the Brevo API client
-const defaultClient = SibApiV3Sdk.ApiClient.instance;
-const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = import.meta.env.BREVO_API_KEY;
-
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+const apiInstance = new Brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, import.meta.env.BREVO_API_KEY);
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -48,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Create the email
-    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    const sendSmtpEmail = new Brevo.SendSmtpEmail();
     sendSmtpEmail.sender = { name: 'Ensembles Contact Form', email: 'webapp@charlestownensembles.com' };
     sendSmtpEmail.to = [{ email: 'harold@charlestownensembles.com' }];
     sendSmtpEmail.replyTo = { email, name };
