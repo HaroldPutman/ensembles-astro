@@ -6,12 +6,18 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "migrate": "node-pg-migrate"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
     "@getbrevo/brevo": "^2.2.0",
     "astro": "^5.8.0",
-    "dayjs": "^1.11.13"
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "node-pg-migrate": "^8.0.2",
+    "pg": "^8.16.0"
   }
 }
