@@ -9,12 +9,12 @@ export const shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 export const up = (pgm) => {
-    pgm.createTable('students', {
+    pgm.createTable('student', {
         id: 'id',
-        firstName: { type: 'varchar(100)', notNull: true },
-        lastName: { type: 'varchar(100)', notNull: true },
+        firstname: { type: 'varchar(100)', notNull: true },
+        lastname: { type: 'varchar(100)', notNull: true },
         dob: { type: 'date', notNull: true },
-        createdAt: {
+        created_at: {
           type: 'timestamp',
           notNull: true,
           default: pgm.func('current_timestamp'),
@@ -27,4 +27,6 @@ export const up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const down = (pgm) => {};
+export const down = (pgm) => {
+  pgm.dropTable('student');
+};
