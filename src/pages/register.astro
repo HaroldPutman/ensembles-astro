@@ -1,0 +1,208 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+  <section class="registration-section">
+    <h1>Event Registration</h1>
+    <p class="intro">Please provide the participant's information to begin registration.</p>
+    
+    <form id="registration-form" class="registration-form">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input 
+          type="text" 
+          id="firstName" 
+          name="firstName" 
+          required 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input 
+          type="text" 
+          id="lastName" 
+          name="lastName" 
+          required 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="birthdate">Birth Date</label>
+        <input 
+          type="date" 
+          id="birthdate" 
+          name="birthdate" 
+          required 
+          class="form-input"
+        />
+      </div>
+
+      <button type="submit" class="submit-button">Next: Contact Information</button>
+      
+      <div id="form-message" class="form-message"></div>
+    </form>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('registration-form') as HTMLFormElement;
+  const messageDiv = document.getElementById('form-message');
+  const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!form || !messageDiv || !submitButton) return;
+
+    // Disable the submit button and show loading state
+    submitButton.disabled = true;
+    submitButton.textContent = 'Saving...';
+    messageDiv.className = 'form-message';
+    messageDiv.textContent = '';
+    
+    const formData = new FormData(form);
+    const data = {
+      firstName: formData.get('firstName'),
+      lastName: formData.get('lastName'),
+      birthdate: formData.get('birthdate')
+    };
+
+    try {
+      const response = await fetch('/api/student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        result = { message: 'Server error occurred' };
+      }
+    
+      if (response.ok) {
+        // Redirect to the next step
+        window.location.href = `/register/contact?registrationId=${result.registrationId}`;
+      } else {
+        throw new Error(result.message || 'Something went wrong');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      messageDiv.textContent = error instanceof Error ? error.message : 'Failed to save information. Please try again.';
+      messageDiv.className = 'form-message error';
+    } finally {
+      // Re-enable the submit button and restore its text
+      submitButton.disabled = false;
+      submitButton.textContent = 'Next: Contact Information';
+    }
+  });
+</script>
+
+<style>
+  .registration-section {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .intro {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .registration-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #666;
+  }
+
+  .submit-button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+  }
+
+  .submit-button:hover:not(:disabled) {
+    background-color: #444;
+  }
+
+  .submit-button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+  }
+
+  .form-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    display: none;
+  }
+
+  .form-message.error {
+    display: block;
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .registration-section {
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .registration-form {
+      padding: 1.5rem;
+    }
+  }
+</style> 
