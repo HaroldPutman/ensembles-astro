@@ -1,13 +1,25 @@
 ---
-import Layout from '../layouts/Layout.astro';
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+
+// Get the course ID from the URL parameters
+const { courseId } = Astro.params;
+
+// Validate course ID format (you can customize this validation)
+if (!courseId || !/^[A-Z]{2}\d{2}-\d{2}$/.test(courseId)) {
+  return Astro.redirect('/events');
+}
 ---
 
 <Layout>
   <section class="registration-section">
     <h1>Event Registration</h1>
-    <p class="intro">Please provide the participant's information to begin registration.</p>
+    <p class="intro">Please provide the participant's information to begin registration for course <strong>{courseId}</strong>.</p>
     
     <form id="registration-form" class="registration-form">
+      <input type="hidden" id="courseId" name="courseId" value={courseId} />
+      
       <div class="form-group">
         <label for="firstName">First Name</label>
         <input 
@@ -68,11 +80,12 @@ import Layout from '../layouts/Layout.astro';
     const data = {
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
-      birthdate: formData.get('birthdate')
+      birthdate: formData.get('birthdate'),
+      courseId: formData.get('courseId')
     };
 
     try {
-      const response = await fetch('/api/student', {
+      const response = await fetch('/api/registration-student', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,8 +102,8 @@ import Layout from '../layouts/Layout.astro';
       }
     
       if (response.ok) {
-        // Redirect to the next step
-        window.location.href = `/register/contact?registrationId=${result.registrationId}`;
+        // Redirect to the next step with course ID
+        window.location.href = `/register/contact?registrationId=${result.registrationId}&courseId=${data.courseId}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }
@@ -123,6 +136,11 @@ import Layout from '../layouts/Layout.astro';
     font-size: 1.2rem;
     color: #666;
     margin-bottom: 2rem;
+  }
+
+  .intro strong {
+    color: #333;
+    font-weight: 600;
   }
 
   .registration-form {

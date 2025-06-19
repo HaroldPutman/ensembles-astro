@@ -1,0 +1,307 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+// Get query parameters
+const registrationId = Astro.url.searchParams.get('registrationId');
+const courseId = Astro.url.searchParams.get('courseId');
+
+// Validate required parameters
+if (!registrationId || !courseId) {
+  return Astro.redirect('/events');
+}
+---
+
+<Layout>
+  <section class="contact-section">
+    <h1>Contact Information</h1>
+    <p class="intro">Please provide your contact information to complete the registration for course <strong>{courseId}</strong>.</p>
+    
+    <form id="contact-form" class="contact-form">
+      <input type="hidden" id="registrationId" name="registrationId" value={registrationId} />
+      <input type="hidden" id="courseId" name="courseId" value={courseId} />
+      
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input 
+          type="text" 
+          id="firstName" 
+          name="firstName" 
+          required 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input 
+          type="text" 
+          id="lastName" 
+          name="lastName" 
+          required 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          required 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone (optional)</label>
+        <input 
+          type="tel" 
+          id="phone" 
+          name="phone" 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="address">Address (optional)</label>
+        <input 
+          type="text" 
+          id="address" 
+          name="address" 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="city">City (optional)</label>
+          <input 
+            type="text" 
+            id="city" 
+            name="city" 
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="state">State (optional)</label>
+          <input 
+            type="text" 
+            id="state" 
+            name="state" 
+            class="form-input"
+            maxlength="2"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="zip">ZIP Code (optional)</label>
+          <input 
+            type="text" 
+            id="zip" 
+            name="zip" 
+            class="form-input"
+            maxlength="10"
+          />
+        </div>
+      </div>
+
+      <button type="submit" class="submit-button">Complete Registration</button>
+      
+      <div id="form-message" class="form-message"></div>
+    </form>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement;
+  const messageDiv = document.getElementById('form-message');
+  const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!form || !messageDiv || !submitButton) return;
+
+    // Disable the submit button and show loading state
+    submitButton.disabled = true;
+    submitButton.textContent = 'Saving...';
+    messageDiv.className = 'form-message';
+    messageDiv.textContent = '';
+    
+    const formData = new FormData(form);
+    const data = {
+      firstName: formData.get('firstName'),
+      lastName: formData.get('lastName'),
+      email: formData.get('email'),
+      phone: formData.get('phone') || null,
+      address: formData.get('address') || null,
+      city: formData.get('city') || null,
+      state: formData.get('state') || null,
+      zip: formData.get('zip') || null,
+      registrationId: formData.get('registrationId')
+    };
+
+    try {
+      const response = await fetch('/api/registration-contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        result = { message: 'Server error occurred' };
+      }
+    
+      if (response.ok) {
+        messageDiv.textContent = 'Registration completed successfully! You will receive a confirmation email shortly.';
+        messageDiv.className = 'form-message success';
+        form.reset();
+        // Redirect to a success page or events page after a delay
+        setTimeout(() => {
+          window.location.href = '/events';
+        }, 3000);
+      } else {
+        throw new Error(result.message || 'Something went wrong');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      messageDiv.textContent = error instanceof Error ? error.message : 'Failed to save contact information. Please try again.';
+      messageDiv.className = 'form-message error';
+    } finally {
+      // Re-enable the submit button and restore its text
+      submitButton.disabled = false;
+      submitButton.textContent = 'Complete Registration';
+    }
+  });
+</script>
+
+<style>
+  .contact-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .intro {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .intro strong {
+    color: #333;
+    font-weight: 600;
+  }
+
+  .contact-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #666;
+  }
+
+  .submit-button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+  }
+
+  .submit-button:hover:not(:disabled) {
+    background-color: #444;
+  }
+
+  .submit-button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+  }
+
+  .form-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    display: none;
+  }
+
+  .form-message.success {
+    display: block;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .form-message.error {
+    display: block;
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .contact-section {
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .contact-form {
+      padding: 1.5rem;
+    }
+
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style> 
