@@ -1,0 +1,330 @@
+---
+
+import Layout from '../../../layouts/Layout.astro';
+
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const events = await getCollection('events');
+  return events.map(event => ({
+    // collection filenames get converted to lowercase ids
+    params: { courseId: event.id.toUpperCase() },
+    props: { event }
+  }));
+}
+
+// Get the course ID from the URL parameters
+const { courseId } = Astro.params;
+const { event } = Astro.props;
+
+---
+
+<Layout>
+  <section class="registration-section">
+    <h1>Additional Information</h1>
+    <p class="intro">Please provide this additional information to complete your registration for <strong>{event.data.name}</strong>.</p>
+    
+    <form id="registration-info-form" class="registration-form">
+      <input type="hidden" id="courseId" name="courseId" value={courseId} />
+      
+      {event.data.question && (
+        <div class="form-group">
+            <label for="registrationQuestion">{event.data.question}</label>
+            <textarea 
+            id="answer" 
+            name="answer" 
+            class="form-input"
+            rows="2"
+        ></textarea>
+        </div>
+      )}
+
+      {!event.data.cost && event.data.suggestedDonation && (
+      <div class="form-group">
+        <p>There is no charge, but a suggested donation is ${event.data.suggestedDonation}.</p>
+        <label for="donationAmount">Donation Amount (optional)</label>
+        <div class="donation-input-group">
+          <span class="currency-symbol">$</span>
+          <input 
+            type="number" 
+            id="donationAmount" 
+            name="donationAmount" 
+            min="0" 
+            step="1" 
+            placeholder="0.00"
+            class="form-input donation-input"
+          />
+        </div>
+        <small class="form-help">Any amount helps support our programs!</small>
+      </div>
+      )}
+
+      <div class="form-group">
+        <label for="note">Notes (optional)</label>
+        <textarea 
+          id="note" 
+          name="note" 
+          class="form-input"
+          rows="4"
+          placeholder="Any special requests, dietary restrictions, or additional information..."
+        ></textarea>
+      </div>
+
+      <button type="submit" name="pay-now" class="submit-button">Continue to Payment</button>
+      
+      <button type="submit" name="add-more" class="secondary-button" >Add Another Registration</button>
+
+      <div id="form-message" class="form-message"></div>
+    </form>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('registration-info-form') as HTMLFormElement;
+  const messageDiv = document.getElementById('form-message');
+  const payNowButton = form?.querySelector('button[name="pay-now"]') as HTMLButtonElement;
+  const addMoreButton = form?.querySelector('button[name="add-more"]') as HTMLButtonElement;
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!form || !messageDiv) return;
+
+    const submitter = e.submitter as HTMLButtonElement;
+    
+    if (submitter?.name === 'pay-now') {
+      // Disable the submit button and show loading state
+      payNowButton.disabled = true;
+      payNowButton.textContent = 'Saving...';
+    } else if (submitter?.name === 'add-more') {
+      // Disable the submit button and show loading state
+      addMoreButton.disabled = true;
+      addMoreButton.textContent = 'Saving...';
+    }
+    messageDiv.className = 'form-message';
+    messageDiv.textContent = '';
+    let registrations: string[] = [];
+    try {
+        registrations = JSON.parse(sessionStorage.getItem('registrations') || '[]');
+    } catch (e) {
+        console.error('Error parsing registration IDs:', e);
+    }
+
+    const formData = new FormData(form);
+
+    const data = {
+      registrationId: registrations.at(-1),
+      answer: formData.get('answer'),
+      donationAmount: formData.get('donationAmount') ? parseFloat(formData.get('donationAmount') as string) : null,
+      note: formData.get('note') || null
+    };
+
+    try {
+      const response = await fetch('/api/registration-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        result = { message: 'Server error occurred' };
+      }
+    
+      if (response.ok) {
+        if (submitter?.name === 'pay-now') {
+          window.location.href = '/register/payment';
+        } else if (submitter?.name === 'add-more') {
+          window.location.href = '/events';
+        }
+      } else {
+        throw new Error(result.message || 'Something went wrong');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      messageDiv.textContent = error instanceof Error ? error.message : 'Failed to save information. Please try again.';
+      messageDiv.className = 'form-message error';
+    } finally {
+      // Re-enable the submit button and restore its text
+      if (submitter?.name === 'pay-now') {
+        payNowButton.disabled = false;
+        payNowButton.textContent = 'Continue to Payment';
+      } else if (submitter?.name === 'add-more') {
+        addMoreButton.disabled = false;
+        addMoreButton.textContent = 'Add Another Registration';
+      }
+    }
+  });
+</script>
+
+<style>
+  .registration-section {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .intro {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .intro strong {
+    color: #333;
+    font-weight: 600;
+  }
+
+  .registration-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #666;
+  }
+
+  textarea.form-input {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .donation-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .currency-symbol {
+    position: absolute;
+    left: 0.75rem;
+    color: #666;
+    font-weight: 500;
+    z-index: 1;
+  }
+
+  .donation-input {
+    padding-left: 1.5rem;
+  }
+
+  .form-help {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #666;
+  }
+
+  .submit-button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .submit-button:hover:not(:disabled) {
+    background-color: #444;
+  }
+
+  .submit-button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+  }
+
+  .secondary-button {
+    background-color: transparent;
+    color: #333;
+    border: 2px solid #333;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .secondary-button:hover:not(:disabled) {
+    background-color: #333;
+    color: white;
+  }
+
+  .secondary-button:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+    border-color: #ddd;
+    cursor: not-allowed;
+  }
+
+  .form-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
+    display: none;
+  }
+
+  .form-message.success {
+    display: block;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .form-message.error {
+    display: block;
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .registration-section {
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .registration-form {
+      padding: 1.5rem;
+    }
+  }
+</style>

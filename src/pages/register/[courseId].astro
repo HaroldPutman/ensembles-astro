@@ -1,27 +1,45 @@
 ---
-export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const events = await getCollection('events');
+  console.log('Course IDs:', events.map(event => event.id));
+  return events.map(event => ({
+    // collection filenames get converted to lowercase ids
+    params: { courseId: event.id.toUpperCase() },
+    props: { event }
+  }));
+}
 
 // Get the course ID from the URL parameters
 const { courseId } = Astro.params;
+const { event } = Astro.props;
 
-// Validate course ID format (you can customize this validation)
-if (!courseId || !/^[A-Z]{2}\d{2}-\d{2}$/.test(courseId)) {
-  return Astro.redirect('/events');
-}
 ---
 
 <Layout>
   <section class="registration-section">
     <h1>Event Registration</h1>
-    <p class="intro">Please provide the participant's information to begin registration for course <strong>{courseId}</strong>.</p>
+    <p class="intro">Let's get registered for <strong>{event.data.name}</strong>.</p>
     
     <form id="registration-form" class="registration-form">
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
       <div class="form-group">
-        <label for="firstName">First Name</label>
+        <label for="birthdate">Student's Birth Date</label>
+        <input 
+          type="date" 
+          id="birthdate" 
+          name="birthdate" 
+          required 
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="firstName">Student's First Name</label>
         <input 
           type="text" 
           id="firstName" 
@@ -32,7 +50,7 @@ if (!courseId || !/^[A-Z]{2}\d{2}-\d{2}$/.test(courseId)) {
       </div>
 
       <div class="form-group">
-        <label for="lastName">Last Name</label>
+        <label for="lastName">Student's Last Name</label>
         <input 
           type="text" 
           id="lastName" 
@@ -42,15 +60,17 @@ if (!courseId || !/^[A-Z]{2}\d{2}-\d{2}$/.test(courseId)) {
         />
       </div>
 
-      <div class="form-group">
-        <label for="birthdate">Birth Date</label>
-        <input 
-          type="date" 
-          id="birthdate" 
-          name="birthdate" 
-          required 
-          class="form-input"
-        />
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            id="isParticipant" 
+            name="isParticipant" 
+            class="form-checkbox"
+          />
+          <span class="checkmark"></span>
+          I am registering for myself.
+        </label>
       </div>
 
       <button type="submit" class="submit-button">Next: Contact Information</button>
@@ -81,7 +101,8 @@ if (!courseId || !/^[A-Z]{2}\d{2}-\d{2}$/.test(courseId)) {
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
       birthdate: formData.get('birthdate'),
-      courseId: formData.get('courseId')
+      courseId: formData.get('courseId'),
+      isParticipant: formData.get('isParticipant') === 'on'
     };
 
     try {
@@ -102,8 +123,21 @@ if (!courseId || !/^[A-Z]{2}\d{2}-\d{2}$/.test(courseId)) {
       }
     
       if (response.ok) {
+        // store the registrationId and studentId in session storage
+
+        let registrations: string[] = [];
+        try {
+            registrations = JSON.parse(sessionStorage.getItem('registrations') || '[]') as string[];
+        } catch (e) {
+            console.error('Error parsing stored registrations:', e);
+        }
+        if (!registrations.includes(result.registrationId)) {
+          registrations.push(result.registrationId);
+          sessionStorage.setItem('registrations', JSON.stringify(registrations));
+        }
+        sessionStorage.setItem('courseId', result.courseId);
         // Redirect to the next step with course ID
-        window.location.href = `/register/contact?registrationId=${result.registrationId}&courseId=${data.courseId}`;
+        window.location.href = `/register/contact?rid=${result.registrationId}&sid=${result.studentId}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }
@@ -173,6 +207,26 @@ if (!courseId || !/^[A-Z]{2}\d{2}-\d{2}$/.test(courseId)) {
   .form-input:focus {
     outline: none;
     border-color: #666;
+  }
+
+  .checkbox-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .form-checkbox {
+    margin-right: 0.75rem;
+    width: 18px;
+    height: 18px;
+    accent-color: #333;
+    cursor: pointer;
   }
 
   .submit-button {

@@ -26,12 +26,12 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { firstName, lastName, email, phone, address, city, state, zip, registrationId } = body;
+    const { firstName, lastName, email, phone, address, city, state, zip, registrationId, studentId } = body;
 
-    if (!firstName || !lastName || !email || !registrationId) {
+    if (!firstName || !lastName || !email || !registrationId ) {
       return new Response(
         JSON.stringify({
-          message: 'First name, last name, email, and registration ID are required',
+          message: `Missing field(s): ${!firstName ? 'firstName' : ''} ${!lastName ? 'lastName' : ''} ${!email ? 'email' : ''} ${!registrationId ? 'registrationId' : ''}`,
         }),
         { 
           status: 400,
@@ -76,27 +76,31 @@ export const POST: APIRoute = async ({ request }) => {
         );
         
         // Create contact_student relationship
-        const registration = await client.query(
-          `SELECT student_id FROM registration WHERE id = $1`,
-          [registrationId]
-        );
-        
-        if (registration.rows.length > 0) {
-          const studentId = registration.rows[0].student_id;
-          
-          // Check if contact_student relationship already exists
-          const existingRelationship = await client.query(
-            `SELECT id FROM contact_student WHERE contact_id = $1 AND student_id = $2`,
-            [contactId, studentId]
-          );
-          
-          if (existingRelationship.rows.length === 0) {
-            await client.query(
-              `INSERT INTO contact_student (contact_id, student_id)
-               VALUES ($1, $2)`,
-              [contactId, studentId]
+        let thisStudentId = studentId;
+        if (!thisStudentId) {
+            // if studentId is not provided, use the student_id from the registration
+            const registration = await client.query(
+            `SELECT student_id FROM registration WHERE id = $1`,
+            [registrationId]
             );
-          }
+            
+            if (registration.rows.length > 0) {
+              thisStudentId = registration.rows[0].student_id;
+            }
+        }
+        
+        // Check if contact_student relationship already exists
+        const existingRelationship = await client.query(
+        `SELECT id FROM contact_student WHERE contact_id = $1 AND student_id = $2`,
+        [contactId, thisStudentId]
+        );
+          
+        if (existingRelationship.rows.length === 0) {
+            await client.query(
+                `INSERT INTO contact_student (contact_id, student_id)
+                VALUES ($1, $2)`,
+                [contactId, thisStudentId]
+            );
         }
         
         await client.query('COMMIT');

@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { firstName, lastName, birthdate, courseId } = body;
+    const { firstName, lastName, birthdate, courseId, isParticipant } = body;
 
     if (!firstName || !lastName || !birthdate || !courseId) {
       return new Response(
@@ -93,6 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
             message: 'Student and registration saved successfully',
             studentId: studentId,
             registrationId: registrationResult.rows[0].id,
+            courseId: courseId
           }),
           { 
             status: 200,

@@ -1,27 +1,17 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 
-// Get query parameters
-const registrationId = Astro.url.searchParams.get('registrationId');
-const courseId = Astro.url.searchParams.get('courseId');
-
-// Validate required parameters
-if (!registrationId || !courseId) {
-  return Astro.redirect('/events');
-}
 ---
 
 <Layout>
   <section class="contact-section">
     <h1>Contact Information</h1>
-    <p class="intro">Please provide your contact information to complete the registration for course <strong>{courseId}</strong>.</p>
+    <p class="intro">Please provide your contact information.</p>
     
     <form id="contact-form" class="contact-form">
-      <input type="hidden" id="registrationId" name="registrationId" value={registrationId} />
-      <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
       <div class="form-group">
-        <label for="firstName">First Name</label>
+        <label for="firstName">Your First Name</label>
         <input 
           type="text" 
           id="firstName" 
@@ -32,7 +22,7 @@ if (!registrationId || !courseId) {
       </div>
 
       <div class="form-group">
-        <label for="lastName">Last Name</label>
+        <label for="lastName">Your Last Name</label>
         <input 
           type="text" 
           id="lastName" 
@@ -107,7 +97,7 @@ if (!registrationId || !courseId) {
         </div>
       </div>
 
-      <button type="submit" class="submit-button">Complete Registration</button>
+      <button type="submit" class="submit-button">Next: Additional Information</button>
       
       <div id="form-message" class="form-message"></div>
     </form>
@@ -118,6 +108,18 @@ if (!registrationId || !courseId) {
   const form = document.getElementById('contact-form') as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
   const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
+
+    // Get query parameters
+    const searchParams = new URLSearchParams(window.location.search);
+    const registrationId = searchParams.get('rid');
+    const studentId = searchParams.get('sid');
+
+    // Validate required parameters
+    if (!registrationId ) {
+      console.error('Missing required parameters');
+      window.location.href = '/events';
+    }
+   
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -140,7 +142,8 @@ if (!registrationId || !courseId) {
       city: formData.get('city') || null,
       state: formData.get('state') || null,
       zip: formData.get('zip') || null,
-      registrationId: formData.get('registrationId')
+      registrationId,
+      studentId
     };
 
     try {
@@ -161,13 +164,7 @@ if (!registrationId || !courseId) {
       }
     
       if (response.ok) {
-        messageDiv.textContent = 'Registration completed successfully! You will receive a confirmation email shortly.';
-        messageDiv.className = 'form-message success';
-        form.reset();
-        // Redirect to a success page or events page after a delay
-        setTimeout(() => {
-          window.location.href = '/events';
-        }, 3000);
+        window.location.href = `/register/info/${sessionStorage.getItem('courseId')}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }

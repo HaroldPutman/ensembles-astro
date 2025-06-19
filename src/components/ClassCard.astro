@@ -10,7 +10,7 @@ interface Props {
   instructors: string[];
 }
 
-const { name, image, dtstart, dtend, ageMin, ageMax, cost, instructors } = Astro.props;
+const { name, eventId,image, dtstart, dtend, ageMin, ageMax, cost, instructors } = Astro.props;
 
 // Format the date range
 const startDate = new Date(dtstart);
@@ -26,6 +26,7 @@ const formattedDate = `${startDate.toLocaleDateString()} ${startDate.toLocaleTim
   )}
   <div class="class-content">
     <h2>{name}</h2>
+    <p>{eventId}</p>
     <div class="class-details">
       <p class="schedule">
         <strong>When:</strong> {formattedDate}

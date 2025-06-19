@@ -29,6 +29,7 @@ const renderedEvents = await Promise.all(
     <h1>Classes</h1>
     {renderedEvents.map((event) => (
       <ClassCard
+        eventId={event.id}
         name={event.data.name}
         image={event.data.image}
         dtstart={event.data.dtstart}

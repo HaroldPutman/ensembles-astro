@@ -27,6 +27,8 @@ const events = defineCollection({
         ageMin: z.number().optional(),
         ageMax: z.number().optional(),
         sizeMax: z.number().optional(),
+        question: z.string().optional(),
+        suggestedDonation: z.number().optional(),
         image: z.string().optional(),
     }),
 });
