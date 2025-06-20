@@ -27,12 +27,26 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { registrationId, answer, donationAmount, note } = body;
+    const { registrationId, answer, donationAmount, note, termsAgreement } = body;
 
     if (!registrationId) {
       return new Response(
         JSON.stringify({
           message: 'Registration ID is required',
+        }),
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    }
+
+    if (!termsAgreement) {
+      return new Response(
+        JSON.stringify({
+          message: 'Terms agreement is required',
         }),
         { 
           status: 400,
@@ -92,9 +106,9 @@ export const POST: APIRoute = async ({ request }) => {
         // Update the registration with additional information
         await client.query(
           `UPDATE registration 
-           SET cost = $1, donation = $2, note = $3, answer = $4
-           WHERE id = $5`,
-          [courseCost, donationAmount, note, answer, registrationId]
+           SET cost = $1, donation = $2, note = $3, answer = $4, terms_agreement = $5
+           WHERE id = $6`,
+          [courseCost, donationAmount, note, answer, termsAgreement, registrationId]
         );
         
         // For now, we'll just return success

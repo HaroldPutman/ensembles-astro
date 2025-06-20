@@ -70,6 +70,42 @@ const { event } = Astro.props;
         ></textarea>
       </div>
 
+      <div class="release-statement">
+        <h3>Release and Consent Agreement</h3>
+        <div class="release-text">
+          <ul>
+            <li>I hold Ensembles harmless against all claims or demands arising from participation in class.</li>
+            <li>I give Ensembles permission for medical treatment, in the event I cannot be reached in a timely manner.</li>
+            <li>Ensembles is not responsible for lost or stolen items. Please bring only what you need for class.</li>
+            <li>All photographs and videos resulting from participation in Ensembles activities will become property of Ensembles to be used in promotion on website, social media and promotional materials. For confidentiality, no student names will be associated with photos.</li>
+          </ul>
+        </div>
+        
+        <h3>Guidelines and Expectations</h3>
+        <div class="release-text">
+          <p>I understand and agree to abide by and follow these guidelines and expectations listed below. I (we) understand that failing to do so will constitute grounds for dismissal from the program without refund of tuition.</p>
+          <ul>
+            <li>Arrive no earlier than 10 minutes before start of the event</li>
+            <li>An adult must come into the building to pick up any child under 13</li>
+            <li>Students will conduct themselves in a courteous, respectful manner toward the teachers and fellow students.</li>
+            <li>Students will come prepared and ready to learn new skills.</li>
+          </ul>
+        </div>
+        
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              id="termsAgreement" 
+              name="termsAgreement" 
+              class="form-checkbox" 
+              required
+            />
+            <span>I have read and agree to these terms and guidelines.</span>
+          </label>
+        </div>
+      </div>
+
       <button type="submit" name="pay-now" class="submit-button">Continue to Payment</button>
       
       <button type="submit" name="add-more" class="secondary-button" >Add Another Registration</button>
@@ -116,8 +152,26 @@ const { event } = Astro.props;
       registrationId: registrations.at(-1),
       answer: formData.get('answer'),
       donationAmount: formData.get('donationAmount') ? parseFloat(formData.get('donationAmount') as string) : null,
-      note: formData.get('note') || null
+      note: formData.get('note') || null,
+      termsAgreement: formData.get('termsAgreement') === 'on'
     };
+
+    // Validate terms agreement
+    if (!data.termsAgreement) {
+      messageDiv.textContent = 'You must agree to the terms and conditions to continue.';
+      messageDiv.className = 'form-message error';
+      messageDiv.style.display = 'block';
+      
+      // Re-enable buttons
+      if (submitter?.name === 'pay-now') {
+        payNowButton.disabled = false;
+        payNowButton.textContent = 'Continue to Payment';
+      } else if (submitter?.name === 'add-more') {
+        addMoreButton.disabled = false;
+        addMoreButton.textContent = 'Add Another Registration';
+      }
+      return;
+    }
 
     try {
       const response = await fetch('/api/registration-info', {
@@ -246,6 +300,59 @@ const { event } = Astro.props;
     margin-top: 0.25rem;
     font-size: 0.875rem;
     color: #666;
+  }
+
+  .release-statement {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #333;
+  }
+
+  .release-statement h3 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .release-text {
+    margin-bottom: 1.5rem;
+  }
+
+  .release-text p {
+    margin-bottom: 0.75rem;
+    color: #555;
+    line-height: 1.5;
+    font-size: 0.95rem;
+  }
+
+  .release-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  .checkbox-group {
+    margin-bottom: 0;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+    line-height: 1.4;
+  }
+
+  .form-checkbox {
+    margin-right: 0.75rem;
+    margin-top: 0.125rem;
+    width: 18px;
+    height: 18px;
+    accent-color: #333;
+    cursor: pointer;
+    flex-shrink: 0;
   }
 
   .submit-button {
