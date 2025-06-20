@@ -1,0 +1,162 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout>
+  <section class="success-section">
+    <div class="success-content">
+      <div class="success-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="#4CAF50" stroke-width="2"/>
+          <path d="M9 12l2 2 4-4" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      
+      <h1>Payment Successful!</h1>
+      <p class="success-message">
+        Thank you for your registration. Your payment has been processed successfully.
+      </p>
+      
+      <div class="next-steps">
+        <h2>What's Next?</h2>
+        <ul>
+          <li>You will receive a confirmation email shortly</li>
+          <li>Please arrive 10 minutes before your first class</li>
+          <li>Bring comfortable clothing for movement</li>
+          <li>If you have any questions, please contact us</li>
+        </ul>
+      </div>
+      
+      <div class="action-buttons">
+        <a href="/events" class="btn btn-primary">View More Events</a>
+        <a href="/" class="btn btn-secondary">Return Home</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .success-section {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  .success-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .success-icon {
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .success-message {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .next-steps {
+    text-align: left;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
+
+  .next-steps h2 {
+    font-size: 1.3rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .next-steps ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .next-steps li {
+    padding: 0.5rem 0;
+    color: #555;
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .next-steps li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #4CAF50;
+    font-weight: bold;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background-color: #333;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #444;
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: #333;
+    border: 1px solid #333;
+  }
+
+  .btn-secondary:hover {
+    background-color: #333;
+    color: white;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .success-section {
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style> 

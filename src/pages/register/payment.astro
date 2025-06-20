@@ -1,0 +1,433 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout>
+  <section class="payment-section">
+    <h1>Payment</h1>
+    <p class="intro">Please review your registrations and complete payment.</p>
+    
+    <div id="loading" class="loading">
+      <p>Loading registration details...</p>
+    </div>
+    
+    <div id="payment-content" class="payment-content" style="display: none;">
+      <div class="registrations-summary">
+        <h2>Registration Summary</h2>
+        <div id="registrations-list" class="registrations-list">
+          <!-- Registration items will be populated here -->
+        </div>
+        
+        <div class="total-section">
+          <div class="total-line">
+            <span>Total Cost:</span>
+            <span id="total-cost" class="total-amount">$0.00</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="payment-form">
+        <h2>Payment Information</h2>
+        <div id="paypal-button-container"></div>
+        
+        <div class="payment-note">
+          <p>You will be redirected to PayPal to complete your payment securely.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div id="error-message" class="error-message" style="display: none;"></div>
+  </section>
+</Layout>
+
+<script>
+  let registrationDetails: any[] = [];
+  let totalCost = 0;
+  let paypalClientId: string | null = null;
+
+  // Load PayPal configuration
+  async function loadPayPalConfig() {
+    try {
+      const response = await fetch('/api/paypal-config');
+      if (response.ok) {
+        const config = await response.json();
+        paypalClientId = config.clientId;
+        loadPayPalSDK();
+      } else {
+        throw new Error('Failed to load PayPal configuration');
+      }
+    } catch (error) {
+      console.error('Error loading PayPal config:', error);
+      showError('Failed to load payment system. Please try again.');
+    }
+  }
+
+  // Load PayPal SDK
+  function loadPayPalSDK() {
+    if (!paypalClientId) {
+      showError('PayPal configuration not available');
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=USD`;
+    script.onload = () => {
+      // SDK loaded, now load registrations
+      loadRegistrations();
+    };
+    script.onerror = () => {
+      showError('Failed to load PayPal. Please try again.');
+    };
+    document.head.appendChild(script);
+  }
+
+  // Load registration IDs from sessionStorage
+  function loadRegistrations() {
+    const registrationIds = sessionStorage.getItem('registrations');
+    if (!registrationIds) {
+      showError('No registrations found. Please start a new registration.');
+      return;
+    }
+
+    const ids = JSON.parse(registrationIds);
+    if (!ids || ids.length === 0) {
+      showError('No registrations found. Please start a new registration.');
+      return;
+    }
+
+    // Fetch registration details from API
+    fetchRegistrationDetails(ids);
+  }
+
+  // Fetch registration details from API
+  async function fetchRegistrationDetails(registrationIds: string[]) {
+    try {
+      const response = await fetch('/api/registration-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ registrationIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch registration details');
+      }
+
+      const data = await response.json();
+      registrationDetails = data.registrations;
+      totalCost = data.totalCost;
+
+      displayRegistrations();
+      hideLoading();
+      initializePayPal();
+    } catch (error) {
+      console.error('Error fetching registration details:', error);
+      showError('Failed to load registration details. Please try again.');
+    }
+  }
+
+  // Display registrations in the UI
+  function displayRegistrations() {
+    const registrationsList = document.getElementById('registrations-list');
+    const totalCostElement = document.getElementById('total-cost');
+
+    if (!registrationsList || !totalCostElement) return;
+
+    registrationsList.innerHTML = '';
+
+    registrationDetails.forEach((registration) => {
+      const registrationItem = document.createElement('div');
+      registrationItem.className = 'registration-item';
+      
+      const totalAmount = (registration.cost || 0) + (registration.donation || 0);
+      
+      registrationItem.innerHTML = `
+        <div class="registration-info">
+          <div class="student-name">${registration.studentFirstName} ${registration.studentLastName}</div>
+          <div class="course-name">${registration.courseName}</div>
+        </div>
+        <div class="registration-costs">
+          <div class="cost-breakdown">
+            <span>Course: $${(registration.cost || 0).toFixed(2)}</span>
+            ${registration.donation ? `<span>Donation: $${registration.donation.toFixed(2)}</span>` : ''}
+          </div>
+          <div class="item-total">$${totalAmount.toFixed(2)}</div>
+        </div>
+      `;
+      
+      registrationsList.appendChild(registrationItem);
+    });
+
+    totalCostElement.textContent = `$${totalCost.toFixed(2)}`;
+  }
+
+  // Initialize PayPal
+  function initializePayPal() {
+    if (typeof (window as any).paypal === 'undefined') {
+      console.error('PayPal SDK not loaded');
+      return;
+    }
+
+    (window as any).paypal.Buttons({
+      createOrder: function(data: any, actions: any) {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: totalCost.toFixed(2)
+            },
+            description: `Registration for ${registrationDetails.length} course(s)`,
+            custom_id: JSON.stringify(registrationDetails.map(r => r.registrationId))
+          }]
+        });
+      },
+      onApprove: function(data: any, actions: any) {
+        return actions.order.capture().then(function(details: any) {
+          // Payment completed successfully
+          processPaymentSuccess(details);
+        });
+      },
+      onError: function(err: any) {
+        console.error('PayPal error:', err);
+        alert('Payment failed. Please try again.');
+      }
+    }).render('#paypal-button-container');
+  }
+
+  // Process successful payment
+  async function processPaymentSuccess(paypalDetails: any) {
+    try {
+      const response = await fetch('/api/process-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          registrationIds: registrationDetails.map(r => r.registrationId),
+          paypalOrderId: paypalDetails.id,
+          paypalPayerId: paypalDetails.payer.payer_id,
+          totalAmount: totalCost,
+          paymentMethod: 'paypal'
+        }),
+      });
+
+      if (response.ok) {
+        // Clear sessionStorage and redirect to success page
+        sessionStorage.removeItem('registrations');
+        sessionStorage.removeItem('courseId');
+        window.location.href = '/register/success';
+      } else {
+        const result = await response.json();
+        throw new Error(result.message || 'Payment processing failed');
+      }
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      alert(error instanceof Error ? error.message : 'Payment processing failed. Please contact support.');
+    }
+  }
+
+  // Show loading state
+  function showLoading() {
+    const loading = document.getElementById('loading');
+    const paymentContent = document.getElementById('payment-content');
+    const errorMessage = document.getElementById('error-message');
+    
+    if (loading) loading.style.display = 'block';
+    if (paymentContent) paymentContent.style.display = 'none';
+    if (errorMessage) errorMessage.style.display = 'none';
+  }
+
+  // Hide loading state
+  function hideLoading() {
+    const loading = document.getElementById('loading');
+    const paymentContent = document.getElementById('payment-content');
+    
+    if (loading) loading.style.display = 'none';
+    if (paymentContent) paymentContent.style.display = 'block';
+  }
+
+  // Show error message
+  function showError(message: string) {
+    const loading = document.getElementById('loading');
+    const paymentContent = document.getElementById('payment-content');
+    const errorMessage = document.getElementById('error-message');
+    
+    if (loading) loading.style.display = 'none';
+    if (paymentContent) paymentContent.style.display = 'none';
+    if (errorMessage) {
+      errorMessage.textContent = message;
+      errorMessage.style.display = 'block';
+    }
+  }
+
+  // Load PayPal config when page loads
+  document.addEventListener('DOMContentLoaded', () => {
+    showLoading();
+    loadPayPalConfig();
+  });
+</script>
+
+<style>
+  .payment-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .intro {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+  }
+
+  .payment-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .registrations-summary {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .registrations-summary h2 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .registrations-list {
+    margin-bottom: 1.5rem;
+  }
+
+  .registration-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .registration-item:last-child {
+    border-bottom: none;
+  }
+
+  .registration-info {
+    flex: 1;
+  }
+
+  .student-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+  }
+
+  .course-name {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .registration-costs {
+    text-align: right;
+  }
+
+  .cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .item-total {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .total-section {
+    border-top: 2px solid #333;
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+
+  .total-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .total-amount {
+    font-size: 1.5rem;
+  }
+
+  .payment-form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .payment-form h2 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+  }
+
+  #paypal-button-container {
+    margin-bottom: 1rem;
+  }
+
+  .payment-note {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .payment-section {
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .payment-content {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+</style> 
