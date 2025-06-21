@@ -106,6 +106,20 @@ const { event } = Astro.props;
         </div>
       </div>
 
+      <div class="email-subscription">
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              id="emailSubscription" 
+              name="emailSubscription" 
+              class="form-checkbox" 
+            />
+            <span>Keep me informed about upcoming events at Ensembles. <small>About one email per month. Your information will never be shared with any third party.</small></span>
+          </label>
+        </div>
+      </div>
+
       <button type="submit" name="pay-now" class="submit-button">Continue to Payment</button>
       
       <button type="submit" name="add-more" class="secondary-button" >Add Another Registration</button>
@@ -153,6 +167,7 @@ const { event } = Astro.props;
       answer: formData.get('answer'),
       donationAmount: formData.get('donationAmount') ? parseFloat(formData.get('donationAmount') as string) : null,
       note: formData.get('note') || null,
+      emailSubscription: formData.get('emailSubscription') === 'on',
       termsAgreement: formData.get('termsAgreement') === 'on'
     };
 
@@ -191,6 +206,30 @@ const { event } = Astro.props;
       }
     
       if (response.ok) {
+        // If email subscription is checked, call the subscribe API
+        if (data.emailSubscription) {
+          try {
+            // Get contact information from sessionStorage or form data
+            const contactInfo = sessionStorage.getItem('contactInfo') || '{}';
+            
+            // Parse to make sure it's an object
+            const contact = JSON.parse(contactInfo);
+            
+            if (contact.email) {
+              await fetch('/api/subscribe', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: contactInfo,
+              });
+            }
+          } catch (subscribeError) {
+            console.error('Error subscribing to email list:', subscribeError);
+            // Don't block the registration process if subscription fails
+          }
+        }
+        
         if (submitter?.name === 'pay-now') {
           window.location.href = '/register/payment';
         } else if (submitter?.name === 'add-more') {
@@ -300,6 +339,20 @@ const { event } = Astro.props;
     margin-top: 0.25rem;
     font-size: 0.875rem;
     color: #666;
+  }
+
+  .email-subscription {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f0f8ff;
+    border-radius: 6px;
+    border-left: 4px solid #0066cc;
+  }
+
+  .email-subscription .checkbox-label {
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.5;
   }
 
   .release-statement {

@@ -164,6 +164,13 @@ import Layout from '../../layouts/Layout.astro';
       }
     
       if (response.ok) {
+        // Store contact info in sessionStorage for potential email subscription
+        sessionStorage.setItem('contactInfo', JSON.stringify({
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName
+        }));
+        
         window.location.href = `/register/info/${sessionStorage.getItem('courseId')}`;
       } else {
         throw new Error(result.message || 'Something went wrong');

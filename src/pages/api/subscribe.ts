@@ -4,9 +4,13 @@ export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   let email;
+  let firstname;
+  let lastname;
   try {
     const body = await request.json();
     email = body.email;
+    firstname = body.firstname;
+    lastname = body.lastname;
   } catch (e) {
     return new Response(
       JSON.stringify({
@@ -35,6 +39,10 @@ export const POST: APIRoute = async ({ request }) => {
       },
       body: JSON.stringify({
         email,
+        attributes: {
+          FIRSTNAME: firstname,
+          LASTNAME: lastname,
+        },
         listIds: [3], // newsletter list id
         updateEnabled: true,
       }),
