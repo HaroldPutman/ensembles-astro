@@ -2,6 +2,7 @@
 
 import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
+import { shortDescription } from '../../lib/datelib';
 
 export async function getStaticPaths() {
   const events = await getCollection('events');
@@ -17,13 +18,14 @@ export async function getStaticPaths() {
 const { courseId } = Astro.params;
 const { event } = Astro.props;
 
+const description = shortDescription(event.data.dtstart, event.data.dtend, event.data.duration, event.data.rrule);
 ---
 
 <Layout>
   <section class="registration-section">
     <h1>Event Registration</h1>
-    <p class="intro">Let's get registered for <strong>{event.data.name}</strong>.</p>
-    
+    <p class="intro">Let's get registered for <strong id="courseName">{event.data.name}</strong>.</p>
+    <p class="intro">{description}</p>
     <form id="registration-form" class="registration-form">
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
@@ -60,19 +62,6 @@ const { event } = Astro.props;
         />
       </div>
 
-      <div class="form-group checkbox-group">
-        <label class="checkbox-label">
-          <input 
-            type="checkbox" 
-            id="isParticipant" 
-            name="isParticipant" 
-            class="form-checkbox"
-          />
-          <span class="checkmark"></span>
-          I am registering for myself.
-        </label>
-      </div>
-
       <button type="submit" class="submit-button">Next: Contact Information</button>
       
       <div id="form-message" class="form-message"></div>
@@ -102,7 +91,6 @@ const { event } = Astro.props;
       lastName: formData.get('lastName'),
       birthdate: formData.get('birthdate'),
       courseId: formData.get('courseId'),
-      isParticipant: formData.get('isParticipant') === 'on'
     };
 
     try {
@@ -135,7 +123,10 @@ const { event } = Astro.props;
           registrations.push(result.registrationId);
           sessionStorage.setItem('registrations', JSON.stringify(registrations));
         }
+        const courseName = document.getElementById('courseName')?.textContent;
+        courseName && sessionStorage.setItem('courseName', courseName);
         sessionStorage.setItem('courseId', result.courseId);
+        sessionStorage.setItem('participant', JSON.stringify(data));
         // Redirect to the next step with course ID
         window.location.href = `/register/contact?rid=${result.registrationId}&sid=${result.studentId}`;
       } else {

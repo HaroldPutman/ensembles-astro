@@ -6,7 +6,8 @@ import Layout from '../../layouts/Layout.astro';
 <Layout>
   <section class="contact-section">
     <h1>Contact Information</h1>
-    <p class="intro">Please provide your contact information.</p>
+    <p class="intro">Great! We're signing <strong class="student-firstname"></strong> <strong class="student-lastname"></strong> up for <strong class="course-name"></strong>. 
+      Please provide <strong>YOUR</strong> contact information.</p>
     
     <form id="contact-form" class="contact-form">
       
@@ -113,7 +114,22 @@ import Layout from '../../layouts/Layout.astro';
     const searchParams = new URLSearchParams(window.location.search);
     const registrationId = searchParams.get('rid');
     const studentId = searchParams.get('sid');
-
+    const courseName = sessionStorage.getItem('courseName');
+    let participant = null;
+    try {
+      participant = JSON.parse(sessionStorage.getItem('participant') || 'null');
+    } catch (e) {
+      console.error('Error parsing participant:', e);
+    }
+    const studentFirstName = participant?.firstName;
+    const studentLastName = participant?.lastName;
+    const firstNameEls = document.querySelectorAll('.student-firstname');
+    firstNameEls.forEach(el => el.textContent = studentFirstName);
+    const lastNameEls = document.querySelectorAll('.student-lastname');
+    lastNameEls.forEach(el => el.textContent = studentLastName);
+    const courseNameEls = document.querySelectorAll('.course-name');
+    courseNameEls.forEach(el => el.textContent = courseName);
+    
     // Validate required parameters
     if (!registrationId ) {
       console.error('Missing required parameters');
