@@ -26,13 +26,14 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
     <h1>Event Registration</h1>
     <p class="intro">Let's get registered for <strong id="courseName">{event.data.name}</strong>.</p>
     <p class="intro">{description}</p>
-    <form id="registration-form" class="registration-form">
+    <form id="registration-form" class="registration-form" data-course-start={event.data.dtstart} 
+        data-course-min-age={event.data.ageMin} data-course-max-age={event.data.ageMax}>
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
       <div class="form-group">
         <label for="birthdate">Student's Birth Date</label>
         <input 
-          type="date" 
+          type="text" 
           id="birthdate" 
           name="birthdate" 
           required 
@@ -73,6 +74,64 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
   const form = document.getElementById('registration-form') as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
   const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
+  const birthdateInput = document.getElementById('birthdate');
+
+  function calculateAge(birthdate: Date) {
+      const courseStart = form?.getAttribute('data-course-start');
+      const dateMatch = courseStart?.match(/^(\d{4})(\d{2})(\d{2})(T|$)/);
+      let refDay;
+      if (dateMatch) {
+        const year = parseInt(dateMatch[1]);
+        const month = parseInt(dateMatch[2]) - 1;
+        const day = parseInt(dateMatch[3]);
+        refDay = new Date(year, month, day);
+      } else {
+        console.error('Invalid course start date:', courseStart);
+        refDay = new Date();
+      }
+      const diff = refDay.getTime() - birthdate.getTime();
+      return Math.floor(diff / 31557600000);
+  }
+
+  function validBirthdate(birthdateStr: string) {
+      const parseDate = /^(0?[1-9]|1[012])([ .\/-]?)(0?[1-9]|[12][0-9]|3[01])\2((?:19|20)?\d\d)$/;
+      const parsed = parseDate.exec(birthdateStr);
+      if (!parsed) {
+          return null;
+      }
+      const mm = ("0"+parsed[1]).slice(-2);
+      const dd = ("0" + parsed[3]).slice(-2);
+      let year = parseInt(parsed[4]);
+      if (year < 100) {
+          year += 1900;
+          const thisYear = (new Date()).getFullYear();
+          // assume two digit year is within past 100 years.
+          if (thisYear - year >= 100) {
+              year += 100
+          }
+      }
+      return new Date(`${year}-${mm}-${dd}T00:00:00`);
+  }
+
+  birthdateInput?.addEventListener('blur', (evt: FocusEvent) => {
+    const target = evt.target as HTMLInputElement;
+    if (!target) return;
+    
+    const birthdate = validBirthdate(target.value);
+    if (birthdate) {
+      const age = calculateAge(birthdate);
+      const minAge = parseInt(form?.getAttribute('data-course-min-age') || '0');
+      const maxAge = parseInt(form?.getAttribute('data-course-max-age') || '150');
+      if (age < minAge) {
+        target.setCustomValidity(`Student must be at least ${minAge} years old`);
+      } else if (age > maxAge) {
+        target.setCustomValidity(`Student must be no more than ${maxAge} years old`);
+      } else {
+        target.setCustomValidity('');
+      }
+      target.value = birthdate.toLocaleDateString('en-US');
+    }
+  });
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
