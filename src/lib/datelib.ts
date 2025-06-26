@@ -1,4 +1,5 @@
 import { RRuleTemporal } from 'rrule-temporal';
+import { Temporal } from '@js-temporal/polyfill';
 
 /**
  * Normalize the duration string to a standard format. Possible input formats are:
@@ -54,20 +55,12 @@ export function normalizeDuration(durtime: string) {
 
 /**
  * Get the day of the week from a date string
- * @param dtstring - The date string to get the day of the week from
+ * @param dtstring - The date string to get the day of the week from (RFC 9557 format)
  * @returns The day of the week
  */
-function getDayOfWeek(dtstring: string) {
-    const match = dtstring?.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/);
-    if (!match) {
-        throw new Error(`Invalid date: ${dtstring}`);
-    }
-    const month = parseInt(match[2]);
-    const day = parseInt(match[3]);
-    const year = parseInt(match[1]);            
-    const dayOfWeek = new Date(year, month - 1, day).getDay();
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return dayNames[dayOfWeek];
+function getDayOfWeek(date: Temporal.ZonedDateTime) {
+    const dayNames = ['_', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    return dayNames[date.dayOfWeek];
 }
 
 function getDayOfWeekFullName(byDay: string) {
@@ -83,7 +76,7 @@ function getDayOfWeekFullName(byDay: string) {
     return dayMap[byDay] || byDay;
 }
 
-function getBydayDescription(byDay: string | string[] | undefined, dtstart: string) {
+function getBydayDescription(byDay: string | string[] | undefined, dtstart: Temporal.ZonedDateTime) {
     if (!byDay) {
         return getDayOfWeek(dtstart);
     } else {
@@ -98,6 +91,7 @@ function getBydayDescription(byDay: string | string[] | undefined, dtstart: stri
     }
     return '';
 }
+            
 
 
 /**
@@ -122,15 +116,15 @@ export function shortDescription(dtstart: string, dtend: string | undefined, dur
   const rruleTemporal = new RRuleTemporal({
     rruleString,
   });
-  const rruleDates = rruleTemporal.all();
+  const rruleDates = rruleTemporal.all((dt, i) => i < 1); // just first date
   const startDate = rruleDates[0];
 
 
   const options = rruleTemporal.options();
   if (options.freq === 'WEEKLY') {
-    const dayOfWeek = getBydayDescription(options.byDay, startDate.toString());
+    const dayOfWeek = getBydayDescription(options.byDay, startDate);
     const startingOn = startDate.toLocaleString('en-US', { dateStyle: 'long' }).split(',')[0];
-    return `Every ${dayOfWeek} starting on ${startingOn}`;
+    return `every ${dayOfWeek} starting ${startingOn}`;
   }
   return rruleTemporal.toText();
 }

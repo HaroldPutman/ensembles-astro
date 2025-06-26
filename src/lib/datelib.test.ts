@@ -121,8 +121,7 @@ describe('datelib', () => {
         
         const result = shortDescription(dtstart, undefined, undefined, rrule);
         
-        expect(result).toContain('Every Thursday');
-        expect(result).toContain('starting on');
+        expect(result).toBe('every Thursday starting January 11');
       });
 
       it('should describe weekly event with multiple byDay', () => {
@@ -131,18 +130,25 @@ describe('datelib', () => {
         
         const result = shortDescription(dtstart, undefined, undefined, rrule);
         
-        expect(result).toContain('Every Monday, Wednesday, and Friday');
-        expect(result).toContain('starting on');
+        expect(result).toBe('every Monday, Wednesday and Friday starting January 12');
       });
 
       it('should describe weekly event without byDay (derived from start date)', () => {
-        const dtstart = '20240111T190000'; // January 11, 2024 is a Thursday
+        const dtstart = '20250114T190000'; // Jan 14, 2025 is a Tuesday
         const rrule = 'FREQ=WEEKLY';
         
         const result = shortDescription(dtstart, undefined, undefined, rrule);
         
-        expect(result).toContain('Every Thursday');
-        expect(result).toContain('starting on');
+        expect(result).toBe('every Tuesday starting January 14');
+      });
+
+      it('should describe weekly Sunday event without byDay (derived from start date)', () => {
+        const dtstart = '20250323T190000'; // Mar 23, 2025 is a Sunday
+        const rrule = 'FREQ=WEEKLY';
+        
+        const result = shortDescription(dtstart, undefined, undefined, rrule);
+        
+        expect(result).toBe('every Sunday starting March 23');
       });
     });
 
@@ -153,8 +159,7 @@ describe('datelib', () => {
         
         const result = shortDescription(dtstart, undefined, undefined, rrule);
         
-        expect(result).toBeDefined();
-        expect(typeof result).toBe('string');
+        expect(result).toBe('every day for 5 times'); // Default description is OK for now.
       });
 
       it('should return rrule text for monthly events', () => {
@@ -163,8 +168,7 @@ describe('datelib', () => {
         
         const result = shortDescription(dtstart, undefined, undefined, rrule);
         
-        expect(result).toBeDefined();
-        expect(typeof result).toBe('string');
+        expect(result).toBe('every month on the 11th day of the month');
       });
 
       it('should return rrule text for yearly events', () => {
@@ -173,8 +177,7 @@ describe('datelib', () => {
         
         const result = shortDescription(dtstart, undefined, undefined, rrule);
         
-        expect(result).toBeDefined();
-        expect(typeof result).toBe('string');
+        expect(result).toBe('every year');
       });
     });
 
@@ -187,8 +190,7 @@ describe('datelib', () => {
         
         const result = shortDescription(dtstart, dtend, duration, rrule);
         
-        expect(result).toContain('Every Thursday');
-        expect(result).toContain('starting on');
+        expect(result).toBe('every Thursday starting January 11');
       });
 
       it('should handle events with end date only', () => {
@@ -198,8 +200,7 @@ describe('datelib', () => {
         
         const result = shortDescription(dtstart, dtend, undefined, rrule);
         
-        expect(result).toContain('Every Thursday');
-        expect(result).toContain('starting on');
+        expect(result).toBe('every Thursday starting January 11');
       });
     });
 
@@ -221,7 +222,7 @@ describe('datelib', () => {
           
           const result = shortDescription(dtstart, undefined, undefined, rrule);
           
-          expect(result).toContain(`Every ${expected}`);
+          expect(result).toContain(`every ${expected}`);
         });
       });
     });
@@ -243,7 +244,7 @@ describe('datelib', () => {
           
           const result = shortDescription(date, undefined, undefined, rrule);
           
-          expect(result).toContain(`Every ${expected}`);
+          expect(result).toContain(`every ${expected}`);
         });
       });
     });
