@@ -100,7 +100,9 @@ describe('datelib', () => {
 
     describe('error cases', () => {
       it('should throw error for invalid duration', () => {
-        expect(() => normalizeDuration('invalid')).toThrow('Invalid duration: invalid');
+        expect(() => normalizeDuration('invalid')).toThrow(
+          'Invalid duration: invalid'
+        );
       });
 
       it('should throw error for malformed duration', () => {
@@ -118,36 +120,38 @@ describe('datelib', () => {
       it('should describe weekly event with byDay', () => {
         const dtstart = '20240111T190000';
         const rrule = 'FREQ=WEEKLY;BYDAY=TH';
-        
+
         const result = shortDescription(dtstart, undefined, undefined, rrule);
-        
+
         expect(result).toBe('every Thursday starting January 11');
       });
 
       it('should describe weekly event with multiple byDay', () => {
         const dtstart = '20240111T190000';
         const rrule = 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=5';
-        
+
         const result = shortDescription(dtstart, undefined, undefined, rrule);
-        
-        expect(result).toBe('every Monday, Wednesday and Friday starting January 12');
+
+        expect(result).toBe(
+          'every Monday, Wednesday and Friday starting January 12'
+        );
       });
 
       it('should describe weekly event without byDay (derived from start date)', () => {
         const dtstart = '20250114T190000'; // Jan 14, 2025 is a Tuesday
         const rrule = 'FREQ=WEEKLY';
-        
+
         const result = shortDescription(dtstart, undefined, undefined, rrule);
-        
+
         expect(result).toBe('every Tuesday starting January 14');
       });
 
       it('should describe weekly Sunday event without byDay (derived from start date)', () => {
         const dtstart = '20250323T190000'; // Mar 23, 2025 is a Sunday
         const rrule = 'FREQ=WEEKLY';
-        
+
         const result = shortDescription(dtstart, undefined, undefined, rrule);
-        
+
         expect(result).toBe('every Sunday starting March 23');
       });
     });
@@ -156,27 +160,27 @@ describe('datelib', () => {
       it('should return rrule text for daily events', () => {
         const dtstart = '20240111T190000';
         const rrule = 'FREQ=DAILY;COUNT=5';
-        
+
         const result = shortDescription(dtstart, undefined, undefined, rrule);
-        
+
         expect(result).toBe('every day for 5 times'); // Default description is OK for now.
       });
 
       it('should return rrule text for monthly events', () => {
         const dtstart = '20240111T190000';
         const rrule = 'FREQ=MONTHLY;BYMONTHDAY=11';
-        
+
         const result = shortDescription(dtstart, undefined, undefined, rrule);
-        
+
         expect(result).toBe('every month on the 11th day of the month');
       });
 
       it('should return rrule text for yearly events', () => {
         const dtstart = '20240111T190000';
         const rrule = 'FREQ=YEARLY';
-        
+
         const result = shortDescription(dtstart, undefined, undefined, rrule);
-        
+
         expect(result).toBe('every year');
       });
     });
@@ -187,9 +191,9 @@ describe('datelib', () => {
         const dtend = '20240111T200000';
         const duration = '1H';
         const rrule = 'FREQ=WEEKLY;BYDAY=TH';
-        
+
         const result = shortDescription(dtstart, dtend, duration, rrule);
-        
+
         expect(result).toBe('every Thursday starting January 11');
       });
 
@@ -197,9 +201,9 @@ describe('datelib', () => {
         const dtstart = '20240111T190000';
         const dtend = '20240111T200000';
         const rrule = 'FREQ=WEEKLY;BYDAY=TH';
-        
+
         const result = shortDescription(dtstart, dtend, undefined, rrule);
-        
+
         expect(result).toBe('every Thursday starting January 11');
       });
     });
@@ -219,9 +223,9 @@ describe('datelib', () => {
         it(`should map ${byDay} to ${expected}`, () => {
           const dtstart = '20240111T190000';
           const rrule = `FREQ=WEEKLY;BYDAY=${byDay}`;
-          
+
           const result = shortDescription(dtstart, undefined, undefined, rrule);
-          
+
           expect(result).toContain(`every ${expected}`);
         });
       });
@@ -229,24 +233,24 @@ describe('datelib', () => {
 
     describe('date derivation from start date', () => {
       const testCases = [
-        { date: '20240108T190000', expected: 'Monday' },    // Jan 8, 2024
-        { date: '20240109T190000', expected: 'Tuesday' },   // Jan 9, 2024
+        { date: '20240108T190000', expected: 'Monday' }, // Jan 8, 2024
+        { date: '20240109T190000', expected: 'Tuesday' }, // Jan 9, 2024
         { date: '20240110T190000', expected: 'Wednesday' }, // Jan 10, 2024
-        { date: '20240111T190000', expected: 'Thursday' },  // Jan 11, 2024
-        { date: '20240112T190000', expected: 'Friday' },    // Jan 12, 2024
-        { date: '20240113T190000', expected: 'Saturday' },  // Jan 13, 2024
-        { date: '20240114T190000', expected: 'Sunday' },    // Jan 14, 2024
+        { date: '20240111T190000', expected: 'Thursday' }, // Jan 11, 2024
+        { date: '20240112T190000', expected: 'Friday' }, // Jan 12, 2024
+        { date: '20240113T190000', expected: 'Saturday' }, // Jan 13, 2024
+        { date: '20240114T190000', expected: 'Sunday' }, // Jan 14, 2024
       ];
 
       testCases.forEach(({ date, expected }) => {
         it(`should derive ${expected} from ${date}`, () => {
           const rrule = 'FREQ=WEEKLY';
-          
+
           const result = shortDescription(date, undefined, undefined, rrule);
-          
+
           expect(result).toContain(`every ${expected}`);
         });
       });
     });
   });
-}); 
+});

@@ -6,14 +6,10 @@
       "request": "launch",
       "name": "Jest Current File",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": [
-        "${fileBasename}",
-        "--config",
-        "jest.config.cjs"
-      ],
+      "args": ["${fileBasename}", "--config", "jest.config.cjs"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
-    },    
+    },
     {
       "command": "./node_modules/.bin/astro dev",
       "name": "Development server",

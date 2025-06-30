@@ -11,7 +11,7 @@ export const POST: APIRoute = async ({ request }) => {
     email = body.email;
     firstname = body.firstname;
     lastname = body.lastname;
-  } catch (e) {
+  } catch (_e) {
     return new Response(
       JSON.stringify({
         message: 'Invalid JSON in request body',
@@ -33,7 +33,7 @@ export const POST: APIRoute = async ({ request }) => {
     const response = await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
         'api-key': import.meta.env.BREVO_API_KEY,
       },
@@ -63,9 +63,12 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('Newsletter subscription error:', error);
     return new Response(
       JSON.stringify({
-        message: error instanceof Error ? error.message : 'Failed to subscribe to newsletter',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to subscribe to newsletter',
       }),
       { status: 500 }
     );
   }
-}; 
+};

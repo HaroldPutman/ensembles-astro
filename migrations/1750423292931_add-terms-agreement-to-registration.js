@@ -8,13 +8,13 @@ export const shorthands = undefined;
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const up = (pgm) => {
-    pgm.addColumn('registration', {
-        terms_agreement: {
-            type: 'boolean',
-            default: false
-        }
-    }); 
+export const up = pgm => {
+  pgm.addColumn('registration', {
+    terms_agreement: {
+      type: 'boolean',
+      default: false,
+    },
+  });
 };
 
 /**
@@ -22,6 +22,6 @@ export const up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const down = (pgm) => {
-    pgm.dropColumn('registration', 'terms_agreement');
+export const down = pgm => {
+  pgm.dropColumn('registration', 'terms_agreement');
 };

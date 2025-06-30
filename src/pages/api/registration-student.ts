@@ -12,32 +12,32 @@ export const POST: APIRoute = async ({ request }) => {
     let body;
     try {
       body = await request.json();
-    } catch (e) {
+    } catch (_e) {
       return new Response(
         JSON.stringify({
           message: 'Invalid JSON in request body',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
 
-    const { firstName, lastName, birthdate, courseId, isParticipant } = body;
+    const { firstName, lastName, birthdate, courseId } = body;
 
     if (!firstName || !lastName || !birthdate || !courseId) {
       return new Response(
         JSON.stringify({
-          message: `Missing required field(s): ${!firstName ? 'firstName':''} ${!lastName ? 'lastName':''} ${!birthdate ? 'birthdate':''} ${!courseId ? 'courseId':''}`,
+          message: `Missing required field(s): ${!firstName ? 'firstName' : ''} ${!lastName ? 'lastName' : ''} ${!birthdate ? 'birthdate' : ''} ${!courseId ? 'courseId' : ''}`,
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
@@ -45,12 +45,12 @@ export const POST: APIRoute = async ({ request }) => {
     try {
       // Start a transaction
       const client = await pool.connect();
-      
+
       try {
         await client.query('BEGIN');
-        
+
         let studentId: number;
-        
+
         // Try to insert the student
         try {
           const studentResult = await client.query(
@@ -60,7 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
             [firstName, lastName, birthdate]
           );
           studentId = studentResult.rows[0].id;
-        } catch (error: any) {
+        } catch (error) {
           // Check for unique violation (Postgres error code 23505)
           if (error.code === '23505') {
             // Query for the existing student
@@ -77,7 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
             throw error;
           }
         }
-        
+
         // Create registration record
         const registrationResult = await client.query(
           `INSERT INTO registration (course, student_id)
@@ -85,21 +85,21 @@ export const POST: APIRoute = async ({ request }) => {
            RETURNING id`,
           [courseId, studentId]
         );
-        
+
         await client.query('COMMIT');
-        
+
         return new Response(
           JSON.stringify({
             message: 'Student and registration saved successfully',
             studentId: studentId,
             registrationId: registrationResult.rows[0].id,
-            courseId: courseId
+            courseId: courseId,
           }),
-          { 
+          {
             status: 200,
             headers: {
-              'Content-Type': 'application/json'
-            }
+              'Content-Type': 'application/json',
+            },
           }
         );
       } catch (error) {
@@ -108,17 +108,17 @@ export const POST: APIRoute = async ({ request }) => {
       } finally {
         client.release();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving student/registration:', error);
       return new Response(
         JSON.stringify({
           message: 'Failed to save student and registration',
         }),
-        { 
+        {
           status: 500,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
@@ -128,12 +128,12 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({
         message: 'Failed to save student and registration',
       }),
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
-}; 
+};

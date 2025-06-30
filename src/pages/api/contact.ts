@@ -5,7 +5,10 @@ export const prerender = false;
 
 // Initialize the Brevo API client
 const apiInstance = new Brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, import.meta.env.BREVO_API_KEY);
+apiInstance.setApiKey(
+  Brevo.TransactionalEmailsApiApiKeys.apiKey,
+  import.meta.env.BREVO_API_KEY
+);
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -13,16 +16,16 @@ export const POST: APIRoute = async ({ request }) => {
     let body;
     try {
       body = await request.json();
-    } catch (e) {
+    } catch (_e) {
       return new Response(
         JSON.stringify({
           message: 'Invalid JSON in request body',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
@@ -35,18 +38,21 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify({
           message: 'Name, email, and message are required',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
 
     // Create the email
     const sendSmtpEmail = new Brevo.SendSmtpEmail();
-    sendSmtpEmail.sender = { name: 'Ensembles Contact Form', email: 'webapp@charlestownensembles.com' };
+    sendSmtpEmail.sender = {
+      name: 'Ensembles Contact Form',
+      email: 'webapp@charlestownensembles.com',
+    };
     sendSmtpEmail.to = [{ email: 'harold@charlestownensembles.com' }];
     sendSmtpEmail.replyTo = { email, name };
     sendSmtpEmail.subject = `New Contact Form Submission from ${name}`;
@@ -65,11 +71,11 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({
         message: 'Message sent successfully',
       }),
-      { 
+      {
         status: 200,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
   } catch (error) {
@@ -78,12 +84,12 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({
         message: 'Failed to send message',
       }),
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
-}; 
+};

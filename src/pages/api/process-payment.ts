@@ -12,54 +12,69 @@ export const POST: APIRoute = async ({ request }) => {
     let body;
     try {
       body = await request.json();
-    } catch (e) {
+    } catch (_e) {
       return new Response(
         JSON.stringify({
           message: 'Invalid JSON in request body',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
 
-    const { registrationIds, paypalOrderId, paypalPayerId, totalAmount, paymentMethod } = body;
+    const {
+      registrationIds,
+      paypalOrderId,
+      paypalPayerId,
+      totalAmount,
+      paymentMethod,
+    } = body;
 
     // Validate required fields
-    if (!registrationIds || !Array.isArray(registrationIds) || registrationIds.length === 0) {
+    if (
+      !registrationIds ||
+      !Array.isArray(registrationIds) ||
+      registrationIds.length === 0
+    ) {
       return new Response(
         JSON.stringify({
           message: 'Registration IDs are required',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
 
-    if (!paypalOrderId || !paypalPayerId || !totalAmount || paymentMethod !== 'paypal') {
+    if (
+      !paypalOrderId ||
+      !paypalPayerId ||
+      !totalAmount ||
+      paymentMethod !== 'paypal'
+    ) {
       return new Response(
         JSON.stringify({
           message: 'Invalid PayPal payment data',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
 
     try {
       const client = await pool.connect();
-      
+
       try {
         // Start a transaction
         await client.query('BEGIN');
@@ -76,18 +91,20 @@ export const POST: APIRoute = async ({ request }) => {
             JSON.stringify({
               message: 'Some registrations not found',
             }),
-            { 
+            {
               status: 404,
               headers: {
-                'Content-Type': 'application/json'
-              }
+                'Content-Type': 'application/json',
+              },
             }
           );
         }
 
         // Calculate expected total
         const expectedTotal = registrationsResult.rows.reduce((sum, row) => {
-          return sum + (parseFloat(row.cost) || 0) + (parseFloat(row.donation) || 0);
+          return (
+            sum + (parseFloat(row.cost) || 0) + (parseFloat(row.donation) || 0)
+          );
         }, 0);
 
         if (Math.abs(expectedTotal - totalAmount) > 0.01) {
@@ -96,11 +113,11 @@ export const POST: APIRoute = async ({ request }) => {
             JSON.stringify({
               message: 'Total amount mismatch',
             }),
-            { 
+            {
               status: 400,
               headers: {
-                'Content-Type': 'application/json'
-              }
+                'Content-Type': 'application/json',
+              },
             }
           );
         }
@@ -112,10 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
             amount 
           ) VALUES ($1, $2)
           RETURNING id`,
-          [
-            paypalOrderId,
-            totalAmount, 
-          ]
+          [paypalOrderId, totalAmount]
         );
 
         const paymentId = paymentResult.rows[0].id;
@@ -137,13 +151,13 @@ export const POST: APIRoute = async ({ request }) => {
             paymentId: paymentId,
             paypalOrderId: paypalOrderId,
             amount: totalAmount,
-            registrationCount: registrationIds.length
+            registrationCount: registrationIds.length,
           }),
-          { 
+          {
             status: 200,
             headers: {
-              'Content-Type': 'application/json'
-            }
+              'Content-Type': 'application/json',
+            },
           }
         );
       } catch (error) {
@@ -152,17 +166,17 @@ export const POST: APIRoute = async ({ request }) => {
       } finally {
         client.release();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error processing payment:', error);
       return new Response(
         JSON.stringify({
           message: 'Failed to process payment',
         }),
-        { 
+        {
           status: 500,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
@@ -172,12 +186,12 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({
         message: 'Failed to process payment',
       }),
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
-}; 
+};

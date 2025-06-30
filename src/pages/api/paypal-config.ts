@@ -5,17 +5,17 @@ export const prerender = false;
 export const GET: APIRoute = async () => {
   try {
     const paypalClientId = import.meta.env.PAYPAL_CLIENT_ID;
-    
+
     if (!paypalClientId) {
       return new Response(
         JSON.stringify({
           message: 'PayPal configuration not found',
         }),
-        { 
+        {
           status: 500,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
@@ -23,13 +23,13 @@ export const GET: APIRoute = async () => {
     return new Response(
       JSON.stringify({
         clientId: paypalClientId,
-        currency: 'USD'
+        currency: 'USD',
       }),
-      { 
+      {
         status: 200,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
   } catch (error) {
@@ -38,12 +38,12 @@ export const GET: APIRoute = async () => {
       JSON.stringify({
         message: 'Failed to get PayPal configuration',
       }),
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
-}; 
+};

@@ -1,4 +1,4 @@
-import { statSync } from "fs";
+import { statSync } from 'fs';
 
 export function remarkModifiedTime() {
   return function (tree, file) {

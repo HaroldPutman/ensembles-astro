@@ -13,39 +13,43 @@ export const POST: APIRoute = async ({ request }) => {
     let body;
     try {
       body = await request.json();
-    } catch (e) {
+    } catch (_e) {
       return new Response(
         JSON.stringify({
           message: 'Invalid JSON in request body',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
 
     const { registrationIds } = body;
 
-    if (!registrationIds || !Array.isArray(registrationIds) || registrationIds.length === 0) {
+    if (
+      !registrationIds ||
+      !Array.isArray(registrationIds) ||
+      registrationIds.length === 0
+    ) {
       return new Response(
         JSON.stringify({
           message: 'Registration IDs are required',
         }),
-        { 
+        {
           status: 400,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
 
     try {
       const client = await pool.connect();
-      
+
       try {
         // Get registration details with student and course information
         const registrationsResult = await client.query(
@@ -69,11 +73,11 @@ export const POST: APIRoute = async ({ request }) => {
             JSON.stringify({
               message: 'No registrations found',
             }),
-            { 
+            {
               status: 404,
               headers: {
-                'Content-Type': 'application/json'
-              }
+                'Content-Type': 'application/json',
+              },
             }
           );
         }
@@ -90,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
           const courseName = eventsMap.get(row.course) || row.course;
           const cost = parseFloat(row.cost) || 0;
           const donation = parseFloat(row.donation) || 0;
-          
+
           return {
             registrationId: row.registration_id,
             courseId: row.course,
@@ -101,40 +105,43 @@ export const POST: APIRoute = async ({ request }) => {
             donation: donation,
             note: row.note,
             answer: row.answer,
-            totalAmount: cost + donation
+            totalAmount: cost + donation,
           };
         });
 
         // Calculate total cost
-        const totalCost = registrations.reduce((sum, reg) => sum + reg.totalAmount, 0);
+        const totalCost = registrations.reduce(
+          (sum, reg) => sum + reg.totalAmount,
+          0
+        );
 
         return new Response(
           JSON.stringify({
             registrations: registrations,
             totalCost: totalCost,
-            count: registrations.length
+            count: registrations.length,
           }),
-          { 
+          {
             status: 200,
             headers: {
-              'Content-Type': 'application/json'
-            }
+              'Content-Type': 'application/json',
+            },
           }
         );
       } finally {
         client.release();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching registration details:', error);
       return new Response(
         JSON.stringify({
           message: 'Failed to fetch registration details',
         }),
-        { 
+        {
           status: 500,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
     }
@@ -144,12 +151,12 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({
         message: 'Failed to fetch registration details',
       }),
-      { 
+      {
         status: 500,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
-}; 
+};

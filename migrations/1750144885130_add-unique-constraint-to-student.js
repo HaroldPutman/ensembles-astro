@@ -8,7 +8,7 @@ export const shorthands = undefined;
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const up = (pgm) => {
+export const up = pgm => {
   pgm.addConstraint('student', 'unique_student_fullname_dob', {
     unique: ['firstname', 'lastname', 'dob'],
   });
@@ -19,6 +19,6 @@ export const up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const down = (pgm) => {
+export const down = pgm => {
   pgm.dropConstraint('student', 'unique_student_fullname_dob');
 };
