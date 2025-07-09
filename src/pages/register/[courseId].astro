@@ -23,9 +23,11 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
 
 <Layout>
   <section class="registration-section">
-    <h1>Event Registration</h1>
-    <p class="intro">Let's get registered for <strong id="courseName">{event.data.name}</strong>.</p>
-    <p class="intro">{description}</p>
+    <h1><span id="courseName">{event.data.name}</span></h1>
+    <p class="intro">Let's get registered. This class meets {description}.</p>
+    {event.data.cost && (
+      <p>The cost of the class is {event.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+    )}
     <form id="registration-form" class="registration-form" data-course-start={event.data.dtstart} 
         data-course-min-age={event.data.ageMin} data-course-max-age={event.data.ageMax}>
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
@@ -116,15 +118,16 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
   birthdateInput?.addEventListener('blur', (evt: FocusEvent) => {
     const target = evt.target as HTMLInputElement;
     if (!target) return;
-    
+
     const birthdate = validBirthdate(target.value);
     if (birthdate) {
+      const ageFudgeFactor = 0.5833; // 7 months
       const age = calculateAge(birthdate);
       const minAge = parseInt(form?.getAttribute('data-course-min-age') || '0');
       const maxAge = parseInt(form?.getAttribute('data-course-max-age') || '150');
-      if (age < minAge) {
+      if (age + ageFudgeFactor < minAge) {
         target.setCustomValidity(`Student must be at least ${minAge} years old`);
-      } else if (age > maxAge) {
+      } else if (age - ageFudgeFactor > maxAge) {
         target.setCustomValidity(`Student must be no more than ${maxAge} years old`);
       } else {
         target.setCustomValidity('');
