@@ -176,11 +176,30 @@ import Layout from '../../layouts/Layout.astro';
         return actions.order.create({
           purchase_units: [{
             amount: {
-              value: totalCost.toFixed(2)
+              currency_code: 'USD',
+              value: totalCost.toFixed(2),
+              breakdown: {
+                item_total: {
+                  currency_code: 'USD',
+                  value: totalCost.toFixed(2)
+                }
+              }
             },
+            items: registrationDetails.map(r => ({
+              name: r.courseName,
+              category: 'DIGITAL_GOODS',
+              quantity: 1,
+              unit_amount: {
+                currency_code: 'USD',
+                value: r.cost.toFixed(2)
+              }
+            })),
             description: `Registration for ${registrationDetails.length} course(s)`,
             custom_id: JSON.stringify(registrationDetails.map(r => r.registrationId))
-          }]
+          }],
+          application_context: {
+            shipping_preference: 'NO_SHIPPING'
+          }
         });
       },
       onApprove: function(data: any, actions: any) {
