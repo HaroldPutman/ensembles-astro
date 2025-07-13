@@ -191,6 +191,10 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
         sessionStorage.setItem('participant', JSON.stringify(data));
         // Redirect to the next step with course ID
         window.location.href = `/register/contact?rid=${result.registrationId}&sid=${result.studentId}`;
+      } else if (response.status === 409 && result.alreadyRegistered) {
+        // Student is already registered for this course
+        const courseName = document.getElementById('courseName')?.textContent || 'this class';
+        window.location.href = `/register/already-registered?firstName=${encodeURIComponent(data.firstName as string)}&courseId=${encodeURIComponent(courseName)}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }

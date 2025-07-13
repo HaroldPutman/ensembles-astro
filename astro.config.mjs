@@ -14,5 +14,8 @@ export default defineConfig({
 
   vite: {
     envPrefix: ['PUBLIC_', 'BREVO_'],
+    build: {
+      sourcemap: true,
+    },
   },
 });

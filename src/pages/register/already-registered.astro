@@ -1,0 +1,167 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+
+// Get the student name and course from URL parameters
+const url = new URL(Astro.request.url);
+const firstName = url.searchParams.get('firstName') || 'Student';
+const courseId = url.searchParams.get('courseId') || 'this class';
+---
+
+<Layout>
+  <section class="already-registered-section">
+    <div class="already-registered-content">
+      <div class="info-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="#2196F3" stroke-width="2"/>
+          <path d="M12 16v-4M12 8h.01" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      
+      <h1>Good News!</h1>
+      <p class="already-registered-message">
+        {firstName} is already registered for {courseId}.
+      </p>
+      
+      <div class="info-box">
+        <h2>What This Means</h2>
+        <ul>
+          <li>Your registration is already in our system</li>
+          <li>No additional action is needed</li>
+          <li>You're all set for the class</li>
+          <li>If you have any questions, please contact us</li>
+        </ul>
+      </div>
+      
+      <div class="action-buttons">
+        <a href="/events" class="btn btn-primary">View More Events</a>
+        <a href="/" class="btn btn-secondary">Return Home</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .already-registered-section {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  .already-registered-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .info-icon {
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .already-registered-message {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .info-box {
+    text-align: left;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
+
+  .info-box h2 {
+    font-size: 1.3rem;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .info-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .info-box li {
+    padding: 0.5rem 0;
+    color: #555;
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .info-box li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #2196F3;
+    font-weight: bold;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background-color: #333;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #444;
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: #333;
+    border: 1px solid #333;
+  }
+
+  .btn-secondary:hover {
+    background-color: #333;
+    color: white;
+  }
+
+  /* Mobile styles */
+  @media (max-width: 768px) {
+    .already-registered-section {
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style> 
