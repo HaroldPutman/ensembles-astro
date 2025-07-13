@@ -84,8 +84,6 @@ export const POST: APIRoute = async ({ request }) => {
           [courseId, studentId]
         );
 
-        await client.query('COMMIT');
-
         return new Response(
           JSON.stringify({
             message: 'Student and registration saved successfully',
@@ -106,7 +104,6 @@ export const POST: APIRoute = async ({ request }) => {
           (registrationError as any).constraint ===
             'unique_registration_course_student'
         ) {
-          await client.query('COMMIT');
 
           // Already registered
           return new Response(
