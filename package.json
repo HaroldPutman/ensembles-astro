@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
+    "@astrojs/netlify": "^6.5.3",
     "@getbrevo/brevo": "^2.2.0",
     "astro": "^5.10.1",
     "dayjs": "^1.11.13",
