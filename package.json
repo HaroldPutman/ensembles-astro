@@ -23,7 +23,7 @@
     "astro": "^5.10.1",
     "dayjs": "^1.11.13",
     "dotenv": "^16.5.0",
-    "rrule-temporal": "^0.2.7",
+    "rrule-temporal": "^1.2.0",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
