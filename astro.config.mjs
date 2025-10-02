@@ -15,7 +15,7 @@ export default defineConfig({
   integrations: [mdx()],
 
   vite: {
-    envPrefix: ['PUBLIC_', 'BREVO_'],
+    envPrefix: ['PUBLIC_'],
     build: {
       sourcemap: true,
     },
