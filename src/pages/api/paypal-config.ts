@@ -4,7 +4,7 @@ export const prerender = false;
 
 export const GET: APIRoute = async () => {
   try {
-    const paypalClientId = import.meta.env.PAYPAL_CLIENT_ID;
+    const paypalClientId = process.env.PAYPAL_CLIENT_ID;
 
     if (!paypalClientId) {
       return new Response(
