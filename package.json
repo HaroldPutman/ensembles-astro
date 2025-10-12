@@ -3,11 +3,14 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "start": "netlify dev",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "migrate": "node-pg-migrate",
+    "migrate:prod": "node-pg-migrate -d DATABASE_URL_PROD",
+    "test-db": "node test-db-connection.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -18,11 +21,12 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
+    "@astrojs/netlify": "^6.5.3",
     "@getbrevo/brevo": "^2.2.0",
     "astro": "^5.10.1",
     "dayjs": "^1.11.13",
     "dotenv": "^16.5.0",
-    "rrule-temporal": "^0.2.7",
+    "rrule-temporal": "^1.2.0",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
@@ -37,6 +41,7 @@
     "eslint-plugin-jest": "^29.0.1",
     "eslint-plugin-prettier": "^5.5.1",
     "jest": "^30.0.2",
+    "netlify-cli": "^23.9.1",
     "node-pg-migrate": "^8.0.2",
     "pg": "^8.16.0",
     "prettier": "^3.6.2",

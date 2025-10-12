@@ -1,4 +1,6 @@
 ---
+import logoImage from '../assets/ensembles-black-logo.svg';
+
 const menuItems = [
   { href: '/about', label: 'About' },
   { href: '/classes', label: 'Classes' },
@@ -10,7 +12,7 @@ const menuItems = [
 <header class="header">
   <div class="header-container">
     <a href="/" class="logo" aria-label="Home">
-      <img src="/src/assets/ensembles-black-logo.svg" alt="Ensembles Logo" class="logo-image">
+      <img src={logoImage.src} alt="Ensembles Logo" class="logo-image">
     </a>
 
     <nav class="nav">
