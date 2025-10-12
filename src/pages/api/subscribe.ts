@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'api-key': import.meta.env.BREVO_API_KEY,
+        'api-key': process.env.BREVO_API_KEY,
       },
       body: JSON.stringify({
         email,

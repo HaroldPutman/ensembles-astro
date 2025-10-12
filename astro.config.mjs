@@ -4,6 +4,8 @@ import { remarkModifiedTime } from './remark-modified-time.mjs';
 
 import mdx from '@astrojs/mdx';
 
+import netlify from '@astrojs/netlify';
+
 // https://astro.build/config
 export default defineConfig({
   markdown: {
@@ -13,9 +15,11 @@ export default defineConfig({
   integrations: [mdx()],
 
   vite: {
-    envPrefix: ['PUBLIC_', 'BREVO_'],
+    envPrefix: ['PUBLIC_'],
     build: {
       sourcemap: true,
     },
   },
+
+  adapter: netlify(),
 });

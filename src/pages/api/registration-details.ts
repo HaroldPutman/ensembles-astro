@@ -5,7 +5,7 @@ import { getCollection } from 'astro:content';
 export const prerender = false;
 
 const pool = new Pool({
-  connectionString: import.meta.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 
 export const POST: APIRoute = async ({ request }) => {

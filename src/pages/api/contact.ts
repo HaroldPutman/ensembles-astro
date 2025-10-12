@@ -7,7 +7,7 @@ export const prerender = false;
 const apiInstance = new Brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(
   Brevo.TransactionalEmailsApiApiKeys.apiKey,
-  import.meta.env.BREVO_API_KEY
+  process.env.BREVO_API_KEY
 );
 
 export const POST: APIRoute = async ({ request }) => {

@@ -1,18 +1,32 @@
 import type { APIRoute } from 'astro';
 import { Pool } from 'pg';
+import type { PoolClient } from 'pg';
 
 export const prerender = false;
 
-const pool = new Pool({
-  connectionString: import.meta.env.DATABASE_URL,
-});
+// Create a function to get a database connection
+async function getDbConnection() {
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    // Serverless-optimized configuration
+    max: 1, // Maximum number of clients in the pool
+    idleTimeoutMillis: 10000, // Close idle clients after 10 seconds
+    connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  });
+
+  return pool;
+}
 
 export const POST: APIRoute = async ({ request }) => {
+  console.log('Registration student API called');
   try {
     let body;
     try {
       body = await request.json();
+      console.log('Request body received:', body);
     } catch (_e) {
+      console.error('Invalid JSON in request body:', _e);
       return new Response(
         JSON.stringify({
           message: 'Invalid JSON in request body',
@@ -42,9 +56,13 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    let pool: Pool | undefined;
+    let client: PoolClient | undefined;
+    
     try {
-      // Start a transaction
-      const client = await pool.connect();
+      // Get database connection
+      pool = await getDbConnection();
+      client = await pool.connect();
 
       let studentId: number;
 
@@ -84,6 +102,9 @@ export const POST: APIRoute = async ({ request }) => {
           [courseId, studentId]
         );
 
+        client.release();
+        await pool.end();
+        
         return new Response(
           JSON.stringify({
             message: 'Student and registration saved successfully',
@@ -106,6 +127,9 @@ export const POST: APIRoute = async ({ request }) => {
         ) {
 
           // Already registered
+          client.release();
+          await pool.end();
+          
           return new Response(
             JSON.stringify({
               message: 'Student already registered for this course',
@@ -126,9 +150,27 @@ export const POST: APIRoute = async ({ request }) => {
       }
     } catch (error: unknown) {
       console.error('Error Creating Registration:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorCode = (error as any)?.code || 'UNKNOWN';
+      
+      // Try to clean up the connection if it exists
+      try {
+        if (typeof client !== 'undefined') {
+          client.release();
+        }
+        if (typeof pool !== 'undefined') {
+          await pool.end();
+        }
+      } catch (cleanupError) {
+        console.error('Error during cleanup:', cleanupError);
+      }
+      
       return new Response(
         JSON.stringify({
           message: 'Failed to create registration',
+          error: errorMessage,
+          code: errorCode,
+          details: process.env.NODE_ENV === 'development' ? error : undefined,
         }),
         {
           status: 500,
@@ -140,9 +182,15 @@ export const POST: APIRoute = async ({ request }) => {
     }
   } catch (error) {
     console.error('Error in student API:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorCode = (error as any)?.code || 'UNKNOWN';
+    
     return new Response(
       JSON.stringify({
         message: 'Failed to save student and registration',
+        error: errorMessage,
+        code: errorCode,
+        details: process.env.NODE_ENV === 'development' ? error : undefined,
       }),
       {
         status: 500,
