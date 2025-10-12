@@ -30,11 +30,38 @@ import Layout from '../../layouts/Layout.astro';
       
       <div class="payment-form">
         <h2>Payment Information</h2>
-        <div id="paypal-button-container"></div>
-        
         <div class="payment-note">
           <p>You don't need a PayPal account to pay with Credit or Debit card. </p>
         </div>
+        <div id="paypal-button-container"></div>
+        
+        <div class="voucher-section">
+          <div class="divider">
+            <span>or</span>
+          </div>
+          <div class="alternate-payment">
+            <button type="button" id="alternate-payment-btn" class="alternate-payment-btn">
+              Pay by check
+            </button>
+          </div>
+            <div class="voucher-input-group">
+            <label for="voucher-code">Have a voucher code?</label>
+            <div class="voucher-input-wrapper">
+              <input 
+                type="text" 
+                id="voucher-code" 
+                name="voucher-code" 
+                placeholder="Enter voucher code"
+                class="voucher-input"
+              />
+              <button type="button" id="apply-voucher-btn" class="apply-voucher-btn" disabled>
+                Apply
+              </button>
+            </div>
+            <p id="voucher-message" class="voucher-message" style="display: none;"></p>
+          </div>
+        </div>
+        
       </div>
     </div>
     
@@ -281,10 +308,105 @@ import Layout from '../../layouts/Layout.astro';
     }
   }
 
+  // Handle voucher code application
+  async function applyVoucher() {
+    const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
+    const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
+    const messageEl = document.getElementById('voucher-message') as HTMLParagraphElement;
+    
+    if (!voucherInput || !applyBtn || !messageEl) return;
+    
+    const voucherCode = voucherInput.value.trim();
+    
+    if (!voucherCode) {
+      showVoucherMessage('Please enter a voucher code', 'error');
+      return;
+    }
+    
+    // Disable button while processing
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Applying...';
+    
+    try {
+      // TODO: Implement API call to validate voucher code
+      // const response = await fetch('/api/validate-voucher', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ code: voucherCode, registrationIds: JSON.parse(sessionStorage.getItem('registrations') || '[]') })
+      // });
+      
+      // For now, simulate validation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simulate success/error
+      const isValid = voucherCode.toLowerCase() === 'test'; // Replace with actual validation
+      
+      if (isValid) {
+        showVoucherMessage('Voucher code applied successfully!', 'success');
+        // Update total cost display
+        // totalCost = newDiscountedTotal;
+        // displayRegistrations();
+      } else {
+        showVoucherMessage('Invalid voucher code. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error applying voucher:', error);
+      showVoucherMessage('Failed to apply voucher. Please try again.', 'error');
+    } finally {
+      applyBtn.disabled = false;
+      applyBtn.textContent = 'Apply';
+    }
+  }
+  
+  function showVoucherMessage(message: string, type: 'success' | 'error') {
+    const messageEl = document.getElementById('voucher-message') as HTMLParagraphElement;
+    if (!messageEl) return;
+    
+    messageEl.textContent = message;
+    messageEl.className = `voucher-message ${type}`;
+    messageEl.style.display = 'block';
+    
+    // Hide message after 5 seconds for success, keep error visible
+    if (type === 'success') {
+      setTimeout(() => {
+        messageEl.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  // Handle voucher input changes to enable/disable apply button
+  function handleVoucherInputChange() {
+    const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
+    const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
+    
+    if (voucherInput && applyBtn) {
+      applyBtn.disabled = voucherInput.value.trim().length === 0;
+    }
+  }
+
   // Load PayPal config when page loads
   document.addEventListener('DOMContentLoaded', () => {
     showLoading();
     loadPayPalConfig();
+    
+    // Add event listener for voucher button
+    const applyVoucherBtn = document.getElementById('apply-voucher-btn');
+    if (applyVoucherBtn) {
+      applyVoucherBtn.addEventListener('click', applyVoucher);
+    }
+    
+    // Allow pressing Enter in voucher input to apply
+    const voucherInput = document.getElementById('voucher-code');
+    if (voucherInput) {
+      voucherInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          applyVoucher();
+        }
+      });
+      
+      // Enable/disable apply button based on input value
+      voucherInput.addEventListener('input', handleVoucherInputChange);
+    }
   });
 </script>
 
@@ -423,7 +545,7 @@ import Layout from '../../layouts/Layout.astro';
     border-radius: 4px;
     text-align: center;
     color: #666;
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 
   .error-message {
@@ -448,5 +570,129 @@ import Layout from '../../layouts/Layout.astro';
       grid-template-columns: 1fr;
       gap: 1rem;
     }
+  }
+
+  .voucher-section {
+    margin-top: 2rem;
+  }
+  
+  .divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 2rem 0 1.5rem;
+  }
+  
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .divider span {
+    padding: 0 1rem;
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+  }
+  
+  .voucher-input-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .voucher-input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .voucher-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .voucher-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+  }
+  
+  .voucher-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  }
+  
+  .apply-voucher-btn {
+    background: var(--color-button-secondary-background);
+    color: var(--color-button-secondary-text);
+    border: 1px solid var(--color-button-secondary-border);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-button);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  .apply-voucher-btn:hover {
+    background: var(--color-button-secondary-hover-background);
+    color: var(--color-button-secondary-hover-text);
+    border-color: var(--color-button-secondary-hover-border);
+  }
+  
+  .apply-voucher-btn:disabled {
+    background: var(--color-button-secondary-disabled-background);
+    color: var(--color-button-secondary-disabled-text);
+    border-color: var(--color-button-secondary-disabled-border);
+    cursor: not-allowed;
+  }
+  
+  .voucher-message {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .voucher-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  
+  .voucher-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+  
+  .alternate-payment {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+  
+  .alternate-payment-btn {
+    width: 100%;
+    background: var(--color-button-secondary-background);
+    color: var(--color-button-secondary-text);
+    border: 1px solid var(--color-button-secondary-border);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-button);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .alternate-payment-btn:hover {
+    background: var(--color-button-secondary-hover-background);
+    border-color: var(--color-button-secondary-hover-border);
+    color: var(--color-button-secondary-hover-text);
   }
 </style> 
