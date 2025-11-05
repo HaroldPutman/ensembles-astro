@@ -21,6 +21,14 @@ import Layout from '../../layouts/Layout.astro';
         </div>
         
         <div class="total-section">
+          <div id="subtotal-line" class="subtotal-line" style="display: none;">
+            <span>Subtotal:</span>
+            <span id="subtotal-amount">$0.00</span>
+          </div>
+          <div id="discount-line" class="discount-line" style="display: none;">
+            <span id="discount-label">Discount:</span>
+            <span id="discount-amount" class="discount-amount">-$0.00</span>
+          </div>
           <div class="total-line">
             <span>Total Cost:</span>
             <span id="total-cost" class="total-amount">$0.00</span>
@@ -124,6 +132,20 @@ import Layout from '../../layouts/Layout.astro';
       return;
     }
 
+    // Check if voucher was previously applied and restore it
+    const appliedVoucherStr = sessionStorage.getItem('appliedVoucher');
+    if (appliedVoucherStr) {
+      const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
+      const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
+      
+      if (voucherInput && applyBtn) {
+        const appliedVoucher = JSON.parse(appliedVoucherStr);
+        voucherInput.value = appliedVoucher.code;
+        voucherInput.disabled = true;
+        applyBtn.disabled = true;
+      }
+    }
+
     // Fetch registration details from API
     fetchRegistrationDetails(ids);
   }
@@ -146,6 +168,13 @@ import Layout from '../../layouts/Layout.astro';
       const data = await response.json();
       registrationDetails = data.registrations;
       totalCost = data.totalCost;
+
+      // Apply voucher discount if one was previously applied
+      const appliedVoucherStr = sessionStorage.getItem('appliedVoucher');
+      if (appliedVoucherStr) {
+        const appliedVoucher = JSON.parse(appliedVoucherStr);
+        totalCost = Math.max(0, totalCost - appliedVoucher.discount);
+      }
 
       displayRegistrations();
       hideLoading();
@@ -188,6 +217,34 @@ import Layout from '../../layouts/Layout.astro';
       registrationsList.appendChild(registrationItem);
     });
 
+    // Check if voucher is applied
+    const appliedVoucherStr = sessionStorage.getItem('appliedVoucher');
+    const subtotalLine = document.getElementById('subtotal-line');
+    const discountLine = document.getElementById('discount-line');
+    const subtotalAmount = document.getElementById('subtotal-amount');
+    const discountLabel = document.getElementById('discount-label');
+    const discountAmount = document.getElementById('discount-amount');
+    
+    if (appliedVoucherStr && subtotalLine && discountLine && subtotalAmount && discountLabel && discountAmount) {
+      const appliedVoucher = JSON.parse(appliedVoucherStr);
+      
+      // Show subtotal and discount lines
+      subtotalLine.style.display = 'flex';
+      discountLine.style.display = 'flex';
+      
+      // Calculate original total
+      const originalTotal = registrationDetails.reduce((sum, r) => sum + (r.cost || 0) + (r.donation || 0), 0);
+      
+      // Update displays
+      subtotalAmount.textContent = `$${originalTotal.toFixed(2)}`;
+      discountLabel.textContent = `Discount (${appliedVoucher.code}):`;
+      discountAmount.textContent = `-$${appliedVoucher.discount.toFixed(2)}`;
+    } else if (subtotalLine && discountLine) {
+      // Hide discount lines if no voucher
+      subtotalLine.style.display = 'none';
+      discountLine.style.display = 'none';
+    }
+    
     totalCostElement.textContent = `$${totalCost.toFixed(2)}`;
   }
 
@@ -328,26 +385,59 @@ import Layout from '../../layouts/Layout.astro';
     applyBtn.textContent = 'Applying...';
     
     try {
-      // TODO: Implement API call to validate voucher code
-      // const response = await fetch('/api/validate-voucher', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ code: voucherCode, registrationIds: JSON.parse(sessionStorage.getItem('registrations') || '[]') })
-      // });
+      // Call API to validate voucher code
+      const response = await fetch('/api/validate-voucher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          code: voucherCode, 
+          registrationIds: JSON.parse(sessionStorage.getItem('registrations') || '[]') 
+        })
+      });
       
-      // For now, simulate validation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const data = await response.json();
       
-      // Simulate success/error
-      const isValid = voucherCode.toLowerCase() === 'test'; // Replace with actual validation
-      
-      if (isValid) {
-        showVoucherMessage('Voucher code applied successfully!', 'success');
-        // Update total cost display
-        // totalCost = newDiscountedTotal;
-        // displayRegistrations();
+      if (response.ok && data.valid) {
+        // Voucher is valid
+        const { voucher } = data;
+        
+        // Calculate discount
+        let discount = 0;
+        if (voucher.percentage) {
+          discount = (totalCost * voucher.percentage) / 100;
+        } else if (voucher.amount) {
+          discount = Math.min(voucher.amount, totalCost);
+        }
+        
+        const newTotal = Math.max(0, totalCost - discount);
+        
+        // Store voucher info in session
+        sessionStorage.setItem('appliedVoucher', JSON.stringify({
+          id: voucher.id,
+          code: voucher.code,
+          discount: discount,
+          description: voucher.description
+        }));
+        
+        // Update display
+        totalCost = newTotal;
+        displayRegistrations();
+        
+        // Show success message
+        const discountText = voucher.percentage 
+          ? `${voucher.percentage}% discount` 
+          : `$${voucher.amount.toFixed(2)} discount`;
+        showVoucherMessage(
+          `Voucher applied! ${discountText} - ${voucher.description || ''}`, 
+          'success'
+        );
+        
+        // Disable the input and button after successful application
+        voucherInput.disabled = true;
+        applyBtn.disabled = true;
       } else {
-        showVoucherMessage('Invalid voucher code. Please try again.', 'error');
+        // Voucher is invalid
+        showVoucherMessage(data.message || 'Invalid voucher code. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error applying voucher:', error);
@@ -509,11 +599,31 @@ import Layout from '../../layouts/Layout.astro';
     margin-top: 1rem;
   }
 
+  .subtotal-line,
+  .discount-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .discount-line {
+    color: #28a745;
+  }
+
+  .discount-amount {
+    font-weight: 600;
+    color: #28a745;
+  }
+
   .total-line {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 1.25rem;
+    padding-top: 0.5rem;
     font-weight: 600;
     color: #333;
   }
