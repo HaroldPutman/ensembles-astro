@@ -81,6 +81,7 @@ import Layout from '../../layouts/Layout.astro';
   let registrationDetails: any[] = [];
   let totalCost = 0;
   let paypalClientId: string | null = null;
+  let appliedVoucher: { id: number; code: string; discount: number; description?: string } | null = null;
 
   // Load PayPal configuration
   async function loadPayPalConfig() {
@@ -135,11 +136,12 @@ import Layout from '../../layouts/Layout.astro';
     // Check if voucher was previously applied and restore it
     const appliedVoucherStr = sessionStorage.getItem('appliedVoucher');
     if (appliedVoucherStr) {
+      appliedVoucher = JSON.parse(appliedVoucherStr);
+      
       const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
       const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
       
       if (voucherInput && applyBtn) {
-        const appliedVoucher = JSON.parse(appliedVoucherStr);
         voucherInput.value = appliedVoucher.code;
         voucherInput.disabled = true;
         applyBtn.disabled = true;
@@ -170,9 +172,7 @@ import Layout from '../../layouts/Layout.astro';
       totalCost = data.totalCost;
 
       // Apply voucher discount if one was previously applied
-      const appliedVoucherStr = sessionStorage.getItem('appliedVoucher');
-      if (appliedVoucherStr) {
-        const appliedVoucher = JSON.parse(appliedVoucherStr);
+      if (appliedVoucher) {
         totalCost = Math.max(0, totalCost - appliedVoucher.discount);
       }
 
@@ -257,17 +257,33 @@ import Layout from '../../layouts/Layout.astro';
 
     (window as any).paypal.Buttons({
       createOrder: function(data: any, actions: any) {
+        // Calculate item total (original prices)
+        const itemTotal = registrationDetails.reduce((sum, r) => {
+          return sum + (r.cost || 0) + (r.donation || 0);
+        }, 0);
+        
+        // Build the amount breakdown
+        const breakdown: any = {
+          item_total: {
+            currency_code: 'USD',
+            value: itemTotal.toFixed(2)
+          }
+        };
+        
+        // Add discount if voucher is applied
+        if (appliedVoucher) {
+          breakdown.discount = {
+            currency_code: 'USD',
+            value: appliedVoucher.discount.toFixed(2)
+          };
+        }
+        
         return actions.order.create({
           purchase_units: [{
             amount: {
               currency_code: 'USD',
               value: totalCost.toFixed(2),
-              breakdown: {
-                item_total: {
-                  currency_code: 'USD',
-                  value: totalCost.toFixed(2)
-                }
-              }
+              breakdown: breakdown
             },
             items: registrationDetails.map(r => ({
               name: r.courseName,
@@ -275,7 +291,7 @@ import Layout from '../../layouts/Layout.astro';
               quantity: 1,
               unit_amount: {
                 currency_code: 'USD',
-                value: r.cost.toFixed(2)
+                value: ((r.cost || 0) + (r.donation || 0)).toFixed(2)
               }
             })),
             description: `Registration for ${registrationDetails.length} course(s)`,
@@ -302,27 +318,36 @@ import Layout from '../../layouts/Layout.astro';
   // Process successful payment
   async function processPaymentSuccess(paypalDetails: any) {
     try {
+      const paymentData = {
+        registrationIds: registrationDetails.map(r => r.registrationId),
+        paypalOrderId: paypalDetails.id,
+        paypalPayerId: paypalDetails.payer.payer_id,
+        totalAmount: totalCost,
+        paymentMethod: 'paypal',
+        voucherId: appliedVoucher?.id,
+      };
+      
+      console.log('Sending payment data:', paymentData);
+      
       const response = await fetch('/api/process-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          registrationIds: registrationDetails.map(r => r.registrationId),
-          paypalOrderId: paypalDetails.id,
-          paypalPayerId: paypalDetails.payer.payer_id,
-          totalAmount: totalCost,
-          paymentMethod: 'paypal'
-        }),
+        body: JSON.stringify(paymentData),
       });
+
+      const result = await response.json();
+      console.log('Payment response:', result);
 
       if (response.ok) {
         // Clear sessionStorage and redirect to success page
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
+        sessionStorage.removeItem('appliedVoucher');
+        appliedVoucher = null;
         window.location.href = '/register/success';
       } else {
-        const result = await response.json();
         throw new Error(result.message || 'Payment processing failed');
       }
     } catch (error) {
@@ -411,13 +436,15 @@ import Layout from '../../layouts/Layout.astro';
         
         const newTotal = Math.max(0, totalCost - discount);
         
-        // Store voucher info in session
-        sessionStorage.setItem('appliedVoucher', JSON.stringify({
+        // Store voucher info in session and global variable
+        appliedVoucher = {
           id: voucher.id,
           code: voucher.code,
           discount: discount,
           description: voucher.description
-        }));
+        };
+        
+        sessionStorage.setItem('appliedVoucher', JSON.stringify(appliedVoucher));
         
         // Update display
         totalCost = newTotal;
