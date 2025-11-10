@@ -70,7 +70,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Look up the voucher code
       const voucherResult = await client.query(
         `SELECT id, code, description, percentage, amount, valid_from, valid_until, 
-                max_uses, times_used, active
+                max_uses, times_used, active, applies_to
          FROM voucher 
          WHERE UPPER(code) = UPPER($1)`,
         [code]
@@ -186,6 +186,7 @@ export const POST: APIRoute = async ({ request }) => {
             description: voucher.description,
             percentage: voucher.percentage,
             amount: voucher.amount ? parseFloat(voucher.amount) : null,
+            appliesTo: voucher.applies_to,
           },
           message: 'Voucher code is valid',
         }),

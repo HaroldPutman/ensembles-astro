@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
+import { getCollection } from 'astro:content';
 
 export const prerender = false;
 
@@ -134,7 +135,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (voucherId) {
           console.log('Voucher ID provided:', voucherId);
           const voucherResult = await client.query(
-            `SELECT percentage, amount FROM voucher WHERE id = $1`,
+            `SELECT percentage, amount, applies_to FROM voucher WHERE id = $1`,
             [voucherId]
           );
           
@@ -142,14 +143,45 @@ export const POST: APIRoute = async ({ request }) => {
           
           if (voucherResult.rows.length > 0) {
             const voucher = voucherResult.rows[0];
+            let discountableTotal = expectedTotal;
+            
+            // If applies_to is set, only apply discount to matching course kinds
+            if (voucher.applies_to) {
+              console.log('Voucher applies only to kind:', voucher.applies_to);
+              
+              // Get events collection to check course kinds
+              const events = await getCollection('events');
+              const eventsMap = new Map();
+              events.forEach(event => {
+                eventsMap.set(event.id.toUpperCase(), event.data.kind);
+              });
+              
+              // Calculate total only for registrations with matching course kind
+              discountableTotal = registrationsResult.rows.reduce((sum, row) => {
+                const courseId = row.id || row.course;
+                const courseKind = eventsMap.get(courseId.toString().toUpperCase());
+                
+                if (courseKind === voucher.applies_to) {
+                  const cost = (parseFloat(row.cost) || 0) + (parseFloat(row.donation) || 0);
+                  console.log(`Including ${courseId} (kind: ${courseKind}) in discount: $${cost}`);
+                  return sum + cost;
+                } else {
+                  console.log(`Excluding ${courseId} (kind: ${courseKind}) from discount`);
+                  return sum;
+                }
+              }, 0);
+              
+              console.log(`Discountable total (${voucher.applies_to} only): $${discountableTotal}`);
+            }
+            
             let discount = 0;
             
             if (voucher.percentage) {
-              discount = (expectedTotal * voucher.percentage) / 100;
-              console.log(`Applying ${voucher.percentage}% discount: ${discount}`);
+              discount = (discountableTotal * voucher.percentage) / 100;
+              console.log(`Applying ${voucher.percentage}% discount to $${discountableTotal}: ${discount}`);
             } else if (voucher.amount) {
-              discount = Math.min(parseFloat(voucher.amount), expectedTotal);
-              console.log(`Applying $${voucher.amount} discount: ${discount}`);
+              discount = Math.min(parseFloat(voucher.amount), discountableTotal);
+              console.log(`Applying $${voucher.amount} discount to $${discountableTotal}: ${discount}`);
             }
             
             expectedTotal = Math.max(0, expectedTotal - discount);

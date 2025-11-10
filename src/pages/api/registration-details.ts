@@ -82,16 +82,21 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Get events collection to map course IDs to course names
+        // Get events collection to map course IDs to course names and kinds
         const events = await getCollection('events');
         const eventsMap = new Map();
         events.forEach(event => {
-          eventsMap.set(event.id.toUpperCase(), event.data.name);
+          eventsMap.set(event.id.toUpperCase(), {
+            name: event.data.name,
+            kind: event.data.kind
+          });
         });
 
         // Process registrations and calculate totals
         const registrations = registrationsResult.rows.map(row => {
-          const courseName = eventsMap.get(row.course) || row.course;
+          const eventData = eventsMap.get(row.course);
+          const courseName = eventData?.name || row.course;
+          const courseKind = eventData?.kind || null;
           const cost = parseFloat(row.cost) || 0;
           const donation = parseFloat(row.donation) || 0;
 
@@ -99,6 +104,7 @@ export const POST: APIRoute = async ({ request }) => {
             registrationId: row.registration_id,
             courseId: row.course,
             courseName: courseName,
+            courseKind: courseKind,
             studentFirstName: row.student_firstname,
             studentLastName: row.student_lastname,
             cost: cost,

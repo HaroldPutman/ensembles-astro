@@ -426,12 +426,23 @@ import Layout from '../../layouts/Layout.astro';
         // Voucher is valid
         const { voucher } = data;
         
-        // Calculate discount
+        // Calculate discount - only apply to matching course kinds if appliesTo is set
+        let discountableTotal = totalCost;
+        
+        if (voucher.appliesTo) {
+          // Only calculate total for registrations with matching kind
+          discountableTotal = registrationDetails
+            .filter(r => r.courseKind === voucher.appliesTo)
+            .reduce((sum, r) => sum + (r.cost || 0) + (r.donation || 0), 0);
+          
+          console.log(`Voucher applies to "${voucher.appliesTo}" only. Discountable total: $${discountableTotal}`);
+        }
+        
         let discount = 0;
         if (voucher.percentage) {
-          discount = (totalCost * voucher.percentage) / 100;
+          discount = (discountableTotal * voucher.percentage) / 100;
         } else if (voucher.amount) {
-          discount = Math.min(voucher.amount, totalCost);
+          discount = Math.min(voucher.amount, discountableTotal);
         }
         
         const newTotal = Math.max(0, totalCost - discount);

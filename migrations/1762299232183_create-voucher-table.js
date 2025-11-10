@@ -30,6 +30,12 @@ export const up = (pgm) => {
       notNull: false,
       comment: 'Fixed discount amount in dollars',
     },
+    applies_to: {
+      type: 'varchar(16)',
+      notNull: false,
+      comment: 'What kind of event this applies to: "event", "class", "group"',
+      check: "(applies_to IS NULL OR applies_to IN ('event','class','group'))",
+    },
     valid_from: {
       type: 'timestamp',
       notNull: false,
