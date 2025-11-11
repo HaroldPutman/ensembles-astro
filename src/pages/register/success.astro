@@ -2,6 +2,10 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
+
+// Check if this was a free registration
+const paymentMethod = Astro.url.searchParams.get('method');
+const isFree = paymentMethod === 'none';
 ---
 
 <Layout>
@@ -14,9 +18,12 @@ import Layout from '../../layouts/Layout.astro';
         </svg>
       </div>
       
-      <h1>Payment Successful!</h1>
+      <h1>{isFree ? 'Registration Complete!' : 'Payment Successful!'}</h1>
       <p class="success-message">
-        Thank you for your registration. Your payment has been processed successfully.
+        {isFree 
+          ? 'Thank you for your registration. Your enrollment has been confirmed!'
+          : 'Thank you for your registration. Your payment has been processed successfully.'
+        }
       </p>
       
       <div class="next-steps">

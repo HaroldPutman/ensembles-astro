@@ -394,12 +394,12 @@ import Layout from '../../layouts/Layout.astro';
       console.log('Free registration response:', result);
 
       if (response.ok) {
-        // Clear sessionStorage and redirect to success page
+        // Clear sessionStorage and redirect to success page with payment method
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
         sessionStorage.removeItem('appliedVoucher');
         appliedVoucher = null;
-        window.location.href = '/register/success';
+        window.location.href = '/register/success?method=none';
       } else {
         throw new Error(result.message || 'Registration processing failed');
       }
@@ -440,12 +440,12 @@ import Layout from '../../layouts/Layout.astro';
       console.log('Payment response:', result);
 
       if (response.ok) {
-        // Clear sessionStorage and redirect to success page
+        // Clear sessionStorage and redirect to success page with payment method
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
         sessionStorage.removeItem('appliedVoucher');
         appliedVoucher = null;
-        window.location.href = '/register/success';
+        window.location.href = '/register/success?method=paypal';
       } else {
         throw new Error(result.message || 'Payment processing failed');
       }
