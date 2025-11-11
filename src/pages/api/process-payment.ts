@@ -71,15 +71,11 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    if (
-      !paypalOrderId ||
-      !paypalPayerId ||
-      !totalAmount ||
-      paymentMethod !== 'paypal'
-    ) {
+    // Validate payment method
+    if (paymentMethod !== 'paypal' && paymentMethod !== 'none') {
       return new Response(
         JSON.stringify({
-          message: 'Invalid PayPal payment data',
+          message: 'Invalid payment method',
         }),
         {
           status: 400,
@@ -88,6 +84,53 @@ export const POST: APIRoute = async ({ request }) => {
           },
         }
       );
+    }
+
+    // Validate PayPal data if payment method is paypal
+    if (paymentMethod === 'paypal') {
+      if (!paypalOrderId || !paypalPayerId || totalAmount === undefined) {
+        return new Response(
+          JSON.stringify({
+            message: 'Invalid PayPal payment data',
+          }),
+          {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
+    }
+
+    // Validate free registration
+    if (paymentMethod === 'none') {
+      if (totalAmount !== 0) {
+        return new Response(
+          JSON.stringify({
+            message: 'Free registration requires total amount to be $0',
+          }),
+          {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
+      if (!voucherId) {
+        return new Response(
+          JSON.stringify({
+            message: 'Free registration requires a voucher',
+          }),
+          {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
     }
 
     let pool: Pool | undefined;
@@ -103,9 +146,11 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Verify registrations exist and get their total cost
         const registrationsResult = await client.query(
-          `SELECT id, cost, donation FROM registration WHERE id = ANY($1)`,
+          `SELECT id, course, cost, donation FROM registration WHERE id = ANY($1)`,
           [registrationIds]
         );
+        
+        console.log('Registration query returned:', registrationsResult.rows);
 
         if (registrationsResult.rows.length !== registrationIds.length) {
           await client.query('ROLLBACK');
@@ -124,8 +169,9 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Calculate expected total
         let expectedTotal = registrationsResult.rows.reduce((sum, row) => {
+          console.log({row, sum});
           return (
-            sum + (parseFloat(row.cost) || 0) + (parseFloat(row.donation) || 0)
+            sum + (parseFloat(row.cost) || 0) + (row.donation ? parseFloat(row.donation) : 0)
           );
         }, 0);
         
@@ -133,13 +179,19 @@ export const POST: APIRoute = async ({ request }) => {
 
         // If a voucher is applied, subtract the discount from expected total
         if (voucherId) {
-          console.log('Voucher ID provided:', voucherId);
+          console.log('Voucher ID provided:', voucherId, 'Type:', typeof voucherId);
+          
           const voucherResult = await client.query(
             `SELECT percentage, amount, applies_to FROM voucher WHERE id = $1`,
             [voucherId]
           );
           
-          console.log('Voucher query result:', voucherResult.rows);
+          console.log('Voucher query result rows count:', voucherResult.rows.length);
+          if (voucherResult.rows.length > 0) {
+            console.log('Voucher found:', voucherResult.rows[0]);
+          } else {
+            console.log('No voucher found with ID:', voucherId);
+          }
           
           if (voucherResult.rows.length > 0) {
             const voucher = voucherResult.rows[0];
@@ -158,7 +210,14 @@ export const POST: APIRoute = async ({ request }) => {
               
               // Calculate total only for registrations with matching course kind
               discountableTotal = registrationsResult.rows.reduce((sum, row) => {
-                const courseId = row.id || row.course;
+                const courseId = row.course;
+                
+                // Safety check - skip if courseId is missing
+                if (!courseId) {
+                  console.log('Warning: Registration missing course ID:', row);
+                  return sum;
+                }
+                
                 const courseKind = eventsMap.get(courseId.toString().toUpperCase());
                 
                 if (courseKind === voucher.applies_to) {
@@ -189,6 +248,8 @@ export const POST: APIRoute = async ({ request }) => {
           } else {
             console.log('Voucher not found in database');
           }
+        } else {
+          console.log('No voucher ID provided, expected total remains:', expectedTotal);
         }
         
         console.log('Final comparison - Expected:', expectedTotal, 'Received:', totalAmount, 'Difference:', Math.abs(expectedTotal - totalAmount));
@@ -209,7 +270,8 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Create payment record
+        // Create payment record (transaction_id can be null for free registrations)
+        const transactionId = paymentMethod === 'none' ? `FREE-${Date.now()}` : paypalOrderId;
         const paymentResult = await client.query(
           `INSERT INTO payment (
             transaction_id, 
@@ -217,7 +279,7 @@ export const POST: APIRoute = async ({ request }) => {
             voucher_id
           ) VALUES ($1, $2, $3)
           RETURNING id`,
-          [paypalOrderId, totalAmount, voucherId]
+          [transactionId, totalAmount, voucherId]
         );
         
         if (voucherId) {
@@ -241,13 +303,19 @@ export const POST: APIRoute = async ({ request }) => {
         // Commit the transaction
         await client.query('COMMIT');
 
+        const responseMessage = paymentMethod === 'none' 
+          ? 'Registration completed successfully' 
+          : 'Payment processed successfully';
+          
         return new Response(
           JSON.stringify({
-            message: 'Payment processed successfully',
+            message: responseMessage,
             paymentId: paymentId,
-            paypalOrderId: paypalOrderId,
+            paypalOrderId: paymentMethod === 'paypal' ? paypalOrderId : null,
+            transactionId: transactionId,
             amount: totalAmount,
             registrationCount: registrationIds.length,
+            paymentMethod: paymentMethod,
           }),
           {
             status: 200,
