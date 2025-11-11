@@ -72,7 +72,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate payment method
-    if (paymentMethod !== 'paypal' && paymentMethod !== 'none') {
+    if (paymentMethod !== 'paypal' && paymentMethod !== 'none' && paymentMethod !== 'check') {
       return new Response(
         JSON.stringify({
           message: 'Invalid payment method',
@@ -270,8 +270,15 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Create payment record (transaction_id can be null for free registrations)
-        const transactionId = paymentMethod === 'none' ? `FREE-${Date.now()}` : paypalOrderId;
+        // Create payment record with appropriate transaction ID
+        let transactionId: string;
+        if (paymentMethod === 'none') {
+          transactionId = `FREE-${Date.now()}`;
+        } else if (paymentMethod === 'check') {
+          transactionId = `CHECK-${Date.now()}`;
+        } else {
+          transactionId = paypalOrderId;
+        }
         const paymentResult = await client.query(
           `INSERT INTO payment (
             transaction_id, 
@@ -303,9 +310,14 @@ export const POST: APIRoute = async ({ request }) => {
         // Commit the transaction
         await client.query('COMMIT');
 
-        const responseMessage = paymentMethod === 'none' 
-          ? 'Registration completed successfully' 
-          : 'Payment processed successfully';
+        let responseMessage: string;
+        if (paymentMethod === 'none') {
+          responseMessage = 'Registration completed successfully';
+        } else if (paymentMethod === 'check') {
+          responseMessage = 'Registration submitted - awaiting check payment';
+        } else {
+          responseMessage = 'Payment processed successfully';
+        }
           
         return new Response(
           JSON.stringify({

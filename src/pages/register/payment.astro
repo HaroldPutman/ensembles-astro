@@ -361,6 +361,59 @@ import Layout from '../../layouts/Layout.astro';
     }).render('#paypal-button-container');
   }
 
+  // Process check payment
+  async function processCheckPayment() {
+    const checkBtn = document.getElementById('alternate-payment-btn') as HTMLButtonElement;
+    
+    if (checkBtn) {
+      checkBtn.disabled = true;
+      checkBtn.textContent = 'Processing...';
+    }
+    
+    try {
+      const paymentData = {
+        registrationIds: registrationDetails.map(r => r.registrationId),
+        paypalOrderId: null,
+        paypalPayerId: null,
+        totalAmount: totalCost,
+        paymentMethod: 'check',
+        voucherId: appliedVoucher?.id,
+      };
+      
+      console.log('Processing check payment:', paymentData);
+      
+      const response = await fetch('/api/process-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const result = await response.json();
+      console.log('Check payment response:', result);
+
+      if (response.ok) {
+        // Clear sessionStorage and redirect to success page with payment method
+        sessionStorage.removeItem('registrations');
+        sessionStorage.removeItem('courseId');
+        sessionStorage.removeItem('appliedVoucher');
+        appliedVoucher = null;
+        window.location.href = '/register/success?method=check';
+      } else {
+        throw new Error(result.message || 'Registration processing failed');
+      }
+    } catch (error) {
+      console.error('Check payment error:', error);
+      alert(error instanceof Error ? error.message : 'Registration failed. Please contact support.');
+      
+      if (checkBtn) {
+        checkBtn.disabled = false;
+        checkBtn.textContent = 'Pay by check';
+      }
+    }
+  }
+
   // Process free registration (no payment required)
   async function processFreeRegistration() {
     const completeBtn = document.getElementById('complete-free-registration-btn') as HTMLButtonElement;
@@ -626,6 +679,12 @@ import Layout from '../../layouts/Layout.astro';
     const completeFreeBtn = document.getElementById('complete-free-registration-btn');
     if (completeFreeBtn) {
       completeFreeBtn.addEventListener('click', processFreeRegistration);
+    }
+    
+    // Add event listener for check payment button
+    const checkPaymentBtn = document.getElementById('alternate-payment-btn');
+    if (checkPaymentBtn) {
+      checkPaymentBtn.addEventListener('click', processCheckPayment);
     }
     
     // Allow pressing Enter in voucher input to apply
