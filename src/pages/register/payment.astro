@@ -148,7 +148,7 @@ import Layout from '../../layouts/Layout.astro';
       const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
       const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
       
-      if (voucherInput && applyBtn) {
+      if (voucherInput && applyBtn && appliedVoucher) {
         voucherInput.value = appliedVoucher.code;
         voucherInput.disabled = true;
         applyBtn.disabled = true;
@@ -394,7 +394,10 @@ import Layout from '../../layouts/Layout.astro';
       console.log('Check payment response:', result);
 
       if (response.ok) {
-        // Clear sessionStorage and redirect to success page with payment method
+        // Store short code and redirect to success page
+        if (result.shortCode) {
+          sessionStorage.setItem('confirmationCode', result.shortCode);
+        }
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
         sessionStorage.removeItem('appliedVoucher');
@@ -447,7 +450,10 @@ import Layout from '../../layouts/Layout.astro';
       console.log('Free registration response:', result);
 
       if (response.ok) {
-        // Clear sessionStorage and redirect to success page with payment method
+        // Store short code and redirect to success page
+        if (result.shortCode) {
+          sessionStorage.setItem('confirmationCode', result.shortCode);
+        }
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
         sessionStorage.removeItem('appliedVoucher');
@@ -493,7 +499,10 @@ import Layout from '../../layouts/Layout.astro';
       console.log('Payment response:', result);
 
       if (response.ok) {
-        // Clear sessionStorage and redirect to success page with payment method
+        // Store short code and redirect to success page
+        if (result.shortCode) {
+          sessionStorage.setItem('confirmationCode', result.shortCode);
+        }
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
         sessionStorage.removeItem('appliedVoucher');

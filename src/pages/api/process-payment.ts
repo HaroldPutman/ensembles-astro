@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
 import { getCollection } from 'astro:content';
+import { generateShortCode } from '../../lib/shortcode';
 
 export const prerender = false;
 
@@ -270,7 +271,7 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Create payment record with appropriate transaction ID
+        // Create payment record with appropriate transaction ID and short code
         let transactionId: string;
         if (paymentMethod === 'none') {
           transactionId = `FREE-${Date.now()}`;
@@ -279,14 +280,40 @@ export const POST: APIRoute = async ({ request }) => {
         } else {
           transactionId = paypalOrderId;
         }
+        
+        // Generate unique short code with retry logic
+        let shortCode: string;
+        let attempts = 0;
+        const maxAttempts = 5;
+        
+        while (attempts < maxAttempts) {
+          shortCode = generateShortCode();
+          
+          // Check if code already exists
+          const existingCode = await client.query(
+            `SELECT id FROM payment WHERE short_code = $1`,
+            [shortCode]
+          );
+          
+          if (existingCode.rows.length === 0) {
+            break; // Unique code found
+          }
+          
+          attempts++;
+          if (attempts === maxAttempts) {
+            throw new Error('Failed to generate unique short code');
+          }
+        }
+        
         const paymentResult = await client.query(
           `INSERT INTO payment (
             transaction_id, 
             amount,
-            voucher_id
-          ) VALUES ($1, $2, $3)
-          RETURNING id`,
-          [transactionId, totalAmount, voucherId]
+            voucher_id,
+            short_code
+          ) VALUES ($1, $2, $3, $4)
+          RETURNING id, short_code`,
+          [transactionId, totalAmount, voucherId, shortCode!]
         );
         
         if (voucherId) {
@@ -298,6 +325,7 @@ export const POST: APIRoute = async ({ request }) => {
         }
 
         const paymentId = paymentResult.rows[0].id;
+        const paymentShortCode = paymentResult.rows[0].short_code;
 
         // Update registrations to mark them as paid and link to payment
         await client.query(
@@ -323,6 +351,7 @@ export const POST: APIRoute = async ({ request }) => {
           JSON.stringify({
             message: responseMessage,
             paymentId: paymentId,
+            shortCode: paymentShortCode,
             paypalOrderId: paymentMethod === 'paypal' ? paypalOrderId : null,
             transactionId: transactionId,
             amount: totalAmount,
