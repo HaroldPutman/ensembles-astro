@@ -119,19 +119,8 @@ export const POST: APIRoute = async ({ request }) => {
           }
         );
       }
-      if (!voucherId) {
-        return new Response(
-          JSON.stringify({
-            message: 'Free registration requires a voucher',
-          }),
-          {
-            status: 400,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-      }
+      // Note: voucherId is optional for free registrations
+      // Courses can be naturally free (cost = 0) or made free by a voucher
     }
 
     let pool: Pool | undefined;

@@ -33,7 +33,9 @@ const isCheck = paymentMethod === 'check';
         }
       </p>
 
-      <div id="confirmation-code-container" class="confirmation-code"></div>
+      <div id="confirmation-code-container" class="confirmation-code">
+        <p>Confirmation code: <span class="confirmation-value"></span></p>
+      </div>
       
       {isCheck && (
         <div class="check-payment-info">
@@ -45,7 +47,8 @@ const isCheck = paymentMethod === 'check';
             Charlestown, IN
           </address>
           <p class="check-note">
-            <strong>Important:</strong> Please include your confirmation code or student name on the check memo line.
+            <strong>Important:</strong> Please include your confirmation code 
+            <span class="confirmation-value"></span> or student name on the check memo line.
           </p>
         </div>
       )}
@@ -72,19 +75,13 @@ const isCheck = paymentMethod === 'check';
   // Display confirmation code from sessionStorage
   const confirmationCode = sessionStorage.getItem('confirmationCode');
   if (confirmationCode) {
-    const container = document.getElementById('confirmation-code-container');
-    if (container) {
-      // Format the code (e.g., ABC-123)
-      const formatted = confirmationCode.length === 6 
+    const codeElements = document.querySelectorAll('.confirmation-value');
+    const formatted = confirmationCode.length === 6 
         ? `${confirmationCode.slice(0, 3)}-${confirmationCode.slice(3)}`
         : confirmationCode;
-      
-      container.innerHTML = `
-        <p class="confirmation-label">Your confirmation code:</p>
-        <p class="confirmation-value">${formatted}</p>
-        <p class="confirmation-note">Please save this code for your records. Include it with any check payments or inquiries.</p>
-      `;
-    }
+    codeElements.forEach(element => {
+      element.textContent = formatted;
+    });
     // Clear it from sessionStorage after displaying
     sessionStorage.removeItem('confirmationCode');
   }
@@ -124,19 +121,6 @@ const isCheck = paymentMethod === 'check';
 
   .confirmation-code {
     background-color: #f3f4f6;
-    border: 2px dashed #9ca3af;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin: 2rem 0;
-  }
-
-  .confirmation-label {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin: 0 0 0.5rem 0;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
   }
 
   .confirmation-value {

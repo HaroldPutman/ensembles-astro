@@ -266,19 +266,28 @@ import Layout from '../../layouts/Layout.astro';
     const alternatePayment = document.querySelector('.alternate-payment') as HTMLElement;
     const voucherInputGroup = document.querySelector('.voucher-input-group') as HTMLElement;
     
+    // Calculate original total (before any voucher)
+    const originalTotal = registrationDetails.reduce((sum, r) => sum + (r.cost || 0) + (r.donation || 0), 0);
+    
     if (totalCost === 0) {
       // Free registration - hide PayPal, show complete button, hide other payment options
       if (paypalContainer) paypalContainer.style.display = 'none';
       if (freeContainer) freeContainer.style.display = 'block';
       if (divider) divider.style.display = 'none';
       if (alternatePayment) alternatePayment.style.display = 'none';
-      // Keep voucher input visible so user can change/remove voucher if needed
+      
+      // Only show voucher input if the original cost was > 0 (voucher made it free)
+      // Hide voucher input if courses are naturally free
+      if (voucherInputGroup) {
+        voucherInputGroup.style.display = originalTotal > 0 ? 'block' : 'none';
+      }
     } else {
       // Paid registration - show PayPal, hide complete button
       if (paypalContainer) paypalContainer.style.display = 'block';
       if (freeContainer) freeContainer.style.display = 'none';
       if (divider) divider.style.display = 'flex';
       if (alternatePayment) alternatePayment.style.display = 'block';
+      if (voucherInputGroup) voucherInputGroup.style.display = 'block';
     }
   }
 
@@ -433,7 +442,7 @@ import Layout from '../../layouts/Layout.astro';
         paypalPayerId: null,
         totalAmount: 0,
         paymentMethod: 'none',
-        voucherId: appliedVoucher?.id,
+        voucherId: appliedVoucher?.id || null,
       };
       
       console.log('Processing free registration:', paymentData);

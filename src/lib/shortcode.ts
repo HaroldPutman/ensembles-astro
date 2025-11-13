@@ -23,13 +23,15 @@ function containsForbiddenString(code: string): boolean {
  */
 export function generateShortCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding similar-looking: 0,O,1,I
-  const maxAttempts = 100; // Prevent infinite loop
-  
+  const maxAttempts = 8; // Prevent infinite loop
+  let startPosition;
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const timestamp = Date.now().toString(36).toUpperCase();
-    
+    // Timestamp will be 8 or 9 characters long
+    startPosition = startPosition || timestamp.length - 3;
     // Take last 3 chars from timestamp + 3 random chars
-    const timestampPart = timestamp.slice(-3);
+    const timestampPart = timestamp.slice(startPosition, startPosition + 3);
     let randomPart = '';
     
     for (let i = 0; i < 3; i++) {
@@ -43,14 +45,8 @@ export function generateShortCode(): string {
       return code;
     }
     
-    // If forbidden, add a small delay to get a different timestamp
-    if (attempt < maxAttempts - 1) {
-      // Sleep for 1ms to ensure different timestamp
-      const start = Date.now();
-      while (Date.now() - start < 1) {
-        // Busy wait
-      }
-    }
+    // If forbidden, move start position backwards
+    startPosition = startPosition === 0 ? timestamp.length - 3 : startPosition - 1;
   }
   
   // Fallback: if we somehow can't generate a clean code after many attempts,
