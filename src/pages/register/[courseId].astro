@@ -19,13 +19,22 @@ const { courseId } = Astro.params;
 const { event } = Astro.props;
 
 const description = shortDescription(event.data.dtstart, event.data.dtend, event.data.duration, event.data.rrule);
+const isFree = typeof event.data.cost === 'number' && event.data.cost === 0;
+const possessiveParticipant = event.data.kind === 'class' ? 'Student\'s' : 'Participant\'s';
 ---
 
 <Layout>
   <section class="registration-section">
     <h1><span id="courseName">{event.data.name}</span></h1>
-    <p class="intro">Let's get registered. This class meets {description}.</p>
-    {event.data.cost && (
+    <p class="intro">
+      Let's get registered. This {event.data.kind === 'class' 
+        ? 'class meets'
+        : event.data.kind === 'group'
+          ? 'group meets'
+          : 'event is happening'
+      } {description}.
+    </p>
+    {!isFree && event.data.cost && (
       <p>The cost of the class is {event.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
     )}
     <form id="registration-form" class="registration-form" data-course-start={event.data.dtstart} 
@@ -33,7 +42,7 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
       <div class="form-group">
-        <label for="birthdate">Student's Birth Date</label>
+        <label for="birthdate">{possessiveParticipant} Birth Date</label>
         <input 
           type="text" 
           id="birthdate" 
@@ -44,7 +53,7 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
       </div>
 
       <div class="form-group">
-        <label for="firstName">Student's First Name</label>
+        <label for="firstName">{possessiveParticipant} First Name</label>
         <input 
           type="text" 
           id="firstName" 
@@ -55,7 +64,7 @@ const description = shortDescription(event.data.dtstart, event.data.dtend, event
       </div>
 
       <div class="form-group">
-        <label for="lastName">Student's Last Name</label>
+        <label for="lastName">{possessiveParticipant} Last Name</label>
         <input 
           type="text" 
           id="lastName" 

@@ -2,6 +2,11 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
+
+// Check payment method
+const paymentMethod = Astro.url.searchParams.get('method');
+const isFree = paymentMethod === 'none';
+const isCheck = paymentMethod === 'check';
 ---
 
 <Layout>
@@ -14,10 +19,39 @@ import Layout from '../../layouts/Layout.astro';
         </svg>
       </div>
       
-      <h1>Payment Successful!</h1>
+      <h1>
+        {isFree ? 'Registration Complete!' : 
+         isCheck ? 'Registration Submitted!' : 
+         'Payment Successful!'}
+      </h1>
       <p class="success-message">
-        Thank you for your registration. Your payment has been processed successfully.
+        {isFree 
+          ? 'Thank you for your registration. Your enrollment has been confirmed!'
+          : isCheck
+          ? 'Thank you for your registration. Your enrollment will be completed when we receive your check payment.'
+          : 'Thank you for your registration. Your payment has been processed successfully.'
+        }
       </p>
+
+      <div id="confirmation-code-container" class="confirmation-code">
+        <p>Confirmation code: <span class="confirmation-value"></span></p>
+      </div>
+      
+      {isCheck && (
+        <div class="check-payment-info">
+          <h3>Payment Instructions</h3>
+          <p>Please mail your check to:</p>
+          <address>
+            <strong>Ensembles, Inc.</strong><br/>
+            1120 Monroe St.<br/>
+            Charlestown, IN
+          </address>
+          <p class="check-note">
+            <strong>Important:</strong> Please include your confirmation code 
+            <span class="confirmation-value"></span> or student name on the check memo line.
+          </p>
+        </div>
+      )}
       
       <div class="next-steps">
         <h2>What's Next?</h2>
@@ -36,6 +70,22 @@ import Layout from '../../layouts/Layout.astro';
     </div>
   </section>
 </Layout>
+
+<script>
+  // Display confirmation code from sessionStorage
+  const confirmationCode = sessionStorage.getItem('confirmationCode');
+  if (confirmationCode) {
+    const codeElements = document.querySelectorAll('.confirmation-value');
+    const formatted = confirmationCode.length === 6 
+        ? `${confirmationCode.slice(0, 3)}-${confirmationCode.slice(3)}`
+        : confirmationCode;
+    codeElements.forEach(element => {
+      element.textContent = formatted;
+    });
+    // Clear it from sessionStorage after displaying
+    sessionStorage.removeItem('confirmationCode');
+  }
+</script>
 
 <style>
   .success-section {
@@ -67,6 +117,70 @@ import Layout from '../../layouts/Layout.astro';
     color: #666;
     margin-bottom: 2rem;
     line-height: 1.6;
+  }
+
+  .confirmation-code {
+    background-color: #f3f4f6;
+  }
+
+  .confirmation-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .confirmation-note {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0.75rem 0 0 0;
+    line-height: 1.5;
+  }
+
+  .check-payment-info {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+  }
+
+  .check-payment-info h3 {
+    color: #856404;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+  }
+
+  .check-payment-info p {
+    color: #856404;
+    margin-bottom: 0.75rem;
+  }
+
+  .check-payment-info address {
+    background: white;
+    padding: 1rem;
+    border-radius: 4px;
+    font-style: normal;
+    margin: 1rem 0;
+    border-left: 4px solid #ffc107;
+  }
+
+  .check-payment-info address strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .check-note {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+    font-size: 0.95rem;
   }
 
   .next-steps {

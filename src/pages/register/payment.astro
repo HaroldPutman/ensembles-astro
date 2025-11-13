@@ -21,6 +21,14 @@ import Layout from '../../layouts/Layout.astro';
         </div>
         
         <div class="total-section">
+          <div id="subtotal-line" class="subtotal-line" style="display: none;">
+            <span>Subtotal:</span>
+            <span id="subtotal-amount">$0.00</span>
+          </div>
+          <div id="discount-line" class="discount-line" style="display: none;">
+            <span id="discount-label">Discount:</span>
+            <span id="discount-amount" class="discount-amount">-$0.00</span>
+          </div>
           <div class="total-line">
             <span>Total Cost:</span>
             <span id="total-cost" class="total-amount">$0.00</span>
@@ -30,11 +38,45 @@ import Layout from '../../layouts/Layout.astro';
       
       <div class="payment-form">
         <h2>Payment Information</h2>
-        <div id="paypal-button-container"></div>
-        
         <div class="payment-note">
           <p>You don't need a PayPal account to pay with Credit or Debit card. </p>
         </div>
+        <div id="paypal-button-container"></div>
+        
+        <div id="free-registration-container" style="display: none;" class="free-registration">
+          <p class="free-message">Your voucher covers the full cost! No payment required.</p>
+          <button type="button" id="complete-free-registration-btn" class="complete-registration-btn">
+            Complete Registration
+          </button>
+        </div>
+        
+        <div class="voucher-section">
+          <div class="divider">
+            <span>or</span>
+          </div>
+          <div class="alternate-payment">
+            <button type="button" id="alternate-payment-btn" class="alternate-payment-btn">
+              Pay by check
+            </button>
+          </div>
+            <div class="voucher-input-group">
+            <label for="voucher-code">Have a voucher code?</label>
+            <div class="voucher-input-wrapper">
+              <input 
+                type="text" 
+                id="voucher-code" 
+                name="voucher-code" 
+                placeholder="Enter voucher code"
+                class="voucher-input"
+              />
+              <button type="button" id="apply-voucher-btn" class="apply-voucher-btn" disabled>
+                Apply
+              </button>
+            </div>
+            <p id="voucher-message" class="voucher-message" style="display: none;"></p>
+          </div>
+        </div>
+        
       </div>
     </div>
     
@@ -46,6 +88,7 @@ import Layout from '../../layouts/Layout.astro';
   let registrationDetails: any[] = [];
   let totalCost = 0;
   let paypalClientId: string | null = null;
+  let appliedVoucher: { id: number; code: string; discount: number; description?: string } | null = null;
 
   // Load PayPal configuration
   async function loadPayPalConfig() {
@@ -97,6 +140,21 @@ import Layout from '../../layouts/Layout.astro';
       return;
     }
 
+    // Check if voucher was previously applied and restore it
+    const appliedVoucherStr = sessionStorage.getItem('appliedVoucher');
+    if (appliedVoucherStr) {
+      appliedVoucher = JSON.parse(appliedVoucherStr);
+      
+      const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
+      const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
+      
+      if (voucherInput && applyBtn && appliedVoucher) {
+        voucherInput.value = appliedVoucher.code;
+        voucherInput.disabled = true;
+        applyBtn.disabled = true;
+      }
+    }
+
     // Fetch registration details from API
     fetchRegistrationDetails(ids);
   }
@@ -119,6 +177,11 @@ import Layout from '../../layouts/Layout.astro';
       const data = await response.json();
       registrationDetails = data.registrations;
       totalCost = data.totalCost;
+
+      // Apply voucher discount if one was previously applied
+      if (appliedVoucher) {
+        totalCost = Math.max(0, totalCost - appliedVoucher.discount);
+      }
 
       displayRegistrations();
       hideLoading();
@@ -161,7 +224,71 @@ import Layout from '../../layouts/Layout.astro';
       registrationsList.appendChild(registrationItem);
     });
 
+    // Check if voucher is applied
+    const appliedVoucherStr = sessionStorage.getItem('appliedVoucher');
+    const subtotalLine = document.getElementById('subtotal-line');
+    const discountLine = document.getElementById('discount-line');
+    const subtotalAmount = document.getElementById('subtotal-amount');
+    const discountLabel = document.getElementById('discount-label');
+    const discountAmount = document.getElementById('discount-amount');
+    
+    if (appliedVoucherStr && subtotalLine && discountLine && subtotalAmount && discountLabel && discountAmount) {
+      const appliedVoucher = JSON.parse(appliedVoucherStr);
+      
+      // Show subtotal and discount lines
+      subtotalLine.style.display = 'flex';
+      discountLine.style.display = 'flex';
+      
+      // Calculate original total
+      const originalTotal = registrationDetails.reduce((sum, r) => sum + (r.cost || 0) + (r.donation || 0), 0);
+      
+      // Update displays
+      subtotalAmount.textContent = `$${originalTotal.toFixed(2)}`;
+      discountLabel.textContent = `Discount (${appliedVoucher.code}):`;
+      discountAmount.textContent = `-$${appliedVoucher.discount.toFixed(2)}`;
+    } else if (subtotalLine && discountLine) {
+      // Hide discount lines if no voucher
+      subtotalLine.style.display = 'none';
+      discountLine.style.display = 'none';
+    }
+    
     totalCostElement.textContent = `$${totalCost.toFixed(2)}`;
+    
+    // Update payment display when total changes
+    updatePaymentDisplay();
+  }
+
+  // Toggle payment method display based on total cost
+  function updatePaymentDisplay() {
+    const paypalContainer = document.getElementById('paypal-button-container');
+    const freeContainer = document.getElementById('free-registration-container');
+    const divider = document.querySelector('.divider') as HTMLElement;
+    const alternatePayment = document.querySelector('.alternate-payment') as HTMLElement;
+    const voucherInputGroup = document.querySelector('.voucher-input-group') as HTMLElement;
+    
+    // Calculate original total (before any voucher)
+    const originalTotal = registrationDetails.reduce((sum, r) => sum + (r.cost || 0) + (r.donation || 0), 0);
+    
+    if (totalCost === 0) {
+      // Free registration - hide PayPal, show complete button, hide other payment options
+      if (paypalContainer) paypalContainer.style.display = 'none';
+      if (freeContainer) freeContainer.style.display = 'block';
+      if (divider) divider.style.display = 'none';
+      if (alternatePayment) alternatePayment.style.display = 'none';
+      
+      // Only show voucher input if the original cost was > 0 (voucher made it free)
+      // Hide voucher input if courses are naturally free
+      if (voucherInputGroup) {
+        voucherInputGroup.style.display = originalTotal > 0 ? 'block' : 'none';
+      }
+    } else {
+      // Paid registration - show PayPal, hide complete button
+      if (paypalContainer) paypalContainer.style.display = 'block';
+      if (freeContainer) freeContainer.style.display = 'none';
+      if (divider) divider.style.display = 'flex';
+      if (alternatePayment) alternatePayment.style.display = 'block';
+      if (voucherInputGroup) voucherInputGroup.style.display = 'block';
+    }
   }
 
   // Initialize PayPal
@@ -170,20 +297,48 @@ import Layout from '../../layouts/Layout.astro';
       console.error('PayPal SDK not loaded');
       return;
     }
+    
+    // Update display based on total
+    updatePaymentDisplay();
 
     (window as any).paypal.Buttons({
       createOrder: function(data: any, actions: any) {
+        // Calculate item total (original prices)
+        const itemTotal = registrationDetails.reduce((sum, r) => {
+          return sum + (r.cost || 0) + (r.donation || 0);
+        }, 0);
+        
+        // Build the amount breakdown
+        const breakdown: any = {
+          item_total: {
+            currency_code: 'USD',
+            value: itemTotal.toFixed(2)
+          }
+        };
+        
+        // Recalculate discount fresh from voucher data to prevent tampering
+        if (appliedVoucher) {
+          // Re-fetch voucher from sessionStorage to get original voucher details
+          const storedVoucher = sessionStorage.getItem('appliedVoucher');
+          if (storedVoucher) {
+            const voucherData = JSON.parse(storedVoucher);
+            
+            // Recalculate discount based on stored voucher details
+            // Note: This still uses sessionStorage but recalculates from the voucher rules
+            // The server will validate the final amount anyway
+            breakdown.discount = {
+              currency_code: 'USD',
+              value: voucherData.discount.toFixed(2)
+            };
+          }
+        }
+        
         return actions.order.create({
           purchase_units: [{
             amount: {
               currency_code: 'USD',
               value: totalCost.toFixed(2),
-              breakdown: {
-                item_total: {
-                  currency_code: 'USD',
-                  value: totalCost.toFixed(2)
-                }
-              }
+              breakdown: breakdown
             },
             items: registrationDetails.map(r => ({
               name: r.courseName,
@@ -191,7 +346,7 @@ import Layout from '../../layouts/Layout.astro';
               quantity: 1,
               unit_amount: {
                 currency_code: 'USD',
-                value: r.cost.toFixed(2)
+                value: ((r.cost || 0) + (r.donation || 0)).toFixed(2)
               }
             })),
             description: `Registration for ${registrationDetails.length} course(s)`,
@@ -215,30 +370,154 @@ import Layout from '../../layouts/Layout.astro';
     }).render('#paypal-button-container');
   }
 
-  // Process successful payment
-  async function processPaymentSuccess(paypalDetails: any) {
+  // Process check payment
+  async function processCheckPayment() {
+    const checkBtn = document.getElementById('alternate-payment-btn') as HTMLButtonElement;
+    
+    if (checkBtn) {
+      checkBtn.disabled = true;
+      checkBtn.textContent = 'Processing...';
+    }
+    
     try {
+      const paymentData = {
+        registrationIds: registrationDetails.map(r => r.registrationId),
+        paypalOrderId: null,
+        paypalPayerId: null,
+        totalAmount: totalCost,
+        paymentMethod: 'check',
+        voucherId: appliedVoucher?.id,
+      };
+      
+      console.log('Processing check payment:', paymentData);
+      
       const response = await fetch('/api/process-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          registrationIds: registrationDetails.map(r => r.registrationId),
-          paypalOrderId: paypalDetails.id,
-          paypalPayerId: paypalDetails.payer.payer_id,
-          totalAmount: totalCost,
-          paymentMethod: 'paypal'
-        }),
+        body: JSON.stringify(paymentData),
       });
 
+      const result = await response.json();
+      console.log('Check payment response:', result);
+
       if (response.ok) {
-        // Clear sessionStorage and redirect to success page
+        // Store short code and redirect to success page
+        if (result.shortCode) {
+          sessionStorage.setItem('confirmationCode', result.shortCode);
+        }
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
-        window.location.href = '/register/success';
+        sessionStorage.removeItem('appliedVoucher');
+        appliedVoucher = null;
+        window.location.href = '/register/success?method=check';
       } else {
-        const result = await response.json();
+        throw new Error(result.message || 'Registration processing failed');
+      }
+    } catch (error) {
+      console.error('Check payment error:', error);
+      alert(error instanceof Error ? error.message : 'Registration failed. Please contact support.');
+      
+      if (checkBtn) {
+        checkBtn.disabled = false;
+        checkBtn.textContent = 'Pay by check';
+      }
+    }
+  }
+
+  // Process free registration (no payment required)
+  async function processFreeRegistration() {
+    const completeBtn = document.getElementById('complete-free-registration-btn') as HTMLButtonElement;
+    
+    if (completeBtn) {
+      completeBtn.disabled = true;
+      completeBtn.textContent = 'Processing...';
+    }
+    
+    try {
+      const paymentData = {
+        registrationIds: registrationDetails.map(r => r.registrationId),
+        paypalOrderId: null,
+        paypalPayerId: null,
+        totalAmount: 0,
+        paymentMethod: 'none',
+        voucherId: appliedVoucher?.id || null,
+      };
+      
+      console.log('Processing free registration:', paymentData);
+      
+      const response = await fetch('/api/process-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const result = await response.json();
+      console.log('Free registration response:', result);
+
+      if (response.ok) {
+        // Store short code and redirect to success page
+        if (result.shortCode) {
+          sessionStorage.setItem('confirmationCode', result.shortCode);
+        }
+        sessionStorage.removeItem('registrations');
+        sessionStorage.removeItem('courseId');
+        sessionStorage.removeItem('appliedVoucher');
+        appliedVoucher = null;
+        window.location.href = '/register/success?method=none';
+      } else {
+        throw new Error(result.message || 'Registration processing failed');
+      }
+    } catch (error) {
+      console.error('Free registration error:', error);
+      alert(error instanceof Error ? error.message : 'Registration failed. Please contact support.');
+      
+      if (completeBtn) {
+        completeBtn.disabled = false;
+        completeBtn.textContent = 'Complete Registration';
+      }
+    }
+  }
+
+  // Process successful payment
+  async function processPaymentSuccess(paypalDetails: any) {
+    try {
+      const paymentData = {
+        registrationIds: registrationDetails.map(r => r.registrationId),
+        paypalOrderId: paypalDetails.id,
+        paypalPayerId: paypalDetails.payer.payer_id,
+        totalAmount: totalCost,
+        paymentMethod: 'paypal',
+        voucherId: appliedVoucher?.id,
+      };
+      
+      console.log('Sending payment data:', paymentData);
+      
+      const response = await fetch('/api/process-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const result = await response.json();
+      console.log('Payment response:', result);
+
+      if (response.ok) {
+        // Store short code and redirect to success page
+        if (result.shortCode) {
+          sessionStorage.setItem('confirmationCode', result.shortCode);
+        }
+        sessionStorage.removeItem('registrations');
+        sessionStorage.removeItem('courseId');
+        sessionStorage.removeItem('appliedVoucher');
+        appliedVoucher = null;
+        window.location.href = '/register/success?method=paypal';
+      } else {
         throw new Error(result.message || 'Payment processing failed');
       }
     } catch (error) {
@@ -281,10 +560,163 @@ import Layout from '../../layouts/Layout.astro';
     }
   }
 
+  // Handle voucher code application
+  async function applyVoucher() {
+    const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
+    const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
+    const messageEl = document.getElementById('voucher-message') as HTMLParagraphElement;
+    
+    if (!voucherInput || !applyBtn || !messageEl) return;
+    
+    const voucherCode = voucherInput.value.trim();
+    
+    if (!voucherCode) {
+      showVoucherMessage('Please enter a voucher code', 'error');
+      return;
+    }
+    
+    // Disable button while processing
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Applying...';
+    
+    try {
+      // Call API to validate voucher code
+      const response = await fetch('/api/validate-voucher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          code: voucherCode, 
+          registrationIds: JSON.parse(sessionStorage.getItem('registrations') || '[]') 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.valid) {
+        // Voucher is valid
+        const { voucher } = data;
+        
+        // Calculate discount - only apply to matching course kinds if appliesTo is set
+        let discountableTotal = totalCost;
+        
+        if (voucher.appliesTo) {
+          // Only calculate total for registrations with matching kind
+          discountableTotal = registrationDetails
+            .filter(r => r.courseKind === voucher.appliesTo)
+            .reduce((sum, r) => sum + (r.cost || 0) + (r.donation || 0), 0);
+          
+          console.log(`Voucher applies to "${voucher.appliesTo}" only. Discountable total: $${discountableTotal}`);
+        }
+        
+        let discount = 0;
+        if (voucher.percentage) {
+          discount = (discountableTotal * voucher.percentage) / 100;
+        } else if (voucher.amount) {
+          discount = Math.min(voucher.amount, discountableTotal);
+        }
+        
+        const newTotal = Math.max(0, totalCost - discount);
+        
+        // Store voucher info in session and global variable
+        appliedVoucher = {
+          id: voucher.id,
+          code: voucher.code,
+          discount: discount,
+          description: voucher.description
+        };
+        
+        sessionStorage.setItem('appliedVoucher', JSON.stringify(appliedVoucher));
+        
+        // Update display
+        totalCost = newTotal;
+        displayRegistrations();
+        
+        // Show success message
+        const discountText = voucher.percentage 
+          ? `${voucher.percentage}% discount` 
+          : `$${voucher.amount.toFixed(2)} discount`;
+        showVoucherMessage(
+          `Voucher applied! ${discountText} - ${voucher.description || ''}`, 
+          'success'
+        );
+        
+        // Disable the input and button after successful application
+        voucherInput.disabled = true;
+        applyBtn.disabled = true;
+      } else {
+        // Voucher is invalid
+        showVoucherMessage(data.message || 'Invalid voucher code. Please try again.', 'error');
+      }
+    } catch (error) {
+      console.error('Error applying voucher:', error);
+      showVoucherMessage('Failed to apply voucher. Please try again.', 'error');
+    } finally {
+      applyBtn.disabled = false;
+      applyBtn.textContent = 'Apply';
+    }
+  }
+  
+  function showVoucherMessage(message: string, type: 'success' | 'error') {
+    const messageEl = document.getElementById('voucher-message') as HTMLParagraphElement;
+    if (!messageEl) return;
+    
+    messageEl.textContent = message;
+    messageEl.className = `voucher-message ${type}`;
+    messageEl.style.display = 'block';
+    
+    // Hide message after 5 seconds for success, keep error visible
+    if (type === 'success') {
+      setTimeout(() => {
+        messageEl.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  // Handle voucher input changes to enable/disable apply button
+  function handleVoucherInputChange() {
+    const voucherInput = document.getElementById('voucher-code') as HTMLInputElement;
+    const applyBtn = document.getElementById('apply-voucher-btn') as HTMLButtonElement;
+    
+    if (voucherInput && applyBtn) {
+      applyBtn.disabled = voucherInput.value.trim().length === 0;
+    }
+  }
+
   // Load PayPal config when page loads
   document.addEventListener('DOMContentLoaded', () => {
     showLoading();
     loadPayPalConfig();
+    
+    // Add event listener for voucher button
+    const applyVoucherBtn = document.getElementById('apply-voucher-btn');
+    if (applyVoucherBtn) {
+      applyVoucherBtn.addEventListener('click', applyVoucher);
+    }
+    
+    // Add event listener for free registration button
+    const completeFreeBtn = document.getElementById('complete-free-registration-btn');
+    if (completeFreeBtn) {
+      completeFreeBtn.addEventListener('click', processFreeRegistration);
+    }
+    
+    // Add event listener for check payment button
+    const checkPaymentBtn = document.getElementById('alternate-payment-btn');
+    if (checkPaymentBtn) {
+      checkPaymentBtn.addEventListener('click', processCheckPayment);
+    }
+    
+    // Allow pressing Enter in voucher input to apply
+    const voucherInput = document.getElementById('voucher-code');
+    if (voucherInput) {
+      voucherInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          applyVoucher();
+        }
+      });
+      
+      // Enable/disable apply button based on input value
+      voucherInput.addEventListener('input', handleVoucherInputChange);
+    }
   });
 </script>
 
@@ -387,11 +819,31 @@ import Layout from '../../layouts/Layout.astro';
     margin-top: 1rem;
   }
 
+  .subtotal-line,
+  .discount-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .discount-line {
+    color: #28a745;
+  }
+
+  .discount-amount {
+    font-weight: 600;
+    color: #28a745;
+  }
+
   .total-line {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 1.25rem;
+    padding-top: 0.5rem;
     font-weight: 600;
     color: #333;
   }
@@ -417,13 +869,55 @@ import Layout from '../../layouts/Layout.astro';
     margin-bottom: 1rem;
   }
 
+  .free-registration {
+    text-align: center;
+    padding: 2rem;
+    background: #d4edda;
+    border: 2px solid #c3e6cb;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .free-message {
+    font-size: 1.1rem;
+    color: #155724;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+
+  .complete-registration-btn {
+    background: var(--color-button-primary-background);
+    color: var(--color-button-primary-text);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: var(--radius-button);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .complete-registration-btn:hover {
+    background: var(--color-button-primary-hover-background);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .complete-registration-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+  }
+
   .payment-note {
     background: #f8f9fa;
     padding: 1rem;
     border-radius: 4px;
     text-align: center;
     color: #666;
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 
   .error-message {
@@ -448,5 +942,129 @@ import Layout from '../../layouts/Layout.astro';
       grid-template-columns: 1fr;
       gap: 1rem;
     }
+  }
+
+  .voucher-section {
+    margin-top: 2rem;
+  }
+  
+  .divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 2rem 0 1.5rem;
+  }
+  
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .divider span {
+    padding: 0 1rem;
+    color: #666;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+  }
+  
+  .voucher-input-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .voucher-input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .voucher-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .voucher-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+  }
+  
+  .voucher-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  }
+  
+  .apply-voucher-btn {
+    background: var(--color-button-secondary-background);
+    color: var(--color-button-secondary-text);
+    border: 1px solid var(--color-button-secondary-border);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-button);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  .apply-voucher-btn:hover {
+    background: var(--color-button-secondary-hover-background);
+    color: var(--color-button-secondary-hover-text);
+    border-color: var(--color-button-secondary-hover-border);
+  }
+  
+  .apply-voucher-btn:disabled {
+    background: var(--color-button-secondary-disabled-background);
+    color: var(--color-button-secondary-disabled-text);
+    border-color: var(--color-button-secondary-disabled-border);
+    cursor: not-allowed;
+  }
+  
+  .voucher-message {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .voucher-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  
+  .voucher-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+  
+  .alternate-payment {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+  
+  .alternate-payment-btn {
+    width: 100%;
+    background: var(--color-button-secondary-background);
+    color: var(--color-button-secondary-text);
+    border: 1px solid var(--color-button-secondary-border);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-button);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .alternate-payment-btn:hover {
+    background: var(--color-button-secondary-hover-background);
+    border-color: var(--color-button-secondary-hover-border);
+    color: var(--color-button-secondary-hover-text);
   }
 </style> 
