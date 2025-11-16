@@ -6,14 +6,9 @@ import ClassCard from '../components/ClassCard.astro';
 
 const events = await getCollection('events');
 
-// Sort events by start date
-const sortedEvents = events.sort((a: CollectionEntry<'events'>, b: CollectionEntry<'events'>) => {
-  return new Date(a.data.dtstart).getTime() - new Date(b.data.dtstart).getTime();
-});
-
-// Render markdown content for each board member
+// Render markdown content for each event
 const renderedEvents = await Promise.all(
-  sortedEvents.map(async (event: CollectionEntry<'events'>) => {
+  events.map(async (event: CollectionEntry<'events'>) => {
     const { Content } = await render(event);
     return {
       ...event,
@@ -32,8 +27,10 @@ const renderedEvents = await Promise.all(
         eventId={event.id}
         name={event.data.name}
         image={event.data.image}
-        dtstart={event.data.dtstart}
-        dtend={event.data.dtend}
+        startDate={event.data.startDate}
+        startTime={event.data.startTime}
+        duration={event.data.duration}
+        repeat={event.data.repeat}
         ageMin={event.data.ageMin}
         ageMax={event.data.ageMax}
         cost={event.data.cost}

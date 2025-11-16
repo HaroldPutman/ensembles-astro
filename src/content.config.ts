@@ -19,10 +19,24 @@ const events = defineCollection({
   schema: z.object({
     name: z.string(),
     instructors: z.array(z.string()),
-    dtstart: z.string(),
-    dtend: z.string().optional(),
-    duration: z.coerce.string().optional(),
-    rrule: z.string(),
+    startDate: z
+      .string()
+      .regex(/^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/\d{4}$/, {
+        message: 'startDate must be in MM/DD/YYYY format',
+      }),
+    startTime: z.string().regex(/^([1-9]|1[0-2]):[0-5][0-9]\s?(am|pm)?$/i, {
+      message:
+        'startTime must be in format H:MM, 24 hour time or specify AM/PM',
+    }),
+    duration: z
+      .union([z.string(), z.number()])
+      .transform(val => String(val))
+      .pipe(
+        z.string().regex(/^(\d+(:\d{2})?|(\d+H)?(\d+M)?)$/i, {
+          message: 'duration in minutes (90) or hh:mm (1:30) or 1h30m',
+        })
+      ),
+    repeat: z.string(),
     cost: z.number().optional(),
     kind: z.enum(['class', 'group', 'event']),
     ageMin: z.number().optional(),

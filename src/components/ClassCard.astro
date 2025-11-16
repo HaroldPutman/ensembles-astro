@@ -1,24 +1,30 @@
 ---
+import { getFirstAndLastDates, shortDescription } from '../lib/datelib';
+
 interface Props {
+  eventId: string;
   name: string;
   image?: string;
-  dtstart: string;
-  dtend: string;
+  startDate: string;
+  startTime: string;
+  duration: string;
+  repeat: string;
   ageMin?: number;
   ageMax?: number;
   cost?: number;
   instructors: string[];
 }
 
-const { name, eventId,image, dtstart, dtend, ageMin, ageMax, cost, instructors } = Astro.props;
+const { name, eventId, image, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors } = Astro.props;
 
-// Format the date range
-const startDate = new Date(dtstart);
-const endDate = new Date(dtend);
-const formattedDate = `${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
 ---
 
-<article class="class-card">
+<article
+  class="class-card"
+  data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
+  data-end={Math.floor(lastDate.epochMilliseconds / 1000)}
+>
   {image && (
     <div class="class-image">
       <img src={image} alt={name} />
@@ -29,10 +35,10 @@ const formattedDate = `${startDate.toLocaleDateString()} ${startDate.toLocaleTim
     <p>{eventId}</p>
     <div class="class-details">
       <p class="schedule">
-        <strong>When:</strong> {formattedDate}
+        {shortDescription(startDate, startTime, duration, repeat)}
       </p>
       <p class="instructors">
-        <strong>Instructors:</strong> {instructors.join(', ')}
+        <strong>Instructor:</strong> {instructors.join(', ')}
       </p>
       {ageMin && ageMax && (
         <p class="age-range">
