@@ -2,7 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
-import ClassCard from '../components/ClassCard.astro';
+import ActivityCard from '../components/ActivityCard.astro';
 
 const events = await getCollection('events');
 
@@ -23,7 +23,7 @@ const renderedEvents = await Promise.all(
   <section>
     <h1>Classes</h1>
     {renderedEvents.map((event) => (
-      <ClassCard
+      <ActivityCard
         eventId={event.id}
         name={event.data.name}
         image={event.data.image}
@@ -37,7 +37,7 @@ const renderedEvents = await Promise.all(
         instructors={event.data.instructors}
       >
         <event.Content />
-      </ClassCard>
+      </ActivityCard>
     ))}
   </section>
 </Layout>

@@ -21,19 +21,19 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
 ---
 
 <article
-  class="class-card"
+  class="activity-card"
   data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
   data-end={Math.floor(lastDate.epochMilliseconds / 1000)}
 >
   {image && (
-    <div class="class-image">
+    <div class="activity-image">
       <img src={image} alt={name} />
     </div>
   )}
-  <div class="class-content">
+  <div class="activity-content">
     <h2>{name}</h2>
     <p>{eventId}</p>
-    <div class="class-details">
+    <div class="activity-details">
       <p class="schedule">
         {shortDescription(startDate, startTime, duration, repeat)}
       </p>
@@ -58,7 +58,7 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
 </article>
 
 <style>
-  .class-card {
+  .activity-card {
     display: grid;
     grid-template-columns: 10rem 1fr;
     gap: 1.5rem;
@@ -69,30 +69,30 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
     transition: transform 0.2s, box-shadow 0.2s;
   }
 
-  .class-card:hover {
+  .activity-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
   
   @media (max-width: 768px) {
-    .class-card {
+    .activity-card {
       grid-template-columns: 1fr;
     }
   }
 
-  .class-image {
+  .activity-image {
     width: 100%;
     height: 10rem;
     overflow: hidden;
   }
 
-  .class-image img {
+  .activity-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .class-content {
+  .activity-content {
     padding: 1.5rem 1.5rem 1.5rem 0;
   }
 
@@ -102,11 +102,11 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
     color: #333;
   }
 
-  .class-details {
+  .activity-details {
     margin-bottom: 1rem;
   }
 
-  .class-details p {
+  .activity-details p {
     margin: 0.5rem 0;
     color: #666;
   }

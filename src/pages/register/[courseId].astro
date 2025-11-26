@@ -5,40 +5,40 @@ import { getCollection } from 'astro:content';
 import { shortDescription } from '../../lib/datelib';
 
 export async function getStaticPaths() {
-  const events = await getCollection('events');
-  console.log('Course IDs:', events.map(event => event.id));
-  return events.map(event => ({
+  const activities = await getCollection('activities');
+  console.log('Course IDs:', activities.map(activity => activity.id));
+  return activities.map(activity => ({
     // collection filenames get converted to lowercase ids
-    params: { courseId: event.id.toUpperCase() },
-    props: { event }
+    params: { courseId: activity.id.toUpperCase() },
+    props: { activity }
   }));
 }
 
 // Get the course ID from the URL parameters
 const { courseId } = Astro.params;
-const { event } = Astro.props;
+const { activity } = Astro.props;
 
-const description = shortDescription(event.data.dtstart, event.data.dtend, event.data.duration, event.data.rrule);
-const isFree = typeof event.data.cost === 'number' && event.data.cost === 0;
-const possessiveParticipant = event.data.kind === 'class' ? 'Student\'s' : 'Participant\'s';
+const description = shortDescription(activity.data.startDate, activity.data.startTime, activity.data.duration, activity.data.repeat);
+const isFree = typeof activity.data.cost === 'number' && activity.data.cost === 0;
+const possessiveParticipant = activity.data.kind === 'class' ? 'Student\'s' : 'Participant\'s';
 ---
 
 <Layout>
   <section class="registration-section">
-    <h1><span id="courseName">{event.data.name}</span></h1>
+    <h1><span id="courseName">{activity.data.name}</span></h1>
     <p class="intro">
-      Let's get registered. This {event.data.kind === 'class' 
+      Let's get registered. This {activity.data.kind === 'class' 
         ? 'class meets'
-        : event.data.kind === 'group'
+        : activity.data.kind === 'group'
           ? 'group meets'
           : 'event is happening'
       } {description}.
     </p>
-    {!isFree && event.data.cost && (
-      <p>The cost of the class is {event.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+    {!isFree && activity.data.cost && (
+      <p>The cost of the class is {activity.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
     )}
-    <form id="registration-form" class="registration-form" data-course-start={event.data.dtstart} 
-        data-course-min-age={event.data.ageMin} data-course-max-age={event.data.ageMax}>
+    <form id="registration-form" class="registration-form" data-course-start={activity.data.dtstart} 
+        data-course-min-age={activity.data.ageMin} data-course-max-age={activity.data.ageMax}>
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
       <div class="form-group">

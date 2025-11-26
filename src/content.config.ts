@@ -14,8 +14,8 @@ const board = defineCollection({
   }),
 });
 
-const events = defineCollection({
-  loader: glob({ pattern: '**/*.mdx', base: './collections/events' }),
+const activities = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './collections/activities' }),
   schema: z.object({
     name: z.string(),
     instructors: z.array(z.string()),
@@ -49,4 +49,4 @@ const events = defineCollection({
 });
 
 // 4. Export a single `collections` object to register your collection(s)
-export const collections = { board, events };
+export const collections = { board, activities };

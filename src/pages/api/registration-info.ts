@@ -84,11 +84,11 @@ export const POST: APIRoute = async ({ request }) => {
 
         const courseId = registrationResult.rows[0].course;
 
-        // Look up the course cost from the events collection
-        const events = await getCollection('events');
-        const event = events.find(e => e.id.toUpperCase() === courseId);
+        // Look up the course cost from the activities collection
+        const activities = await getCollection('activities');
+        const activity = activities.find(a => a.id.toUpperCase() === courseId);
 
-        if (!event) {
+        if (!activity) {
           return new Response(
             JSON.stringify({
               message: 'Course not found',
@@ -102,7 +102,7 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        const courseCost = event.data.cost || 0;
+        const courseCost = activity.data.cost || 0;
 
         // Update the registration with additional information
         await client.query(
