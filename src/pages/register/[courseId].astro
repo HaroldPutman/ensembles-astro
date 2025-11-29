@@ -9,7 +9,7 @@ export async function getStaticPaths() {
   console.log('Course IDs:', activities.map(activity => activity.id));
   return activities.map(activity => ({
     // collection filenames get converted to lowercase ids
-    params: { courseId: activity.id.toUpperCase() },
+    params: { courseId: activity.id.toLowerCase() },
     props: { activity }
   }));
 }

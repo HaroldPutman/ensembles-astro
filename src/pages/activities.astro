@@ -4,14 +4,14 @@ import type { CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import ActivityCard from '../components/ActivityCard.astro';
 
-const events = await getCollection('events');
+const activities = await getCollection('activities');
 
 // Render markdown content for each event
-const renderedEvents = await Promise.all(
-  events.map(async (event: CollectionEntry<'events'>) => {
-    const { Content } = await render(event);
+const renderedActivities = await Promise.all(
+  activities.map(async (activity: CollectionEntry<'activities'>) => {
+    const { Content } = await render(activity);
     return {
-      ...event,
+      ...activity,
       Content
     };
   })
@@ -22,21 +22,21 @@ const renderedEvents = await Promise.all(
 <Layout>
   <section>
     <h1>Classes</h1>
-    {renderedEvents.map((event) => (
+    {renderedActivities.map((activity) => (
       <ActivityCard
-        eventId={event.id}
-        name={event.data.name}
-        image={event.data.image}
-        startDate={event.data.startDate}
-        startTime={event.data.startTime}
-        duration={event.data.duration}
-        repeat={event.data.repeat}
-        ageMin={event.data.ageMin}
-        ageMax={event.data.ageMax}
-        cost={event.data.cost}
-        instructors={event.data.instructors}
+        activityId={activity.id}
+        name={activity.data.name}
+        image={activity.data.image}
+        startDate={activity.data.startDate}
+        startTime={activity.data.startTime}
+        duration={activity.data.duration}
+        repeat={activity.data.repeat}
+        ageMin={activity.data.ageMin}
+        ageMax={activity.data.ageMax}
+        cost={activity.data.cost}
+        instructors={activity.data.instructors}
       >
-        <event.Content />
+        <activity.Content />
       </ActivityCard>
     ))}
   </section>

@@ -86,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Look up the course cost from the activities collection
         const activities = await getCollection('activities');
-        const activity = activities.find(a => a.id.toUpperCase() === courseId);
+        const activity = activities.find(a => a.id.toLowerCase() === courseId);
 
         if (!activity) {
           return new Response(

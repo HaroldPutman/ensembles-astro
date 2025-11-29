@@ -220,7 +220,7 @@ export const POST: APIRoute = async ({ request }) => {
               const activitiesMap = new Map();
               activities.forEach((activity: any) => {
                 activitiesMap.set(
-                  activity.id.toUpperCase(),
+                  activity.id.toLowerCase(),
                   activity.data.kind
                 );
               });
@@ -240,7 +240,7 @@ export const POST: APIRoute = async ({ request }) => {
                   }
 
                   const courseKind = activitiesMap.get(
-                    courseId.toString().toUpperCase()
+                    courseId.toString().toLowerCase()
                   );
 
                   if (courseKind === voucher.applies_to) {

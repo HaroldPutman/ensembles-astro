@@ -86,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
         const activities = await getCollection('activities');
         const activitiesMap = new Map();
         activities.forEach((activity: any) => {
-          activitiesMap.set(activity.id.toUpperCase(), {
+          activitiesMap.set(activity.id.toLowerCase(), {
             name: activity.data.name,
             kind: activity.data.kind,
           });

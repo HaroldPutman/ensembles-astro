@@ -18,7 +18,7 @@ const activities = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './collections/activities' }),
   schema: z.object({
     name: z.string(),
-    instructors: z.array(z.string()),
+    instructors: z.array(z.string()).optional().default([]),
     startDate: z
       .string()
       .regex(/^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/\d{4}$/, {
