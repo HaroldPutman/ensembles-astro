@@ -1,0 +1,123 @@
+---
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro Basics</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<Header />
+		<main class="full-width">
+			<slot />
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--font-primary: "Public Sans", -apple-system, BlinkMacSystemFont,
+			"Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+		--color-button-primary-background: #2C2E2F;
+		--color-button-primary-text: #FAFDFE;
+		--color-button-primary-border: #6E7071;
+		--color-button-primary-hover-background: #6E7071;
+		--color-button-primary-hover-text: #fff;
+		--color-button-primary-hover-border: #2C2E2F;
+		--color-button-primary-disabled-background: #ADAFB1;
+		--color-button-primary-disabled-text: #000;
+		--color-button-primary-disabled-border: #838586;
+		--color-button-secondary-background: #FAFDFE;
+		--color-button-secondary-text: #2C2E2F;
+		--color-button-secondary-border: #6E7071;
+		--color-button-secondary-hover-background: #f0f3f4;
+		--color-button-secondary-hover-text: #4e5051;
+		--color-button-secondary-hover-border: #6E7071;
+		--color-button-secondary-disabled-background: #ECEEEF;
+		--color-button-secondary-disabled-text: #6E7071;
+		--color-button-secondary-disabled-border: #ECEEEF;
+		--radius-button: 3px;
+	}
+
+	html {
+		font-family: var(--font-primary);
+		font-size: 18px;
+		-webkit-text-size-adjust: 100%;
+		-moz-text-size-adjust: 100%;
+		text-size-adjust: 100%;
+	}
+
+	body {
+		margin: 0;
+		padding: 0;
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	main.full-width {
+		width: 100%;
+		padding: 0;
+	}
+
+	main.full-width > section {
+		width: 100%;
+		padding: 2rem 1rem;
+	}
+
+	h1 {
+		font-size: 2.5rem;
+		margin-bottom: 1rem;
+		color: #333;
+	}
+
+	h2 {
+		font-size: 1.75rem;
+		color: #333;
+		margin: 2rem 0 1rem;
+	}
+
+	h3 {
+		font-size: 1.25rem;
+		color: #444;
+		margin: 1.5rem 0 1rem;
+	}
+
+	/* Optional: Ensure all text inherits the font */
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+
+	/* Optional: Improve text rendering */
+	@media (prefers-reduced-motion: no-preference) {
+		html {
+			scroll-behavior: smooth;
+		}
+	}
+
+	@media (max-width: 768px) {
+		main.full-width > section {
+			padding: 1rem;
+		}
+		h1 {
+			font-size: 2rem;
+			margin-bottom: 2rem;
+		}
+	}
+</style>
+

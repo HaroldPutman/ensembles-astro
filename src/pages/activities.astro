@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
-import Layout from '../layouts/Layout.astro';
+import FullWidthLayout from '../layouts/FullWidthLayout.astro';
 import ActivityCard from '../components/ActivityCard.astro';
 
 const activities = await getCollection('activities');
@@ -19,66 +19,67 @@ const renderedActivities = await Promise.all(
 ---
 
 
-<Layout>
-  <section>
+<FullWidthLayout>
+  <section class="activities-section">
     <h1>Classes</h1>
-    {renderedActivities.map((activity) => (
-      <ActivityCard
-        activityId={activity.id}
-        name={activity.data.name}
-        image={activity.data.image}
-        startDate={activity.data.startDate}
-        startTime={activity.data.startTime}
-        duration={activity.data.duration}
-        repeat={activity.data.repeat}
-        ageMin={activity.data.ageMin}
-        ageMax={activity.data.ageMax}
-        cost={activity.data.cost}
-        instructors={activity.data.instructors}
-      >
-        <activity.Content />
-      </ActivityCard>
-    ))}
+    <div class="activities-grid">
+      {renderedActivities.map((activity) => (
+        <ActivityCard
+          activityId={activity.id}
+          name={activity.data.name}
+          image={activity.data.image}
+          startDate={activity.data.startDate}
+          startTime={activity.data.startTime}
+          duration={activity.data.duration}
+          repeat={activity.data.repeat}
+          ageMin={activity.data.ageMin}
+          ageMax={activity.data.ageMax}
+          cost={activity.data.cost}
+          instructors={activity.data.instructors}
+        >
+          <activity.Content />
+        </ActivityCard>
+      ))}
+    </div>
   </section>
-</Layout>
+</FullWidthLayout>
 
 <style>
+  .activities-section {
+    padding: 2rem;
+  }
+
   h1 {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
     font-size: 2.5rem;
     color: #333;
+    padding: 0 1rem;
   }
 
-  .event-group {
-    margin-bottom: 4rem;
-  }
-
-  h2 {
-    font-size: 2rem;
-    color: #444;
-    margin-bottom: 2rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #eee;
-  }
-
-  .events-grid {
+  .activities-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, 320px);
     gap: 2rem;
+    padding: 0 1rem;
+    justify-content: center;
   }
 
-  /* Mobile styles */
+  /* Responsive breakpoints */
   @media (max-width: 768px) {
-    .events-grid {
-      grid-template-columns: 1fr;
+    .activities-section {
+      padding: 1rem;
+    }
+
+    .activities-grid {
+      grid-template-columns: 320px;
+      padding: 0;
+      justify-content: center;
     }
 
     h1 {
       font-size: 2rem;
-    }
-
-    h2 {
-      font-size: 1.75rem;
+      padding: 0;
+      text-align: center;
     }
   }
 </style> 
