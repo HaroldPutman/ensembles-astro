@@ -10,20 +10,21 @@ interface Props {
   duration: string;
   repeat: string;
   ageMin?: number;
-  ageMax?: number;
+  ageMax?: number | 'adult';
   cost?: number;
   instructors: string[];
 }
 
-const { name, image, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors } = Astro.props;
+const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors } = Astro.props;
 
 const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
+const isUpcoming = firstDate.epochMilliseconds > Date.now();
 ---
 
 <article
   class="activity-card"
   data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
-  data-end={Math.floor(lastDate.epochMilliseconds / 1000)}
+  data-end={lastDate ? Math.floor(lastDate.epochMilliseconds / 1000) : Math.floor(firstDate.epochMilliseconds / 1000)}
 >
   <div class="activity-image">
     <img src="https://picsum.photos/960/420" alt={name} />
@@ -34,20 +35,25 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
       <p class="schedule">
         {shortDescription(startDate, startTime, duration, repeat)}
       </p>
-      <p class="instructors">
-        <strong>Instructor:</strong> {instructors.join(', ')}
-      </p>
-      {ageMin && ageMax && (
+      {instructors.length > 0 && (
+        <p class="instructors">
+          <strong>Instructor:</strong> {instructors.join(', ')}
+        </p>
+      )}
+      {isUpcoming && ageMin && ageMax && (
         <p class="age-range">
           <strong>Ages:</strong> {ageMin}-{ageMax}
         </p>
       )}
-      {cost !== undefined && (
+      {isUpcoming && cost !== undefined && (
         <p class="cost">
           <strong>Cost:</strong> {cost === 0 ? 'Free' : `$${cost}`}
         </p>
       )}
     </div>
+    {isUpcoming && (
+      <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+    )}
   </div>
 </article>
 
@@ -108,6 +114,26 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
 
   .activity-details strong {
     color: #333;
+  }
+
+  .register-btn {
+    display: block;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: var(--color-button-primary-background);
+    color: var(--color-button-primary-text);
+    border: 2px solid var(--color-button-primary-border);
+    border-radius: var(--radius-button);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .register-btn:hover {
+    background: var(--color-button-primary-hover-background);
+    color: var(--color-button-primary-hover-text);
+    border-color: var(--color-button-primary-hover-border);
   }
 
   </style> 

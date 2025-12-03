@@ -163,12 +163,12 @@ describe('datelib', () => {
     it('should return a short description of a 6 week class', () => {
       expect(
         shortDescription(
-          '8/7/2025',
+          '11/3/2025',
           '12:30',
           '1h',
-          'FREQ=WEEKLY;BYDAY=TH;COUNT=6'
+          'FREQ=WEEKLY;BYDAY=MO;COUNT=6;EXDATE=11/24/2025'
         )
-      ).toBe('Aug 7 - Sep 11, Thursdays 12:30 PM - 1:30 PM');
+      ).toBe('Mondays 12:30 PM - 1:30 PM, Nov 3 - Dec 15');
     });
   });
 });

@@ -73,6 +73,18 @@ export function makeICalTime(time: string) {
 }
 
 /**
+ * Get the hour and minute from a time string
+ * @param time - The time string to get the hour and minute from
+ * @returns The hour and minute as an object
+ */
+export function getHourAndMinute(time: string) {
+  const iCalTime = makeICalTime(time);
+  return {
+    hour: parseInt(iCalTime.slice(0, 2), 10),
+    minute: parseInt(iCalTime.slice(2, 4), 10),
+  };
+}
+/**
  * Make a date string in the format of YYYYMMDD
  * We assume the input is in correct format because it is validated in the content.config.
  * @param date - The date string to make in the format of YYYYMMDD
@@ -181,7 +193,7 @@ function getFirstDate(
   startTime: string,
   duration: string,
   repeat: string
-) {
+): Temporal.ZonedDateTime {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
     rruleString,
@@ -196,14 +208,18 @@ function getFirstDate(
  * @param startTime - The start time of the event hh:mm string
  * @param duration - The duration of the event in minutes, hh:mm string, or 1h30m string
  * @param repeat - Event repeat rules
- * @returns An array of Temporal.ZonedDateTime objects containing the first and last dates of the event
+ * @returns An array of Temporal.ZonedDateTime objects containing the first and last dates of the event and the count of events.
  */
 export function getFirstAndLastDates(
   startDate: string,
   startTime: string,
   duration: string,
   repeat: string
-) {
+): [
+  Temporal.ZonedDateTime,
+  Temporal.ZonedDateTime | undefined,
+  number | undefined,
+] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
     rruleString,
@@ -211,10 +227,10 @@ export function getFirstAndLastDates(
   const options = rruleTemporal.options();
   const hasEnd = options.until !== undefined || options.count !== undefined;
   if (hasEnd) {
-    const all = rruleTemporal.all();
-    return [all[0], all[all.length - 1]];
+    const all = rruleTemporal.all((_dt, i) => i < 100);
+    return [all[0], all[all.length - 1], all.length];
   } else {
-    return rruleTemporal.all((_dt, i) => i < 1);
+    return [rruleTemporal.all((_dt, i) => i < 1)[0], undefined, undefined];
   }
 }
 
@@ -289,7 +305,7 @@ export function shortDescription(
   duration: string,
   repeat: string
 ) {
-  const [firstDate, lastDate] = getFirstAndLastDates(
+  const [firstDate, lastDate, count] = getFirstAndLastDates(
     startDate,
     startTime,
     duration,
@@ -299,20 +315,25 @@ export function shortDescription(
     month: 'short',
     day: 'numeric',
   });
-  const endDateString = lastDate.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
   const dayOfWeek = getDayOfWeek(firstDate);
   const startTimeString = firstDate.toLocaleString('en-US', {
     timeStyle: 'short',
   });
-
-  // Calculate end time by adding duration to first date
   const durationISO = makeICalDuration(duration);
   const firstDateEndTime = firstDate.add(Temporal.Duration.from(durationISO));
   const firstDateEndTimeString = firstDateEndTime.toLocaleString('en-US', {
     timeStyle: 'short',
   });
-  return `${startDateString} - ${endDateString}, ${dayOfWeek}s ${startTimeString} - ${firstDateEndTimeString}`;
+  if (count === 1) {
+    return `${dayOfWeek} ${startDateString}, ${startTimeString} - ${firstDateEndTimeString}`;
+  }
+  const endDateString = lastDate
+    ? lastDate.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
+    : '';
+
+  // Calculate end time by adding duration to first date
+  return `${dayOfWeek}s ${startTimeString} - ${firstDateEndTimeString}, ${startDateString} - ${endDateString}`;
 }

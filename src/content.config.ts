@@ -40,7 +40,7 @@ const activities = defineCollection({
     cost: z.number().optional(),
     kind: z.enum(['class', 'group', 'event']),
     ageMin: z.number().optional(),
-    ageMax: z.number().optional(),
+    ageMax: z.union([z.number().int().min(0), z.literal('adult')]).optional(),
     sizeMax: z.number().optional(),
     question: z.string().optional(),
     suggestedDonation: z.number().optional(),
