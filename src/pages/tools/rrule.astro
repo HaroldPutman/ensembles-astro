@@ -1,10 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
 ---
 
 <Layout title="RRule Tester">
   <main>
-    <h1>Repeating Event Generator</h1>
+    <h1><Icon name="mdi:test-tube" /> Repeating Event Generator</h1>
     <p>Test your event repeat rules to see when events will occur.</p>
 
     <div class="container">
@@ -214,6 +215,9 @@ import Layout from '../../layouts/Layout.astro';
   h1 {
     color: #333;
     margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   h2 {
