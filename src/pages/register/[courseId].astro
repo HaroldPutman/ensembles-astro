@@ -2,6 +2,7 @@
 
 import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
+import { getFirstDate } from '../../lib/datelib';
 import ActivityDateTime from '../../components/ActivityDateTime.astro';
 
 export async function getStaticPaths() {
@@ -20,6 +21,8 @@ const { activity } = Astro.props;
 
 const isFree = typeof activity.data.cost === 'number' && activity.data.cost === 0;
 const possessiveParticipant = activity.data.kind === 'class' ? 'Student' : 'Participant';
+const firstDate = getFirstDate(activity.data.startDate, activity.data.startTime, activity.data.duration, activity.data.repeat);
+const dtstart = firstDate.toPlainDate().toString();
 ---
 
 <Layout>
@@ -31,8 +34,8 @@ const possessiveParticipant = activity.data.kind === 'class' ? 'Student' : 'Part
     {!isFree && activity.data.cost && (
       <p>The cost of the class is {activity.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
     )}
-    <form id="registration-form" class="registration-form" data-course-start={activity.data.dtstart} 
-        data-course-min-age={activity.data.ageMin} data-course-max-age={activity.data.ageMax}>
+    <form id="registration-form" class="registration-form" data-course-start={dtstart} 
+        data-course-min-age={activity.data.minAge} data-course-max-age={activity.data.maxAge}>
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
       <div class="form-group">
@@ -83,19 +86,25 @@ const possessiveParticipant = activity.data.kind === 'class' ? 'Student' : 'Part
 
   function calculateAge(birthdate: Date) {
       const courseStart = form?.getAttribute('data-course-start');
-      const dateMatch = courseStart?.match(/^(\d{4})(\d{2})(\d{2})(T|$)/);
-      let refDay;
-      if (dateMatch) {
-        const year = parseInt(dateMatch[1]);
-        const month = parseInt(dateMatch[2]) - 1;
-        const day = parseInt(dateMatch[3]);
+      const dateParts = courseStart?.split('-');
+      let refDay = new Date();
+      if (dateParts) {
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1;
+        const day = parseInt(dateParts[2]);
         refDay = new Date(year, month, day);
       } else {
-        console.error('Invalid course start date:', courseStart);
-        refDay = new Date();
+        console.error('Something went wrong with the course start date:', courseStart);
       }
-      const diff = refDay.getTime() - birthdate.getTime();
-      return Math.floor(diff / 31557600000);
+      let age = refDay.getFullYear() - birthdate.getFullYear();
+      // If birthday hasn't occurred yet this year as of refDay, subtract 1
+      if (
+        refDay.getMonth() < birthdate.getMonth() ||
+        (refDay.getMonth() === birthdate.getMonth() && refDay.getDate() < birthdate.getDate())
+      ) {
+        age--;
+      }
+      return age;
   }
 
   function validBirthdate(birthdateStr: string) {

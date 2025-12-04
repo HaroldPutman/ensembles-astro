@@ -207,7 +207,7 @@ export function buildRRuleString(
  * @param repeat - Event repeat rules
  * @returns The first date of the event
  */
-function getFirstDate(
+export function getFirstDate(
   startDate: string,
   startTime: string,
   duration: string,
