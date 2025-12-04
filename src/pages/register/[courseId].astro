@@ -35,7 +35,7 @@ const dtstart = firstDate.toPlainDate().toString();
       <p>The cost of the class is {activity.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
     )}
     <form id="registration-form" class="registration-form" data-course-start={dtstart} 
-        data-course-min-age={activity.data.minAge} data-course-max-age={activity.data.maxAge}>
+        data-course-age-min={activity.data.ageMin} data-course-age-max={activity.data.ageMax}>
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
       <div class="form-group">
@@ -84,6 +84,11 @@ const dtstart = firstDate.toPlainDate().toString();
   const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
   const birthdateInput = document.getElementById('birthdate');
 
+  /**
+   * Calculate the age of student at the course start date. 
+   * @param birthdate - the birthdate to calculate the age of
+   * @returns the age of the student as a floating point number. 
+   */
   function calculateAge(birthdate: Date) {
       const courseStart = form?.getAttribute('data-course-start');
       const dateParts = courseStart?.split('-');
@@ -96,14 +101,9 @@ const dtstart = firstDate.toPlainDate().toString();
       } else {
         console.error('Something went wrong with the course start date:', courseStart);
       }
-      let age = refDay.getFullYear() - birthdate.getFullYear();
-      // If birthday hasn't occurred yet this year as of refDay, subtract 1
-      if (
-        refDay.getMonth() < birthdate.getMonth() ||
-        (refDay.getMonth() === birthdate.getMonth() && refDay.getDate() < birthdate.getDate())
-      ) {
-        age--;
-      }
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const daysOld = (refDay.getTime() - birthdate.getTime()) / msPerDay;
+      const age = daysOld / 365;
       return age;
   }
 
@@ -135,8 +135,8 @@ const dtstart = firstDate.toPlainDate().toString();
     if (birthdate) {
       const ageFudgeFactor = 0.5833; // 7 months
       const age = calculateAge(birthdate);
-      const minAge = parseInt(form?.getAttribute('data-course-min-age') || '0');
-      const maxAge = parseInt(form?.getAttribute('data-course-max-age') || '150');
+      const minAge = parseInt(form?.getAttribute('data-course-age-min') || '0');
+      const maxAge = parseInt(form?.getAttribute('data-course-age-max') || '199');
       if (age + ageFudgeFactor < minAge) {
         target.setCustomValidity(`Student must be at least ${minAge} years old`);
       } else if (age - ageFudgeFactor > maxAge) {
@@ -145,7 +145,14 @@ const dtstart = firstDate.toPlainDate().toString();
         target.setCustomValidity('');
       }
       target.value = birthdate.toLocaleDateString('en-US');
+    } else if (target.value.trim()) {
+      // Invalid date format entered
+      target.setCustomValidity('Please enter a valid birth date (e.g., 01/15/2010)');
+    } else {
+      // Empty field - let required validation handle it
+      target.setCustomValidity('');
     }
+    target.reportValidity();
   });
 
   form?.addEventListener('submit', async (e) => {
