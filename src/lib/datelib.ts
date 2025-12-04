@@ -65,10 +65,29 @@ export function makeICalTime(time: string) {
   // Trim and normalize string
   const normalized = time.trim().toUpperCase();
 
-  let [hours, minutes] = normalized.split(':').map(a => parseInt(a, 10));
-  if (normalized.endsWith('PM') && hours < 12) {
+  // Extract AM/PM suffix
+  const suffixMatch = normalized.match(/AM|PM$/);
+  const suffix = suffixMatch ? suffixMatch[0] : null;
+
+  // Remove the suffix for parsing
+  const timeWithoutSuffix = normalized.replace(/AM|PM$/, '').trim();
+
+  // Parse hours and minutes
+  const parts = timeWithoutSuffix.split(':');
+  let hours = parseInt(parts[0], 10);
+  let minutes = parts[1] ? parseInt(parts[1], 10) : 0;
+
+  // Validate and default
+  if (isNaN(hours)) hours = 0;
+  if (isNaN(minutes)) minutes = 0;
+
+  // Apply 12-hour rules
+  if (suffix === 'AM' && hours === 12) {
+    hours = 0;
+  } else if (suffix === 'PM' && hours < 12) {
     hours += 12;
   }
+
   return `${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}00`;
 }
 

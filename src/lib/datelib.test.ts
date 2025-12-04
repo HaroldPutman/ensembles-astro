@@ -134,6 +134,12 @@ describe('datelib', () => {
     it('should make a time string in the format of HH:MM:SS with 12:00 PM', () => {
       expect(makeICalTime('12:00 PM')).toBe('120000');
     });
+    it('should convert 12:00 AM to midnight (000000)', () => {
+      expect(makeICalTime('12:00 AM')).toBe('000000');
+    });
+    it('should convert 12:30 PM to noon (123000)', () => {
+      expect(makeICalTime('12:30 PM')).toBe('123000');
+    });
   });
 
   describe('makeICalDate', () => {
