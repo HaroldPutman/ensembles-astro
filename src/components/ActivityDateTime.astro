@@ -1,0 +1,116 @@
+---
+import {
+  getFirstAndLastDates,
+  getDayOfWeek,
+  makeICalDuration,
+} from '../lib/datelib';
+import { Temporal } from '@js-temporal/polyfill';
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  startDate: string;
+  startTime: string;
+  duration: string;
+  repeat: string;
+  class?: string;
+}
+
+const {
+  startDate,
+  startTime,
+  duration,
+  repeat,
+  class: className,
+} = Astro.props;
+
+const [firstDate, lastDate, count, exDate] = getFirstAndLastDates(
+  startDate,
+  startTime,
+  duration,
+  repeat
+);
+
+const startDateString = firstDate.toLocaleString('en-US', {
+  month: 'short',
+  day: 'numeric',
+});
+const exDateString = exDate
+  ? exDate.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    })
+  : '';
+const dayOfWeek = getDayOfWeek(firstDate);
+const startTimeString = firstDate.toLocaleString('en-US', {
+  timeStyle: 'short',
+});
+const durationISO = makeICalDuration(duration);
+const firstDateEndTime = firstDate.add(Temporal.Duration.from(durationISO));
+const firstDateEndTimeString = firstDateEndTime.toLocaleString('en-US', {
+  timeStyle: 'short',
+});
+let adjStartTimeString = startTimeString;
+if (
+  startTimeString.slice(-3) === firstDateEndTimeString.slice(-3)
+) {
+  adjStartTimeString = startTimeString.slice(0, -3);
+}
+const endDateString = lastDate
+  ? lastDate.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    })
+  : '';
+---
+
+<div class:list={['activity-datetime', className]}>
+  {
+    count === 1 ? (
+      <p class="single-line">
+        <Icon name="mdi:calendar" /> {dayOfWeek} {startDateString},{' '}
+        {adjStartTimeString} - {firstDateEndTimeString}
+      </p>
+    ) : (
+      <>
+        <p class="time-line">
+          <Icon name="mdi:access-time" /> {dayOfWeek}s {adjStartTimeString} -{' '}
+          {firstDateEndTimeString}
+        </p>
+        <p class="date-line">
+          <Icon name="mdi:calendar-repeat" /> {startDateString} -{' '}
+          {endDateString}
+        </p>
+        {exDateString && (
+          <p class="exception-line">
+            Not meeting on {exDateString}
+          </p>
+        )}
+      </>
+    )
+  }
+</div>
+
+<style>
+  .activity-datetime {
+    line-height: 1.4;
+  }
+
+  .time-line,
+  .date-line,
+  .exception-line,
+  .single-line {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin: 0;
+    color: #333;
+    font-size: 0.95em;
+  }
+  .single-line {
+    font-size: 0.9em;
+  }
+  .exception-line {
+    font-style: italic;
+    padding-left: 1.3em;
+  }
+</style>

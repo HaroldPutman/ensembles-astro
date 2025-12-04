@@ -82,21 +82,21 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Get events collection to map course IDs to course names and kinds
-        const events = await getCollection('events');
-        const eventsMap = new Map();
-        events.forEach(event => {
-          eventsMap.set(event.id.toUpperCase(), {
-            name: event.data.name,
-            kind: event.data.kind
+        // Get activities collection to map course IDs to course names and kinds
+        const activities = await getCollection('activities');
+        const activitiesMap = new Map();
+        activities.forEach((activity: any) => {
+          activitiesMap.set(activity.id.toLowerCase(), {
+            name: activity.data.name,
+            kind: activity.data.kind,
           });
         });
 
         // Process registrations and calculate totals
         const registrations = registrationsResult.rows.map(row => {
-          const eventData = eventsMap.get(row.course);
-          const courseName = eventData?.name || row.course;
-          const courseKind = eventData?.kind || null;
+          const activityData = activitiesMap.get(row.course);
+          const courseName = activityData?.name || row.course;
+          const courseKind = activityData?.kind || null;
           const cost = parseFloat(row.cost) || 0;
           const donation = parseFloat(row.donation) || 0;
 

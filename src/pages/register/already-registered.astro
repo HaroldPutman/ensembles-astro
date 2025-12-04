@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
 
 // Get the student name and course from URL parameters
 const url = new URL(Astro.request.url);
@@ -13,10 +14,7 @@ const courseId = url.searchParams.get('courseId') || 'this class';
   <section class="already-registered-section">
     <div class="already-registered-content">
       <div class="info-icon">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="#2196F3" stroke-width="2"/>
-          <path d="M12 16v-4M12 8h.01" stroke="#2196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <Icon name="mdi:emoticon-happy-outline" width="96" height="96"/>
       </div>
       
       <h1>Good News!</h1>
@@ -35,7 +33,7 @@ const courseId = url.searchParams.get('courseId') || 'this class';
       </div>
       
       <div class="action-buttons">
-        <a href="/events" class="btn btn-primary">View More Events</a>
+        <a href="/activities" class="btn btn-primary">View More Activities</a>
         <a href="/" class="btn btn-secondary">Return Home</a>
       </div>
     </div>
@@ -59,6 +57,9 @@ const courseId = url.searchParams.get('courseId') || 'this class';
 
   .info-icon {
     margin-bottom: 1.5rem;
+    svg {
+      color: #2196F3;
+    }
   }
 
   h1 {

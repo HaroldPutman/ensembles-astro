@@ -1,0 +1,138 @@
+---
+import { getFirstAndLastDates, shortDescription } from '../lib/datelib';
+import ActivityDateTime from './ActivityDateTime.astro';
+
+interface Props {
+  activityId: string;
+  name: string;
+  image?: string;
+  startDate: string;
+  startTime: string;
+  duration: string;
+  repeat: string;
+  ageMin?: number;
+  ageMax?: number | 'adult';
+  cost?: number;
+  instructors: string[];
+}
+
+const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors } = Astro.props;
+
+const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
+const isUpcoming = firstDate.epochMilliseconds > Date.now();
+---
+
+<article
+  class="activity-card"
+  data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
+  data-end={lastDate ? Math.floor(lastDate.epochMilliseconds / 1000) : Math.floor(firstDate.epochMilliseconds / 1000)}
+>
+  <div class="activity-image">
+    <img src="https://picsum.photos/960/420" alt={name} />
+  </div>
+  <div class="activity-content">
+    <h2>{name}</h2>
+    <div class="activity-details">
+      <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
+      {instructors.length > 0 && (
+        <p class="instructors">
+          <strong>Instructor:</strong> {instructors.join(', ')}
+        </p>
+      )}
+      {isUpcoming && ageMin && ageMax && (
+        <p class="age-range">
+          <strong>Ages:</strong> {ageMin}-{ageMax}
+        </p>
+      )}
+      {isUpcoming && cost !== undefined && (
+        <p class="cost">
+          <strong>Cost:</strong> {cost === 0 ? 'Free' : `$${cost}`}
+        </p>
+      )}
+    </div>
+    {isUpcoming && (
+      <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+    )}
+  </div>
+</article>
+
+<style>
+  .activity-card {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+  }
+
+  .activity-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .activity-image {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    background: #f0f0f0;
+  }
+
+  .activity-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .activity-content {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .activity-details {
+    flex: 1;
+  }
+
+  .activity-details p {
+    margin: 0.75rem 0;
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .activity-details strong {
+    color: #333;
+  }
+
+  .register-btn {
+    display: block;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: var(--color-button-primary-background);
+    color: var(--color-button-primary-text);
+    border: 2px solid var(--color-button-primary-border);
+    border-radius: var(--radius-button);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .register-btn:hover {
+    background: var(--color-button-primary-hover-background);
+    color: var(--color-button-primary-hover-text);
+    border-color: var(--color-button-primary-hover-border);
+  }
+
+  </style> 

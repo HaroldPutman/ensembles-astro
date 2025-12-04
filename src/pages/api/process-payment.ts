@@ -14,7 +14,10 @@ async function getDbConnection() {
     max: 1,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 10000,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
   });
 
   return pool;
@@ -50,8 +53,15 @@ export const POST: APIRoute = async ({ request }) => {
       paymentMethod,
       voucherId,
     } = body;
-    
-    console.log('Parsed values:', { registrationIds, paypalOrderId, paypalPayerId, totalAmount, paymentMethod, voucherId });
+
+    console.log('Parsed values:', {
+      registrationIds,
+      paypalOrderId,
+      paypalPayerId,
+      totalAmount,
+      paymentMethod,
+      voucherId,
+    });
 
     // Validate required fields
     if (
@@ -73,7 +83,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate payment method
-    if (paymentMethod !== 'paypal' && paymentMethod !== 'none' && paymentMethod !== 'check') {
+    if (
+      paymentMethod !== 'paypal' &&
+      paymentMethod !== 'none' &&
+      paymentMethod !== 'check'
+    ) {
       return new Response(
         JSON.stringify({
           message: 'Invalid payment method',
@@ -139,7 +153,7 @@ export const POST: APIRoute = async ({ request }) => {
           `SELECT id, course, cost, donation FROM registration WHERE id = ANY($1)`,
           [registrationIds]
         );
-        
+
         console.log('Registration query returned:', registrationsResult.rows);
 
         if (registrationsResult.rows.length !== registrationIds.length) {
@@ -159,90 +173,136 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Calculate expected total
         let expectedTotal = registrationsResult.rows.reduce((sum, row) => {
-          console.log({row, sum});
+          console.log({ row, sum });
           return (
-            sum + (parseFloat(row.cost) || 0) + (row.donation ? parseFloat(row.donation) : 0)
+            sum +
+            (parseFloat(row.cost) || 0) +
+            (row.donation ? parseFloat(row.donation) : 0)
           );
         }, 0);
-        
+
         console.log('Original expected total:', expectedTotal);
 
         // If a voucher is applied, subtract the discount from expected total
         if (voucherId) {
-          console.log('Voucher ID provided:', voucherId, 'Type:', typeof voucherId);
-          
+          console.log(
+            'Voucher ID provided:',
+            voucherId,
+            'Type:',
+            typeof voucherId
+          );
+
           const voucherResult = await client.query(
             `SELECT percentage, amount, applies_to FROM voucher WHERE id = $1`,
             [voucherId]
           );
-          
-          console.log('Voucher query result rows count:', voucherResult.rows.length);
+
+          console.log(
+            'Voucher query result rows count:',
+            voucherResult.rows.length
+          );
           if (voucherResult.rows.length > 0) {
             console.log('Voucher found:', voucherResult.rows[0]);
           } else {
             console.log('No voucher found with ID:', voucherId);
           }
-          
+
           if (voucherResult.rows.length > 0) {
             const voucher = voucherResult.rows[0];
             let discountableTotal = expectedTotal;
-            
+
             // If applies_to is set, only apply discount to matching course kinds
             if (voucher.applies_to) {
               console.log('Voucher applies only to kind:', voucher.applies_to);
-              
-              // Get events collection to check course kinds
-              const events = await getCollection('events');
-              const eventsMap = new Map();
-              events.forEach(event => {
-                eventsMap.set(event.id.toUpperCase(), event.data.kind);
+
+              // Get activities collection to check course kinds
+              const activities = await getCollection('activities');
+              const activitiesMap = new Map();
+              activities.forEach((activity: any) => {
+                activitiesMap.set(
+                  activity.id.toLowerCase(),
+                  activity.data.kind
+                );
               });
-              
+
               // Calculate total only for registrations with matching course kind
-              discountableTotal = registrationsResult.rows.reduce((sum, row) => {
-                const courseId = row.course;
-                
-                // Safety check - skip if courseId is missing
-                if (!courseId) {
-                  console.log('Warning: Registration missing course ID:', row);
-                  return sum;
-                }
-                
-                const courseKind = eventsMap.get(courseId.toString().toUpperCase());
-                
-                if (courseKind === voucher.applies_to) {
-                  const cost = (parseFloat(row.cost) || 0) + (parseFloat(row.donation) || 0);
-                  console.log(`Including ${courseId} (kind: ${courseKind}) in discount: $${cost}`);
-                  return sum + cost;
-                } else {
-                  console.log(`Excluding ${courseId} (kind: ${courseKind}) from discount`);
-                  return sum;
-                }
-              }, 0);
-              
-              console.log(`Discountable total (${voucher.applies_to} only): $${discountableTotal}`);
+              discountableTotal = registrationsResult.rows.reduce(
+                (sum, row) => {
+                  const courseId = row.course;
+
+                  // Safety check - skip if courseId is missing
+                  if (!courseId) {
+                    console.log(
+                      'Warning: Registration missing course ID:',
+                      row
+                    );
+                    return sum;
+                  }
+
+                  const courseKind = activitiesMap.get(
+                    courseId.toString().toLowerCase()
+                  );
+
+                  if (courseKind === voucher.applies_to) {
+                    const cost =
+                      (parseFloat(row.cost) || 0) +
+                      (parseFloat(row.donation) || 0);
+                    console.log(
+                      `Including ${courseId} (kind: ${courseKind}) in discount: $${cost}`
+                    );
+                    return sum + cost;
+                  } else {
+                    console.log(
+                      `Excluding ${courseId} (kind: ${courseKind}) from discount`
+                    );
+                    return sum;
+                  }
+                },
+                0
+              );
+
+              console.log(
+                `Discountable total (${voucher.applies_to} only): $${discountableTotal}`
+              );
             }
-            
+
             let discount = 0;
-            
+
             if (voucher.percentage) {
               discount = (discountableTotal * voucher.percentage) / 100;
-              console.log(`Applying ${voucher.percentage}% discount to $${discountableTotal}: ${discount}`);
+              console.log(
+                `Applying ${voucher.percentage}% discount to $${discountableTotal}: ${discount}`
+              );
             } else if (voucher.amount) {
-              discount = Math.min(parseFloat(voucher.amount), discountableTotal);
-              console.log(`Applying $${voucher.amount} discount to $${discountableTotal}: ${discount}`);
+              discount = Math.min(
+                parseFloat(voucher.amount),
+                discountableTotal
+              );
+              console.log(
+                `Applying $${voucher.amount} discount to $${discountableTotal}: ${discount}`
+              );
             }
-            
+
             expectedTotal = Math.max(0, expectedTotal - discount);
             console.log('Expected total after discount:', expectedTotal);
           } else {
             console.log('Voucher not found in database');
           }
         } else {
-          console.log('No voucher ID provided, expected total remains:', expectedTotal);
+          console.log(
+            'No voucher ID provided, expected total remains:',
+            expectedTotal
+          );
         }
-        
-        console.log('Final comparison - Expected:', expectedTotal, 'Received:', totalAmount, 'Difference:', Math.abs(expectedTotal - totalAmount));
+
+        console.log(
+          'Final comparison - Expected:',
+          expectedTotal,
+          'Received:',
+          totalAmount,
+          'Difference:',
+          Math.abs(expectedTotal - totalAmount)
+        );
 
         if (Math.abs(expectedTotal - totalAmount) > 0.01) {
           await client.query('ROLLBACK');
@@ -269,31 +329,31 @@ export const POST: APIRoute = async ({ request }) => {
         } else {
           transactionId = paypalOrderId;
         }
-        
+
         // Generate unique short code with retry logic
         let shortCode: string;
         let attempts = 0;
         const maxAttempts = 5;
-        
+
         while (attempts < maxAttempts) {
           shortCode = generateShortCode();
-          
+
           // Check if code already exists
           const existingCode = await client.query(
             `SELECT id FROM payment WHERE short_code = $1`,
             [shortCode]
           );
-          
+
           if (existingCode.rows.length === 0) {
             break; // Unique code found
           }
-          
+
           attempts++;
           if (attempts === maxAttempts) {
             throw new Error('Failed to generate unique short code');
           }
         }
-        
+
         const paymentResult = await client.query(
           `INSERT INTO payment (
             transaction_id, 
@@ -304,7 +364,7 @@ export const POST: APIRoute = async ({ request }) => {
           RETURNING id, short_code`,
           [transactionId, totalAmount, voucherId, shortCode!]
         );
-        
+
         if (voucherId) {
           // if voucherId is provided, update the voucher times_used
           await client.query(
@@ -335,7 +395,7 @@ export const POST: APIRoute = async ({ request }) => {
         } else {
           responseMessage = 'Payment processed successfully';
         }
-          
+
         return new Response(
           JSON.stringify({
             message: responseMessage,

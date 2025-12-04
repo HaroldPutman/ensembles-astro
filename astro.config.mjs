@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import { remarkModifiedTime } from './remark-modified-time.mjs';
+import icon from 'astro-icon';
 
 import mdx from '@astrojs/mdx';
 
@@ -12,7 +13,7 @@ export default defineConfig({
     remarkPlugins: [remarkModifiedTime],
   },
 
-  integrations: [mdx()],
+  integrations: [mdx(), icon()],
 
   vite: {
     envPrefix: ['PUBLIC_'],

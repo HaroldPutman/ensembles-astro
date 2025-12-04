@@ -5,31 +5,31 @@ import Layout from '../../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
-  const events = await getCollection('events');
-  return events.map(event => ({
+  const activities = await getCollection('activities');
+  return activities.map(activity => ({
     // collection filenames get converted to lowercase ids
-    params: { courseId: event.id.toUpperCase() },
-    props: { event }
+    params: { courseId: activity.id.toLowerCase() },
+    props: { activity }
   }));
 }
 
 // Get the course ID from the URL parameters
 const { courseId } = Astro.params;
-const { event } = Astro.props;
+const { activity } = Astro.props;
 
 ---
 
 <Layout>
   <section class="registration-section">
     <h1>Additional Information</h1>
-    <p class="intro">Please provide this additional information to complete your registration for <strong>{event.data.name}</strong>.</p>
+    <p class="intro">Please provide this additional information to complete your registration for <strong>{activity.name}</strong>.</p>
     
     <form id="registration-info-form" class="registration-form">
       <input type="hidden" id="courseId" name="courseId" value={courseId} />
       
-      {event.data.question && (
+      {activity.data.question && (
         <div class="form-group">
-            <label for="registrationQuestion">{event.data.question}</label>
+            <label for="registrationQuestion">{activity.data.question}</label>
             <textarea 
             id="answer" 
             name="answer" 
@@ -39,9 +39,9 @@ const { event } = Astro.props;
         </div>
       )}
 
-      {!event.data.cost && event.data.suggestedDonation && (
+      {!activity.data.cost && activity.data.suggestedDonation && (
       <div class="form-group">
-        <p>There is no charge, but a suggested donation is ${event.data.suggestedDonation}.</p>
+        <p>There is no charge, but a suggested donation is ${activity.data.suggestedDonation}.</p>
         <label for="donationAmount">Donation Amount (optional)</label>
         <div class="donation-input-group">
           <span class="currency-symbol">$</span>
@@ -233,7 +233,7 @@ const { event } = Astro.props;
         if (submitter?.name === 'pay-now') {
           window.location.href = '/register/payment';
         } else if (submitter?.name === 'add-more') {
-          window.location.href = '/events';
+          window.location.href = '/activities';
         }
       } else {
         throw new Error(result.message || 'Something went wrong');

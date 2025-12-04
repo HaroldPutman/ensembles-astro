@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
 
 // Check payment method
 const paymentMethod = Astro.url.searchParams.get('method');
@@ -13,10 +14,7 @@ const isCheck = paymentMethod === 'check';
   <section class="success-section">
     <div class="success-content">
       <div class="success-icon">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="10" stroke="#4CAF50" stroke-width="2"/>
-          <path d="M9 12l2 2 4-4" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <Icon name="mdi:checkbox-marked-circle-outline" width="96" height="96"/>
       </div>
       
       <h1>
@@ -64,7 +62,7 @@ const isCheck = paymentMethod === 'check';
       </div>
       
       <div class="action-buttons">
-        <a href="/events" class="btn btn-primary">View More Events</a>
+        <a href="/activities" class="btn btn-primary">View More Activities</a>
         <a href="/" class="btn btn-secondary">Return Home</a>
       </div>
     </div>
@@ -104,8 +102,10 @@ const isCheck = paymentMethod === 'check';
 
   .success-icon {
     margin-bottom: 1.5rem;
+    svg {
+      color: #4CAF50;
+    }
   }
-
   h1 {
     font-size: 2.5rem;
     color: #333;
@@ -124,9 +124,7 @@ const isCheck = paymentMethod === 'check';
   }
 
   .confirmation-value {
-    font-size: 2rem;
     font-weight: bold;
-    color: #333;
     margin: 0;
     font-family: 'Courier New', Courier, monospace;
     letter-spacing: 0.1em;
