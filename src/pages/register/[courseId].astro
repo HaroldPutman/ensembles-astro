@@ -2,7 +2,7 @@
 
 import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import { shortDescription } from '../../lib/datelib';
+import ActivityDateTime from '../../components/ActivityDateTime.astro';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
@@ -18,22 +18,16 @@ export async function getStaticPaths() {
 const { courseId } = Astro.params;
 const { activity } = Astro.props;
 
-const description = shortDescription(activity.data.startDate, activity.data.startTime, activity.data.duration, activity.data.repeat);
 const isFree = typeof activity.data.cost === 'number' && activity.data.cost === 0;
-const possessiveParticipant = activity.data.kind === 'class' ? 'Student\'s' : 'Participant\'s';
+const possessiveParticipant = activity.data.kind === 'class' ? 'Student' : 'Participant';
 ---
 
 <Layout>
   <section class="registration-section">
     <h1><span id="courseName">{activity.data.name}</span></h1>
-    <p class="intro">
-      Let's get registered. This {activity.data.kind === 'class' 
-        ? 'class meets'
-        : activity.data.kind === 'group'
-          ? 'group meets'
-          : 'event is happening'
-      } {description}.
-    </p>
+    <div class="activity-datetime">
+      <ActivityDateTime startDate={activity.data.startDate} startTime={activity.data.startTime} duration={activity.data.duration} repeat={activity.data.repeat} />
+    </div>
     {!isFree && activity.data.cost && (
       <p>The cost of the class is {activity.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
     )}
@@ -230,6 +224,10 @@ const possessiveParticipant = activity.data.kind === 'class' ? 'Student\'s' : 'P
     font-size: 2.5rem;
     color: #333;
     margin-bottom: 1rem;
+  }
+
+  .activity-datetime {
+   font-size: 1.2rem;
   }
 
   .intro {

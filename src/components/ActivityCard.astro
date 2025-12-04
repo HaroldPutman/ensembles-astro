@@ -1,5 +1,6 @@
 ---
 import { getFirstAndLastDates, shortDescription } from '../lib/datelib';
+import ActivityDateTime from './ActivityDateTime.astro';
 
 interface Props {
   activityId: string;
@@ -32,9 +33,7 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
   <div class="activity-content">
     <h2>{name}</h2>
     <div class="activity-details">
-      <p class="schedule">
-        {shortDescription(startDate, startTime, duration, repeat)}
-      </p>
+      <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
       {instructors.length > 0 && (
         <p class="instructors">
           <strong>Instructor:</strong> {instructors.join(', ')}

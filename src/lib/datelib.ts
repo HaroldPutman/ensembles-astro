@@ -219,6 +219,7 @@ export function getFirstAndLastDates(
   Temporal.ZonedDateTime,
   Temporal.ZonedDateTime | undefined,
   number | undefined,
+  Temporal.ZonedDateTime | undefined,
 ] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
@@ -228,9 +229,19 @@ export function getFirstAndLastDates(
   const hasEnd = options.until !== undefined || options.count !== undefined;
   if (hasEnd) {
     const all = rruleTemporal.all((_dt, i) => i < 100);
-    return [all[0], all[all.length - 1], all.length];
+    return [
+      all[0],
+      all[all.length - 1],
+      all.length,
+      options.exDate?.length ? options.exDate[0] : undefined,
+    ];
   } else {
-    return [rruleTemporal.all((_dt, i) => i < 1)[0], undefined, undefined];
+    return [
+      rruleTemporal.all((_dt, i) => i < 1)[0],
+      undefined,
+      undefined,
+      undefined,
+    ];
   }
 }
 
@@ -239,7 +250,7 @@ export function getFirstAndLastDates(
  * @param dtstring - The date string to get the day of the week from (RFC 9557 format)
  * @returns The day of the week
  */
-function getDayOfWeek(date: Temporal.ZonedDateTime) {
+export function getDayOfWeek(date: Temporal.ZonedDateTime) {
   const dayNames = [
     '_',
     'Monday',
