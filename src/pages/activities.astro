@@ -7,8 +7,9 @@ import { Temporal } from '@js-temporal/polyfill';
 import { getHourAndMinute } from '../lib/datelib';
 
 const activities = await getCollection('activities');
+const now = Date.now();
 
-// Render markdown content for each event
+// Sort and render activities
 const renderedActivities = await Promise.all(
   activities
     .sort((a, b) => {
@@ -16,7 +17,6 @@ const renderedActivities = await Promise.all(
       const [monthB, dayB, yearB] = b.data.startDate.split('/').map(Number);
       const startTimeA = getHourAndMinute(a.data.startTime);
       const startTimeB = getHourAndMinute(b.data.startTime);
-      // Include start time in comparison by creating a PlainDateTime with hours and minutes
       const dateA = Temporal.PlainDateTime.from({
         year: yearA,
         month: monthA,
@@ -32,76 +32,81 @@ const renderedActivities = await Promise.all(
       return Temporal.PlainDateTime.compare(dateA, dateB);
     })
     .map(async (activity: CollectionEntry<'activities'>) => {
-    const { Content } = await render(activity);
-    return {
-      ...activity,
-      Content
-    };
-  })
+      const { Content } = await render(activity);
+      const [month, day, year] = activity.data.startDate.split('/').map(Number);
+      const startDateTime = new Date(year, month - 1, day).getTime();
+      return {
+        ...activity,
+        Content,
+        isCurrent: startDateTime < now,
+        isUpcoming: startDateTime >= now,
+      };
+    })
 );
+
+// Split into current and upcoming
+const currentActivities = renderedActivities.filter(a => a.isCurrent);
+const upcomingActivities = renderedActivities.filter(a => a.isUpcoming);
 ---
 
 
 <FullWidthLayout>
   <section class="activities-section">
     <h1>Activities</h1>
-    <div class="toggle-group">
-      <button type="button" class="toggle-btn active" data-filter="current">Current</button>
-      <button type="button" class="toggle-btn" data-filter="upcoming">Upcoming</button>
-    </div>
-    <div class="activities-grid">
-      {renderedActivities.map((activity) => (
-        <ActivityCard
-          activityId={activity.id}
-          name={activity.data.name}
-          image={activity.data.image}
-          startDate={activity.data.startDate}
-          startTime={activity.data.startTime}
-          duration={activity.data.duration}
-          repeat={activity.data.repeat}
-          ageMin={activity.data.ageMin}
-          ageMax={activity.data.ageMax}
-          cost={activity.data.cost}
-          instructors={activity.data.instructors}
-        >
-          <activity.Content />
-        </ActivityCard>
-      ))}
-    </div>
+    {currentActivities.length > 0 && (
+      <details class="activity-group">
+        <summary>
+          <span class="summary-text">Current Activities</span>
+          <span class="summary-count">{currentActivities.length}</span>
+        </summary>
+        <div class="activities-grid">
+          {currentActivities.map((activity) => (
+            <ActivityCard
+              activityId={activity.id}
+              name={activity.data.name}
+              image={activity.data.image}
+              startDate={activity.data.startDate}
+              startTime={activity.data.startTime}
+              duration={activity.data.duration}
+              repeat={activity.data.repeat}
+              ageMin={activity.data.ageMin}
+              ageMax={activity.data.ageMax}
+              cost={activity.data.cost}
+              instructors={activity.data.instructors}
+            />
+          ))}
+        </div>
+      </details>
+    )}
+
+    {upcomingActivities.length > 0 && (
+      <details class="activity-group" open>
+        <summary>
+          <span class="summary-text">Upcoming Activities</span>
+          <span class="summary-count">{upcomingActivities.length}</span>
+        </summary>
+        <div class="activities-grid">
+          {upcomingActivities.map((activity) => (
+            <ActivityCard
+              activityId={activity.id}
+              name={activity.data.name}
+              image={activity.data.image}
+              startDate={activity.data.startDate}
+              startTime={activity.data.startTime}
+              duration={activity.data.duration}
+              repeat={activity.data.repeat}
+              ageMin={activity.data.ageMin}
+              ageMax={activity.data.ageMax}
+              cost={activity.data.cost}
+              instructors={activity.data.instructors}
+            />
+          ))}
+        </div>
+      </details>
+    )}
+
   </section>
 </FullWidthLayout>
-
-<script>
-  const today = Math.floor(Date.now() / 1000);
-  const toggleButtons = document.querySelectorAll('.toggle-btn');
-  const cards = document.querySelectorAll('.activity-card');
-
-  function filterCards(filter: string) {
-    cards.forEach((card) => {
-      const startDate = parseInt(card.getAttribute('data-start') || '0', 10);
-      const isCurrent = startDate < today;
-      const isUpcoming = startDate >= today;
-
-      if (filter === 'current') {
-        (card as HTMLElement).style.display = isCurrent ? '' : 'none';
-      } else {
-        (card as HTMLElement).style.display = isUpcoming ? '' : 'none';
-      }
-    });
-  }
-
-  toggleButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      toggleButtons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      const filter = btn.getAttribute('data-filter') || 'current';
-      filterCards(filter);
-    });
-  });
-
-  // Initial filter
-  filterCards('current');
-</script>
 
 <style>
   .activities-section {
@@ -115,41 +120,53 @@ const renderedActivities = await Promise.all(
     padding: 0 1rem;
   }
 
-  .toggle-group {
-    display: flex;
-    justify-content: center;
-    gap: 0;
+  .activity-group {
     margin-bottom: 2rem;
   }
 
-  .toggle-btn {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
+  .activity-group summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    font-size: 1.25rem;
     font-weight: 600;
-    border: 2px solid var(--color-button-primary-background);
-    background: var(--color-button-secondary-background);
-    color: var(--color-button-secondary-text);
+    color: #333;
     cursor: pointer;
-    transition: all 0.2s ease;
+    list-style: none;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 1.5rem;
   }
 
-  .toggle-btn:first-child {
-    border-radius: 6px 0 0 6px;
-    border-right: 1px solid var(--color-button-primary-background);
+  .activity-group summary::-webkit-details-marker {
+    display: none;
   }
 
-  .toggle-btn:last-child {
-    border-radius: 0 6px 6px 0;
-    border-left: 1px solid var(--color-button-primary-background);
+  .activity-group summary::before {
+    content: '▶';
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
   }
 
-  .toggle-btn:hover:not(.active) {
-    background: var(--color-button-secondary-hover-background);
+  .activity-group[open] summary::before {
+    transform: rotate(90deg);
   }
 
-  .toggle-btn.active {
-    background: var(--color-button-primary-background);
-    color: var(--color-button-primary-text);
+  .activity-group summary:hover {
+    background: #f9f9f9;
+  }
+
+  .summary-text {
+    flex: 1;
+  }
+
+  .summary-count {
+    background: #eee;
+    color: #666;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
   .activities-grid {
@@ -178,9 +195,9 @@ const renderedActivities = await Promise.all(
       text-align: center;
     }
 
-    .toggle-btn {
-      padding: 0.5rem 1rem;
-      font-size: 0.9rem;
+    .activity-group summary {
+      font-size: 1.1rem;
+      padding: 0.75rem;
     }
   }
 </style> 
