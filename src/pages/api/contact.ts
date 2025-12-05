@@ -1,13 +1,17 @@
 import type { APIRoute } from 'astro';
-import * as Brevo from '@getbrevo/brevo';
+import {
+  TransactionalEmailsApi,
+  TransactionalEmailsApiApiKeys,
+  SendSmtpEmail,
+} from '@getbrevo/brevo';
 
 export const prerender = false;
 
 // Initialize the Brevo API client
-const apiInstance = new Brevo.TransactionalEmailsApi();
+const apiInstance = new TransactionalEmailsApi();
 apiInstance.setApiKey(
-  Brevo.TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY
+  TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY || ''
 );
 
 export const POST: APIRoute = async ({ request }) => {
@@ -48,7 +52,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Create the email
-    const sendSmtpEmail = new Brevo.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.sender = {
       name: 'Ensembles Contact Form',
       email: 'webapp@charlestownensembles.com',

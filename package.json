@@ -22,12 +22,12 @@
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
     "@astrojs/netlify": "^6.5.3",
-    "@getbrevo/brevo": "^2.2.0",
+    "@getbrevo/brevo": "^3.0.1",
     "@iconify-json/mdi": "^1.2.3",
     "astro": "^5.10.1",
     "astro-icon": "^1.1.5",
     "dayjs": "^1.11.13",
-    "dotenv": "^16.5.0",
+    "dotenv": "^17.2.3",
     "rrule-temporal": "^1.2.0",
     "tslib": "^2.8.1"
   },
