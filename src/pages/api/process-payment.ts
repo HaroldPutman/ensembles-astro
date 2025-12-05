@@ -3,6 +3,10 @@ import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
 import { getCollection } from 'astro:content';
 import { generateShortCode } from '../../lib/shortcode';
+import {
+  sendPaymentConfirmationEmail,
+  type RegistrationItem,
+} from '../../lib/email';
 
 export const prerender = false;
 
@@ -386,6 +390,105 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Commit the transaction
         await client.query('COMMIT');
+
+        // Send confirmation email
+        try {
+          // Get contact email and registration details for the email
+          const emailDataResult = await client.query(
+            `SELECT DISTINCT
+              c.email,
+              c.firstname,
+              c.lastname
+            FROM registration r
+            JOIN contact c ON r.contact_id = c.id
+            WHERE r.id = ANY($1)
+            LIMIT 1`,
+            [registrationIds]
+          );
+
+          if (emailDataResult.rows.length > 0) {
+            const contact = emailDataResult.rows[0];
+
+            // Get activities collection for course names
+            const activities = await getCollection('activities');
+            const activitiesMap = new Map<string, string>();
+            activities.forEach((activity: any) => {
+              activitiesMap.set(activity.id.toLowerCase(), activity.data.name);
+            });
+
+            // Build registration items for the email
+            const registrationItems: RegistrationItem[] =
+              registrationsResult.rows.map(row => {
+                const courseName =
+                  activitiesMap.get(row.course?.toLowerCase()) || row.course;
+                return {
+                  studentName: '', // Will be populated below
+                  courseName: courseName,
+                  cost: parseFloat(row.cost) || 0,
+                  donation: row.donation ? parseFloat(row.donation) : undefined,
+                };
+              });
+
+            // Get student names for each registration
+            const studentNamesResult = await client.query(
+              `SELECT r.id as registration_id, s.firstname, s.lastname
+              FROM registration r
+              JOIN student s ON r.student_id = s.id
+              WHERE r.id = ANY($1)`,
+              [registrationIds]
+            );
+
+            const studentNamesMap = new Map<
+              number,
+              { firstname: string; lastname: string }
+            >();
+            studentNamesResult.rows.forEach(row => {
+              studentNamesMap.set(row.registration_id, {
+                firstname: row.firstname,
+                lastname: row.lastname,
+              });
+            });
+
+            // Update registration items with student names
+            registrationsResult.rows.forEach((row, index) => {
+              const studentInfo = studentNamesMap.get(row.id);
+              if (studentInfo) {
+                registrationItems[index].studentName =
+                  `${studentInfo.firstname} ${studentInfo.lastname}`;
+              }
+            });
+
+            // Send the email
+            const emailResult = await sendPaymentConfirmationEmail({
+              recipientEmail: contact.email,
+              recipientName: `${contact.firstname} ${contact.lastname}`,
+              confirmationCode: paymentShortCode,
+              registrations: registrationItems,
+              totalAmount: totalAmount,
+              paymentMethod: paymentMethod as 'paypal' | 'check' | 'none',
+              transactionId: transactionId,
+            });
+
+            if (!emailResult.success) {
+              console.error(
+                'Failed to send confirmation email:',
+                emailResult.error
+              );
+            } else {
+              console.log(
+                'Confirmation email sent successfully:',
+                emailResult.messageId
+              );
+            }
+          } else {
+            console.log(
+              'No contact email found for registrations, skipping email'
+            );
+          }
+        } catch (emailError) {
+          // Log the error but don't fail the payment
+          console.error('Error sending confirmation email:', emailError);
+        }
 
         let responseMessage: string;
         if (paymentMethod === 'none') {
