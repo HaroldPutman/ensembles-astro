@@ -38,7 +38,7 @@ const isCheck = paymentMethod === 'check';
       {isCheck && (
         <div class="check-payment-info">
           <h3>Payment Instructions</h3>
-          <p>Please mail your check to:</p>
+          <p>Please mail a check for <strong class="check-amount">the amount shown in your confirmation email</strong> to:</p>
           <address>
             <strong>Ensembles, Inc.</strong><br/>
             1120 Monroe St.<br/>
@@ -80,8 +80,16 @@ const isCheck = paymentMethod === 'check';
     codeElements.forEach(element => {
       element.textContent = formatted;
     });
-    // Clear it from sessionStorage after displaying
-    sessionStorage.removeItem('confirmationCode');
+  }
+
+  // Display payment amount for check payments
+  const paymentAmount = sessionStorage.getItem('paymentAmount');
+  const urlParams = new URLSearchParams(window.location.search);
+  if (paymentAmount && urlParams.get('method') === 'check') {
+    const amountElement = document.querySelector('.check-amount');
+    if (amountElement) {
+      amountElement.textContent = `$${paymentAmount}`;
+    }
   }
 </script>
 
