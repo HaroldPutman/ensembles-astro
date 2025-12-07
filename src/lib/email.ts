@@ -94,7 +94,7 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
               <td style="background: white; padding: 15px; border-radius: 4px; border-left: 4px solid #ffc107; font-family: ${fontStack};">
                 <strong>Ensembles, Inc.</strong><br>
                 1120 Monroe St.<br>
-                Charlestown, IN
+                Charlestown, IN 47111
               </td>
             </tr>
           </table>
