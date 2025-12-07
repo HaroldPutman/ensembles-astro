@@ -20,6 +20,20 @@ interface PaymentConfirmationData {
 }
 
 /**
+ * Escapes HTML special characters to prevent XSS
+ */
+function escapeHtml(text: string): string {
+  const htmlEscapes: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return text.replace(/[&<>"']/g, char => htmlEscapes[char]);
+}
+
+/**
  * Formats a number as currency (USD)
  */
 function formatCurrency(amount: number): string {
@@ -36,8 +50,8 @@ function generateRegistrationsHtml(registrations: RegistrationItem[]): string {
       let html = `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; font-family: ${fontStack};">
-          <strong>${reg.studentName}</strong><br>
-          <span style="color: #666;">${reg.courseName}</span>
+          <strong>${escapeHtml(reg.studentName)}</strong><br>
+          <span style="color: #666;">${escapeHtml(reg.courseName)}</span>
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right; font-family: ${fontStack};">
           ${formatCurrency(reg.cost)}`;
@@ -131,7 +145,7 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
           <tr>
             <td style="background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
               
-              <p style="font-family: ${fontStack};">Hello ${data.recipientName},</p>
+              <p style="font-family: ${fontStack};">Hello ${escapeHtml(data.recipientName)},</p>
               
               <p style="font-family: ${fontStack};">Your registration has been confirmed. Here's a summary of your enrollment:</p>
               
@@ -279,7 +293,6 @@ ${checkInstructions}
 WHAT'S NEXT?
 ------------
 - Please arrive 10 minutes before your first class
-- Bring comfortable clothing for movement
 - If you have any questions, please contact us
 
 Questions? Contact us at info@ensemblesmusic.org
@@ -294,6 +307,18 @@ Questions? Contact us at info@ensemblesmusic.org
 export async function sendPaymentConfirmationEmail(
   data: PaymentConfirmationData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Validate input data
+  if (
+    !data.recipientEmail ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.recipientEmail)
+  ) {
+    return { success: false, error: 'Invalid recipient email address' };
+  }
+
+  if (!data.registrations || data.registrations.length === 0) {
+    return { success: false, error: 'No registrations provided' };
+  }
+
   const apiKey = process.env.BREVO_API_KEY;
 
   if (!apiKey) {
