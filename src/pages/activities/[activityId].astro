@@ -1,0 +1,465 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+import { Temporal } from '@js-temporal/polyfill';
+import { RRuleTemporal } from 'rrule-temporal';
+import {
+  buildRRuleString,
+  makeICalDuration,
+  getDayOfWeek,
+} from '../../lib/datelib';
+
+export async function getStaticPaths() {
+  const activities = await getCollection('activities');
+  return activities.map((activity) => ({
+    params: { activityId: activity.id },
+    props: { activity },
+  }));
+}
+
+const { activity } = Astro.props;
+const { Content } = await render(activity);
+
+// Get all dates for this activity
+function getAllDates(
+  startDate: string,
+  startTime: string,
+  duration: string,
+  repeat: string
+) {
+  const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
+  const rruleTemporal = new RRuleTemporal({ rruleString });
+  return rruleTemporal.all((_dt, i) => i < 100); // Limit to 100 occurrences
+}
+
+const allDates = getAllDates(
+  activity.data.startDate,
+  activity.data.startTime,
+  activity.data.duration,
+  activity.data.repeat
+);
+
+const durationISO = makeICalDuration(activity.data.duration);
+
+// Format age range
+function formatAgeRange(ageMin?: number, ageMax?: number | 'adult') {
+  if (!ageMin && !ageMax) return null;
+  if (ageMax === 'adult') return `Ages ${ageMin}+`;
+  if (ageMin && ageMax) return `Ages ${ageMin}-${ageMax}`;
+  if (ageMin) return `Ages ${ageMin}+`;
+  if (ageMax) return `Ages up to ${ageMax}`;
+  return null;
+}
+
+const ageRange = formatAgeRange(activity.data.ageMin, activity.data.ageMax);
+
+// Format cost
+function formatCost(cost?: number) {
+  if (!cost || cost === 0) return 'Free';
+  return `$${cost}`;
+}
+
+// Get kind label
+function getKindLabel(kind: string) {
+  const labels: Record<string, string> = {
+    class: 'Class',
+    group: 'Performance Group',
+    event: 'Event',
+  };
+  return labels[kind] || kind;
+}
+---
+
+<Layout>
+  <article class="activity-detail">
+    <!-- Header -->
+    <header class="activity-header">
+      {activity.data.image && (
+        <div class="header-image">
+          <img src={activity.data.image} alt={activity.data.name} />
+        </div>
+      )}
+      <div class="header-content">
+        <span class="activity-type">{getKindLabel(activity.data.kind)}</span>
+        <h1>{activity.data.name}</h1>
+        <div class="activity-meta">
+          {ageRange && (
+            <span class="meta-item">
+              <Icon name="mdi:account-group" width="18" height="18" />
+              {ageRange}
+            </span>
+          )}
+          <span class="meta-item">
+            <Icon name="mdi:tag" width="18" height="18" />
+            {formatCost(activity.data.cost)}
+          </span>
+          <span class="meta-item">
+            <Icon name="mdi:clock-outline" width="18" height="18" />
+            {allDates.length} {allDates.length === 1 ? 'session' : 'sessions'}
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="activity-body">
+      <!-- Description -->
+      <section class="description-section">
+        <h2>About This {getKindLabel(activity.data.kind)}</h2>
+        <div class="description-content">
+          <Content />
+        </div>
+        
+        <div class="cta-section">
+          <a href={`/register/${activity.id}`} class="btn btn-primary">
+            Register Now
+            <Icon name="mdi:arrow-right" width="20" height="20" />
+          </a>
+        </div>
+      </section>
+
+      <!-- Schedule -->
+      <aside class="schedule-section">
+        <h2>
+          <Icon name="mdi:calendar-month" width="24" height="24" />
+          Schedule
+        </h2>
+        <div class="schedule-list">
+          {allDates.map((date, index) => {
+            const endTime = date.add(Temporal.Duration.from(durationISO));
+            const isPast = Temporal.ZonedDateTime.compare(
+              date,
+              Temporal.Now.zonedDateTimeISO('America/Louisville')
+            ) < 0;
+            
+            return (
+              <div class:list={['schedule-item', { 'is-past': isPast }]}>
+                <div class="schedule-date">
+                  <span class="schedule-month">
+                    {date.toLocaleString('en-US', { month: 'short' })}
+                  </span>
+                  <span class="schedule-day">{date.day}</span>
+                </div>
+                <div class="schedule-details">
+                  <span class="schedule-weekday">{getDayOfWeek(date)}</span>
+                  <span class="schedule-time">
+                    {date.toLocaleString('en-US', { timeStyle: 'short' })} - {endTime.toLocaleString('en-US', { timeStyle: 'short' })}
+                  </span>
+                </div>
+                {isPast && <span class="past-badge">Completed</span>}
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+    </div>
+
+    <!-- Back Link -->
+    <nav class="back-nav">
+      <a href="/activities" class="back-link">
+        <Icon name="mdi:arrow-left" width="20" height="20" />
+        Back to Activities
+      </a>
+    </nav>
+  </article>
+</Layout>
+
+<style>
+  .activity-detail {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Header */
+  .activity-header {
+    position: relative;
+    background: #1a1a1a;
+    color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .header-image {
+    position: absolute;
+    inset: 0;
+  }
+
+  .header-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.4;
+  }
+
+  .header-content {
+    position: relative;
+    padding: 3rem 2rem;
+    z-index: 1;
+  }
+
+  .activity-type {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+  }
+
+  .activity-header h1 {
+    font-size: 2.5rem;
+    margin: 0 0 1rem;
+    color: white;
+  }
+
+  .activity-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+
+  /* Body Layout */
+  .activity-body {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Description Section */
+  .description-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .description-section h2 {
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem;
+    color: #1a1a1a;
+  }
+
+  .description-content {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #444;
+  }
+
+  .description-content :global(p) {
+    margin: 0 0 1rem;
+  }
+
+  .description-content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .cta-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--radius-button);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: var(--color-button-primary-background);
+    color: var(--color-button-primary-text);
+    border: 1px solid var(--color-button-primary-border);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-button-primary-hover-background);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Schedule Section */
+  .schedule-section {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .schedule-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    margin: 0 0 1.5rem;
+    color: #1a1a1a;
+  }
+
+  .schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+  }
+
+  .schedule-item:hover {
+    transform: translateX(4px);
+  }
+
+  .schedule-item.is-past {
+    opacity: 0.5;
+  }
+
+  .schedule-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 48px;
+    padding: 0.5rem;
+    background: #2c2e2f;
+    color: white;
+    border-radius: 6px;
+  }
+
+  .schedule-month {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .schedule-day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .schedule-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .schedule-weekday {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 0.9rem;
+  }
+
+  .schedule-time {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .past-badge {
+    font-size: 0.7rem;
+    background: #e0e0e0;
+    color: #666;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Back Navigation */
+  .back-nav {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .back-link:hover {
+    color: #1a1a1a;
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 768px) {
+    .activity-detail {
+      padding: 0;
+    }
+
+    .activity-header {
+      border-radius: 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-content {
+      padding: 2rem 1.5rem;
+    }
+
+    .activity-header h1 {
+      font-size: 1.75rem;
+    }
+
+    .activity-meta {
+      gap: 1rem;
+    }
+
+    .meta-item {
+      font-size: 0.9rem;
+    }
+
+    .activity-body {
+      grid-template-columns: 1fr;
+      padding: 0 1rem;
+    }
+
+    .description-section {
+      padding: 1.5rem;
+    }
+
+    .schedule-section {
+      position: static;
+    }
+
+    .schedule-list {
+      max-height: none;
+    }
+
+    .back-nav {
+      padding: 1.5rem 1rem;
+    }
+  }
+</style>
+
