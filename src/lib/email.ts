@@ -314,10 +314,16 @@ export async function sendPaymentConfirmationEmail(
       break;
   }
 
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  if (!senderEmail) {
+    console.error('BREVO_SENDER_EMAIL environment variable is not set');
+    return { success: false, error: 'Email sender not configured' };
+  }
+
   const emailPayload = {
     sender: {
       name: 'Ensembles',
-      email: 'harold@charlestownensembles.com',
+      email: senderEmail,
     },
     to: [
       {

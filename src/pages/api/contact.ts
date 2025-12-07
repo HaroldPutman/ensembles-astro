@@ -52,10 +52,18 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Create the email
+    const senderEmail = process.env.BREVO_SENDER_EMAIL;
+    if (!senderEmail) {
+      return new Response(
+        JSON.stringify({ message: 'Email sender not configured' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.sender = {
       name: 'Ensembles Contact Form',
-      email: 'webapp@charlestownensembles.com',
+      email: senderEmail,
     };
     sendSmtpEmail.to = [{ email: 'harold@charlestownensembles.com' }];
     sendSmtpEmail.replyTo = { email, name };
