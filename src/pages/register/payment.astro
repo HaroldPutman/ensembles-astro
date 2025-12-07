@@ -403,10 +403,11 @@ import Layout from '../../layouts/Layout.astro';
       console.log('Check payment response:', result);
 
       if (response.ok) {
-        // Store short code and redirect to success page
+        // Store short code and amount, then redirect to success page
         if (result.shortCode) {
           sessionStorage.setItem('confirmationCode', result.shortCode);
         }
+        sessionStorage.setItem('paymentAmount', totalCost.toFixed(2));
         sessionStorage.removeItem('registrations');
         sessionStorage.removeItem('courseId');
         sessionStorage.removeItem('appliedVoucher');
