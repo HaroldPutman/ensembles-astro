@@ -1,6 +1,7 @@
 ---
-import { getFirstAndLastDates, shortDescription } from '../lib/datelib';
+import { getFirstAndLastDates } from '../lib/datelib';
 import ActivityDateTime from './ActivityDateTime.astro';
+import ActivityStatus from './ActivityStatus.astro';
 
 interface Props {
   activityId: string;
@@ -14,9 +15,10 @@ interface Props {
   ageMax?: number | 'adult';
   cost?: number;
   instructors: string[];
+  sizeMax?: number;
 }
 
-const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors } = Astro.props;
+const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, sizeMax } = Astro.props;
 
 const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
 const isUpcoming = firstDate.epochMilliseconds > Date.now();
@@ -50,9 +52,19 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
         </p>
       )}
     </div>
-    {isUpcoming && (
+    {isUpcoming && sizeMax ? (
+      <ActivityStatus activityId={activityId} sizeMax={sizeMax} server:defer>
+        <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+        <Fragment slot="fallback">
+          <p class="spots-remaining">
+            <strong>Spots:</strong> <span class="spots-count loading">Checking availability...</span>
+          </p>
+          <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+        </Fragment>
+      </ActivityStatus>
+    ) : isUpcoming ? (
       <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
-    )}
+    ) : null}
   </div>
 </article>
 
@@ -135,4 +147,19 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
     border-color: var(--color-button-primary-hover-border);
   }
 
-  </style> 
+  .spots-remaining {
+    margin: 0.75rem 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .spots-remaining .spots-count {
+    font-weight: 600;
+  }
+
+  .spots-remaining .spots-count.loading {
+    color: #999;
+    font-style: italic;
+    font-weight: normal;
+  }
+</style>

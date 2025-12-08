@@ -1,0 +1,112 @@
+---
+import { Pool } from 'pg';
+
+interface Props {
+  activityId: string;
+  sizeMax: number;
+}
+
+const { activityId, sizeMax } = Astro.props;
+
+// Fetch registration count from database
+let registeredCount = 0;
+let error = false;
+
+try {
+  // Use environment variable (works in both dev and prod)
+  const connectionString = process.env.DATABASE_URL || import.meta.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    throw new Error('DATABASE_URL not configured');
+  }
+
+  const pool = new Pool({
+    connectionString,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
+    // Serverless-optimized configuration
+    max: 1,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
+  });
+
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT COUNT(*) as count
+       FROM registration
+       WHERE LOWER(course) = LOWER($1)
+         AND cancelled_at IS NULL`,
+      [activityId]
+    );
+    registeredCount = parseInt(result.rows[0].count, 10);
+  } finally {
+    client.release();
+    await pool.end();
+  }
+} catch (e) {
+  console.error('Failed to fetch activity status:', e);
+  error = true;
+}
+
+const isFull = registeredCount >= sizeMax;
+const spotsRemaining = Math.max(0, sizeMax - registeredCount);
+const isLow = spotsRemaining > 0 && spotsRemaining <= 3;
+---
+
+{error ? (
+  <p class="spots-remaining">
+    <strong>Spots:</strong> <span class="spots-count">{sizeMax} max</span>
+  </p>
+) : (
+  <>
+    <p class:list={['spots-remaining', { 'spots-low': isLow, 'spots-full': isFull }]}>
+      <strong>Spots:</strong> 
+      <span class="spots-count">
+        {isFull ? 'Full' : `${spotsRemaining} of ${sizeMax} available`}
+      </span>
+    </p>
+    
+    {isFull ? (
+      <div class="activity-full-message">
+        Sorry, this activity is full
+      </div>
+    ) : (
+      <slot />
+    )}
+  </>
+)}
+
+<style>
+  .spots-remaining {
+    margin: 0.75rem 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .spots-remaining .spots-count {
+    font-weight: 600;
+  }
+
+  .spots-remaining.spots-low .spots-count {
+    color: #d97706;
+  }
+
+  .spots-remaining.spots-full .spots-count {
+    color: #991b1b;
+  }
+
+  .activity-full-message {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 2px solid #fecaca;
+    border-radius: var(--radius-button);
+    font-weight: 600;
+  }
+</style>
+
