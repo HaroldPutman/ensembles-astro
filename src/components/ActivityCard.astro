@@ -29,11 +29,15 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
   data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
   data-end={lastDate ? Math.floor(lastDate.epochMilliseconds / 1000) : Math.floor(firstDate.epochMilliseconds / 1000)}
 >
-  <div class="activity-image">
-    <img src="https://picsum.photos/960/420" alt={name} />
-  </div>
+  <a href={`/activities/${activityId}`} class="card-link">
+    <div class="activity-image">
+      <img src="https://picsum.photos/960/420" alt={name} />
+    </div>
+    <div class="activity-header">
+      <h2>{name}</h2>
+    </div>
+  </a>
   <div class="activity-content">
-    <h2>{name}</h2>
     <div class="activity-details">
       <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
       {instructors.length > 0 && (
@@ -52,19 +56,23 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
         </p>
       )}
     </div>
-    {isUpcoming && sizeMax ? (
-      <ActivityStatus activityId={activityId} sizeMax={sizeMax} server:defer>
-        <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
-        <Fragment slot="fallback">
-          <p class="spots-remaining">
-            <strong>Spots:</strong> <span class="spots-count loading">Checking availability...</span>
-          </p>
+
+    <div class="card-actions">
+      <a href={`/activities/${activityId}`} class="details-btn">View Details</a>
+      {isUpcoming && sizeMax ? (
+        <ActivityStatus activityId={activityId} sizeMax={sizeMax} server:defer>
           <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
-        </Fragment>
-      </ActivityStatus>
-    ) : isUpcoming ? (
-      <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
-    ) : null}
+          <Fragment slot="fallback">
+            <p class="spots-remaining">
+              <strong>Spots:</strong> <span class="spots-count loading">Checking availability...</span>
+            </p>
+            <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+          </Fragment>
+        </ActivityStatus>
+      ) : isUpcoming ? (
+        <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+      ) : null}
+    </div>
   </div>
 </article>
 
@@ -85,6 +93,11 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
+  .card-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
   .activity-image {
     width: 100%;
     height: 180px;
@@ -96,20 +109,29 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
   }
 
-  .activity-content {
-    padding: 1.5rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+  .card-link:hover .activity-image img {
+    transform: scale(1.05);
+  }
+
+  .activity-header {
+    padding: 1rem 1.5rem 0;
   }
 
   h2 {
     font-size: 1.25rem;
-    margin: 0 0 1rem 0;
+    margin: 0;
     color: #333;
     font-weight: 600;
+  }
+
+  .activity-content {
+    padding: 1rem 1.5rem 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .activity-details {
@@ -127,18 +149,40 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
     color: #333;
   }
 
-  .register-btn {
-    display: block;
-    text-align: center;
-    padding: 0.75rem 1rem;
+  .card-actions {
+    display: flex;
+    gap: 0.5rem;
     margin-top: 1rem;
-    background: var(--color-button-primary-background);
-    color: var(--color-button-primary-text);
-    border: 2px solid var(--color-button-primary-border);
+  }
+
+  .details-btn,
+  .register-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.625rem 0.75rem;
     border-radius: var(--radius-button);
     text-decoration: none;
     font-weight: 600;
+    font-size: 0.9rem;
     transition: all 0.2s ease;
+  }
+
+  .details-btn {
+    background: var(--color-button-secondary-background);
+    color: var(--color-button-secondary-text);
+    border: 1px solid var(--color-button-secondary-border);
+  }
+
+  .details-btn:hover {
+    background: var(--color-button-secondary-hover-background);
+    color: var(--color-button-secondary-hover-text);
+    border-color: var(--color-button-secondary-hover-border);
+  }
+
+  .register-btn {
+    background: var(--color-button-primary-background);
+    color: var(--color-button-primary-text);
+    border: 1px solid var(--color-button-primary-border);
   }
 
   .register-btn:hover {
