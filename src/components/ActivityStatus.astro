@@ -8,6 +8,9 @@ interface Props {
 
 const { activityId, sizeMax } = Astro.props;
 
+// Cache this server island response for up to 15 minutes
+Astro.response.headers.set('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=60');
+
 // Fetch registration count from database
 let registeredCount = 0;
 let error = false;

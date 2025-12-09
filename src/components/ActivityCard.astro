@@ -1,7 +1,6 @@
 ---
 import { getFirstAndLastDates } from '../lib/datelib';
 import ActivityDateTime from './ActivityDateTime.astro';
-import ActivityStatus from './ActivityStatus.astro';
 
 interface Props {
   activityId: string;
@@ -16,16 +15,16 @@ interface Props {
   cost?: number;
   instructors: string[];
   sizeMax?: number;
+  kind: string;
 }
 
-const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, sizeMax } = Astro.props;
+const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, sizeMax, kind } = Astro.props;
 
 const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
-const isUpcoming = firstDate.epochMilliseconds > Date.now();
 ---
 
 <article
-  class="activity-card"
+  class:list={["activity-card", `kind-${kind}`]}
   data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
   data-end={lastDate ? Math.floor(lastDate.epochMilliseconds / 1000) : Math.floor(firstDate.epochMilliseconds / 1000)}
 >
@@ -45,12 +44,12 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
           <strong>Instructor:</strong> {instructors.join(', ')}
         </p>
       )}
-      {isUpcoming && ageMin && ageMax && (
+      {ageMin !== undefined && ageMax && (
         <p class="age-range">
           <strong>Ages:</strong> {ageMin}-{ageMax}
         </p>
       )}
-      {isUpcoming && cost !== undefined && (
+      {cost !== undefined && (
         <p class="cost">
           <strong>Cost:</strong> {cost === 0 ? 'Free' : `$${cost}`}
         </p>
@@ -59,24 +58,28 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
 
     <div class="card-actions">
       <a href={`/activities/${activityId}`} class="details-btn">View Details</a>
-      {isUpcoming && sizeMax ? (
-        <ActivityStatus activityId={activityId} sizeMax={sizeMax} server:defer>
-          <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
-          <Fragment slot="fallback">
-            <p class="spots-remaining">
-              <strong>Spots:</strong> <span class="spots-count loading">Checking availability...</span>
-            </p>
-            <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
-          </Fragment>
-        </ActivityStatus>
-      ) : isUpcoming ? (
-        <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
-      ) : null}
+      <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
     </div>
   </div>
 </article>
 
 <style>
+  .activity-card.current {
+    .age-range {
+      display: none;
+    }
+    .cost {
+      display: none;
+    }
+    .register-btn {
+      display: none;
+    }
+  }
+
+  .activity-card.upcoming {
+    background: var(--color-background-tertiary);
+  }
+
   .activity-card {
     display: flex;
     flex-direction: column;
@@ -192,19 +195,4 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
     border-color: var(--color-button-primary-hover-border);
   }
 
-  .spots-remaining {
-    margin: 0.75rem 0;
-    color: #666;
-    font-size: 0.9rem;
-  }
-
-  .spots-remaining .spots-count {
-    font-weight: 600;
-  }
-
-  .spots-remaining .spots-count.loading {
-    color: #999;
-    font-style: italic;
-    font-weight: normal;
-  }
 </style>
