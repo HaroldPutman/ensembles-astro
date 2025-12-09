@@ -24,9 +24,11 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
 ---
 
 <article
+  id={activityId}
   class:list={["activity-card", `kind-${kind}`]}
   data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
   data-end={lastDate ? Math.floor(lastDate.epochMilliseconds / 1000) : Math.floor(firstDate.epochMilliseconds / 1000)}
+  data-kind={kind}
 >
   <a href={`/activities/${activityId}`} class="card-link">
     <div class="activity-image">
@@ -59,6 +61,7 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
     <div class="card-actions">
       <a href={`/activities/${activityId}`} class="details-btn">View Details</a>
       <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+      <p class="registration-status"></p>
     </div>
   </div>
 </article>
@@ -72,6 +75,9 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
       display: none;
     }
     .register-btn {
+      display: none;
+    }
+    .registration-status {
       display: none;
     }
   }
@@ -193,6 +199,14 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
     background: var(--color-button-primary-hover-background);
     color: var(--color-button-primary-hover-text);
     border-color: var(--color-button-primary-hover-border);
+  }
+
+  .registration-status {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin: 0;
+    font-style: italic;
   }
 
 </style>

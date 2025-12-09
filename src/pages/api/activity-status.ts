@@ -54,11 +54,7 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  if (
-    !activityIds ||
-    !Array.isArray(activityIds) ||
-    activityIds.length === 0
-  ) {
+  if (!activityIds || !Array.isArray(activityIds) || activityIds.length === 0) {
     return new Response(
       JSON.stringify({
         message: 'activityIds array is required',
@@ -120,7 +116,8 @@ async function getActivityStatus(activityIds: string[]): Promise<Response> {
           registeredCount,
           maxParticipants,
           isFull,
-          spotsRemaining: spotsRemaining !== null ? Math.max(0, spotsRemaining) : null,
+          spotsRemaining:
+            spotsRemaining !== null ? Math.max(0, spotsRemaining) : null,
         };
       });
 
@@ -130,7 +127,11 @@ async function getActivityStatus(activityIds: string[]): Promise<Response> {
         }),
         {
           status: 200,
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control':
+              'public, max-age=600, s-maxage=600, stale-while-revalidate=60',
+          },
         }
       );
     } finally {
@@ -149,4 +150,3 @@ async function getActivityStatus(activityIds: string[]): Promise<Response> {
     );
   }
 }
-

@@ -178,7 +178,15 @@ const sortedActivities = activities.sort((a, b) => {
 </style>
 
 <script>
-  function categorizeActivities() {
+  interface ActivityStatus {
+    activityId: string;
+    registeredCount: number;
+    maxParticipants: number | null;
+    isFull: boolean;
+    spotsRemaining: number | null;
+  }
+
+  function categorizeActivities(): string[] {
     const now = Math.floor(Date.now() / 1000); // Current time in seconds
     const cards = document.querySelectorAll('.activity-card');
     const currentGrid = document.querySelector('.activities-grid.current');
@@ -189,10 +197,11 @@ const sortedActivities = activities.sort((a, b) => {
     const upcomingGroup = upcomingGrid?.closest('.activity-group');
     const placeholder = upcomingGrid?.querySelector('.placeholder');
 
-    if (!currentGrid || !upcomingGrid) return;
+    if (!currentGrid || !upcomingGrid) return [];
 
     let currentActivities = 0;
     let upcomingActivities = 0;
+    const upcomingIds: string[] = [];
 
     cards.forEach(card => {
       const startTime = parseInt(card.getAttribute('data-start') || '0', 10);
@@ -201,11 +210,12 @@ const sortedActivities = activities.sort((a, b) => {
       if (endTime < now) {
         // Activity has ended - remove it
         card.remove();
-      } else if (startTime > now) {
-        // Activity hasn't started yet - move to upcoming
+      } else if (startTime > now || card.getAttribute('data-kind') === 'group') {
+        // Activity Available for registration - move to upcoming
         upcomingGrid.appendChild(card);
         card.classList.add('upcoming');
         upcomingActivities++;
+        upcomingIds.push(card.id);
       } else {
         // Activity is currently running - keep in current
         card.classList.add('current');
@@ -242,8 +252,57 @@ const sortedActivities = activities.sort((a, b) => {
     if (upcomingGroup) {
       (upcomingGroup as HTMLDetailsElement).open = true;
     }
+
+    return upcomingIds;
+  }
+
+  async function updateRegistrationStatus(activityIds: string[]) {
+    if (activityIds.length === 0) return;
+
+    try {
+      const url = '/api/activity-status?' + activityIds.map(id => 'id=' + encodeURIComponent(id)).join('&');
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const activities: ActivityStatus[] = data.activities;
+
+      activities.forEach(status => {
+        const card = document.getElementById(status.activityId);
+        if (!card) return;
+
+        const registerBtn = card.querySelector('.register-btn') as HTMLElement;
+        const statusEl = card.querySelector('.registration-status') as HTMLElement;
+
+        if (status.isFull) {
+          // Activity is full - hide register button and show message
+          if (registerBtn) {
+            registerBtn.style.display = 'none';
+          }
+          if (statusEl) {
+            statusEl.textContent = 'Sorry, this activity is full';
+            statusEl.style.color = '#991b1b';
+          }
+        } else if (status.spotsRemaining !== null && status.spotsRemaining <= 3) {
+          // Low spots - show warning
+          if (statusEl) {
+            statusEl.textContent = `Only ${status.spotsRemaining} spot${status.spotsRemaining === 1 ? '' : 's'} left!`;
+            statusEl.style.color = '#d97706';
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch activity status:', error);
+    }
   }
 
   // Run on page load
-  document.addEventListener('DOMContentLoaded', categorizeActivities);
+  document.addEventListener('DOMContentLoaded', async () => {
+    const upcomingIds = categorizeActivities();
+    await updateRegistrationStatus(upcomingIds);
+  });
 </script> 
