@@ -1,6 +1,11 @@
 import { Pool, type PoolClient } from 'pg';
 
-// Shared pool configuration for serverless environments
+/**
+ * Create a PostgreSQL connection pool tuned for serverless deployments.
+ *
+ * @param connectionString - Database connection string
+ * @returns A configured pg Pool using a single connection, short idle and connection timeouts, and SSL enabled in production with `rejectUnauthorized: false`
+ */
 export function createPool(connectionString: string): Pool {
   return new Pool({
     connectionString,
@@ -15,11 +20,13 @@ export function createPool(connectionString: string): Pool {
 }
 
 /**
- * Get the count of active registrations for an activity.
- * Active registrations are those that:
- * - Are not cancelled (cancelled_at IS NULL)
- * - Either have completed payment (payment_id IS NOT NULL)
- *   OR are reserved within the last 15 minutes (reserved_at > NOW() - 15 minutes)
+ * Retrieve the number of active registrations for an activity.
+ *
+ * Active registrations are those not cancelled and either have a payment recorded
+ * or were reserved within the last 15 minutes.
+ *
+ * @param activityId - Activity identifier matched against the `course` column (case-insensitive)
+ * @returns The count of active registrations for the specified activity
  */
 export async function getActiveRegistrationCount(
   client: PoolClient,
@@ -40,8 +47,12 @@ export async function getActiveRegistrationCount(
 }
 
 /**
- * Get active registration counts for multiple activities at once.
- * Includes both paid registrations and those reserved within the last 15 minutes.
+ * Fetches active registration counts for the given activities.
+ *
+ * Active registrations are those not cancelled and either paid or reserved within the last 15 minutes.
+ *
+ * @param activityIds - Activity identifiers to query; comparison is case-insensitive.
+ * @returns A map where each key is the lowercased activity identifier and each value is the number of active registrations for that activity.
  */
 export async function getActiveRegistrationCounts(
   client: PoolClient,
