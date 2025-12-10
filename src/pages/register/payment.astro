@@ -237,9 +237,9 @@ import Layout from '../../layouts/Layout.astro';
     const remainingIds = originalIds.filter(id => !rejectedIds.has(id));
 
     if (remainingIds.length > 0) {
-      sessionStorage.setItem('registrationIds', JSON.stringify(remainingIds));
+      sessionStorage.setItem('registrations', JSON.stringify(remainingIds));
     } else {
-      sessionStorage.removeItem('registrationIds');
+      sessionStorage.removeItem('registrations');
     }
   }
 

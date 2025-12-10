@@ -71,6 +71,17 @@ export const POST: APIRoute = async ({ request }) => {
   return getActivityStatus(activityIds, false);
 };
 
+/**
+ * Produce activity status objects for the provided activity IDs and return them as a JSON HTTP response.
+ *
+ * Retrieves configured max participant counts from the activities collection and live registration counts
+ * from the database, then computes per-activity status including registeredCount, maxParticipants, isFull,
+ * and spotsRemaining.
+ *
+ * @param activityIds - Array of activity IDs to include (matching against stored activities is case-insensitive)
+ * @param noCache - When true, omits the Cache-Control header from the response; when false, includes a public caching policy
+ * @returns A Response whose successful body is `{ activities: ActivityStatus[] }` with status 200; on failure returns a 500 Response with `{ message: 'Failed to fetch activity status' }`
+ */
 async function getActivityStatus(
   activityIds: string[],
   noCache: boolean
