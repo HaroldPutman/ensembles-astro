@@ -1,13 +1,8 @@
 import type { APIRoute } from 'astro';
-import { Pool } from 'pg';
 import { getCollection } from 'astro:content';
-import { getActiveRegistrationCounts } from '../../lib/db';
+import { getPool, getActiveRegistrationCounts } from '../../lib/db';
 
 export const prerender = false;
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -49,6 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     try {
+      const pool = getPool();
       const client = await pool.connect();
 
       try {
@@ -180,7 +176,6 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
         await client.query('COMMIT');
-
 
         // Process accepted registrations
         const registrations = acceptedRows.map(row => {

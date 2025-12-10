@@ -1,10 +1,45 @@
 import { Pool, type PoolClient } from 'pg';
 
+// Singleton pool instance - lazily initialized
+let pool: Pool | null = null;
+
 /**
+ * Get the singleton PostgreSQL connection pool.
+ * Creates the pool on first call, reuses it on subsequent calls.
+ * Configured for serverless deployments with short timeouts.
+ */
+export function getPool(): Pool {
+  if (!pool) {
+    const connectionString =
+      process.env.DATABASE_URL || import.meta.env.DATABASE_URL;
+
+    if (!connectionString) {
+      throw new Error('DATABASE_URL not configured');
+    }
+
+    pool = new Pool({
+      connectionString,
+      ssl:
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
+      max: 1,
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 10000,
+    });
+
+    // Handle pool errors to prevent crashes
+    pool.on('error', err => {
+      console.error('Unexpected error on idle database client', err);
+    });
+  }
+
+  return pool;
+}
+
+/**
+ * @deprecated Use getPool() instead for singleton pool access
  * Create a PostgreSQL connection pool tuned for serverless deployments.
- *
- * @param connectionString - Database connection string
- * @returns A configured pg Pool using a single connection, short idle and connection timeouts, and SSL enabled in production with `rejectUnauthorized: false`
  */
 export function createPool(connectionString: string): Pool {
   return new Pool({

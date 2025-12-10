@@ -1,5 +1,4 @@
 import type { APIRoute } from 'astro';
-import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
 import { getCollection } from 'astro:content';
 import { generateShortCode } from '../../lib/shortcode';
@@ -7,25 +6,9 @@ import {
   sendPaymentConfirmationEmail,
   type RegistrationItem,
 } from '../../lib/email';
+import { getPool } from '../../lib/db';
 
 export const prerender = false;
-
-// Create a function to get a database connection
-async function getDbConnection() {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // Serverless-optimized configuration
-    max: 1,
-    idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 10000,
-    ssl:
-      process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : false,
-  });
-
-  return pool;
-}
 
 export const POST: APIRoute = async ({ request }) => {
   console.log('Process payment API called');
@@ -141,11 +124,10 @@ export const POST: APIRoute = async ({ request }) => {
       // Courses can be naturally free (cost = 0) or made free by a voucher
     }
 
-    let pool: Pool | undefined;
     let client: PoolClient | undefined;
 
     try {
-      pool = await getDbConnection();
+      const pool = getPool();
       client = await pool.connect();
 
       try {
@@ -525,9 +507,6 @@ export const POST: APIRoute = async ({ request }) => {
       } finally {
         if (client) {
           client.release();
-        }
-        if (pool) {
-          await pool.end();
         }
       }
     } catch (error) {

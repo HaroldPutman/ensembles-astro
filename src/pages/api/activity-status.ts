@@ -1,17 +1,8 @@
 import type { APIRoute } from 'astro';
-import { Pool } from 'pg';
 import { getCollection } from 'astro:content';
-import { getActiveRegistrationCounts } from '../../lib/db';
+import { getPool, getActiveRegistrationCounts } from '../../lib/db';
 
 export const prerender = false;
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
-});
 
 interface ActivityStatus {
   activityId: string;
@@ -96,6 +87,7 @@ async function getActivityStatus(
     });
 
     // Query database for registration counts
+    const pool = getPool();
     const client = await pool.connect();
 
     try {

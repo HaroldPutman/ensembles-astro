@@ -1,22 +1,8 @@
 import type { APIRoute } from 'astro';
-import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
+import { getPool } from '../../lib/db';
 
 export const prerender = false;
-
-// Create a function to get a database connection
-async function getDbConnection() {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // Serverless-optimized configuration
-    max: 1, // Maximum number of clients in the pool
-    idleTimeoutMillis: 10000, // Close idle clients after 10 seconds
-    connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  });
-
-  return pool;
-}
 
 export const POST: APIRoute = async ({ request }) => {
   console.log('Registration student API called');
@@ -56,12 +42,11 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    let pool: Pool | undefined;
     let client: PoolClient | undefined;
-    
+
     try {
       // Get database connection
-      pool = await getDbConnection();
+      const pool = getPool();
       client = await pool.connect();
 
       let studentId: number;
@@ -103,8 +88,7 @@ export const POST: APIRoute = async ({ request }) => {
         );
 
         client.release();
-        await pool.end();
-        
+
         return new Response(
           JSON.stringify({
             message: 'Student and registration saved successfully',
@@ -128,8 +112,7 @@ export const POST: APIRoute = async ({ request }) => {
 
           // Already registered
           client.release();
-          await pool.end();
-          
+
           return new Response(
             JSON.stringify({
               message: 'Student already registered for this course',
@@ -157,9 +140,6 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         if (typeof client !== 'undefined') {
           client.release();
-        }
-        if (typeof pool !== 'undefined') {
-          await pool.end();
         }
       } catch (cleanupError) {
         console.error('Error during cleanup:', cleanupError);

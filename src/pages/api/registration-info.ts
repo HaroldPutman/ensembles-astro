@@ -1,12 +1,8 @@
 import type { APIRoute } from 'astro';
-import { Pool } from 'pg';
 import { getCollection } from 'astro:content';
+import { getPool } from '../../lib/db';
 
 export const prerender = false;
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -60,6 +56,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     try {
       // Get the registration to find the course ID
+      const pool = getPool();
       const client = await pool.connect();
 
       try {
