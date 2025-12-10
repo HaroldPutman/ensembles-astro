@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { Pool } from 'pg';
 import { getCollection } from 'astro:content';
+import { getActiveRegistrationCounts } from '../../lib/db';
 
 export const prerender = false;
 
@@ -82,19 +83,103 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Get activities collection to map course IDs to course names and kinds
+        // Get activities collection to map course IDs to course names, kinds, and sizeMax
         const activities = await getCollection('activities');
-        const activitiesMap = new Map();
-        activities.forEach((activity: any) => {
+        const activitiesMap = new Map<
+          string,
+          { name: string; kind: string; sizeMax?: number }
+        >();
+        activities.forEach(activity => {
           activitiesMap.set(activity.id.toLowerCase(), {
             name: activity.data.name,
             kind: activity.data.kind,
+            sizeMax: activity.data.sizeMax,
           });
         });
 
-        // Process registrations and calculate totals
-        const registrations = registrationsResult.rows.map(row => {
-          const activityData = activitiesMap.get(row.course);
+        // Get unique course IDs from the registrations
+        const courseIds = [
+          ...new Set(
+            registrationsResult.rows.map(row => row.course.toLowerCase())
+          ),
+        ];
+
+        // Get current registration counts for capacity checking
+        const registrationCounts = await getActiveRegistrationCounts(
+          client,
+          courseIds
+        );
+
+        // Check capacity and determine which registrations can proceed
+        // Group registrations by course to handle multiple registrations for the same course
+        const registrationsByCourse = new Map<
+          string,
+          typeof registrationsResult.rows
+        >();
+        registrationsResult.rows.forEach(row => {
+          const courseId = row.course.toLowerCase();
+          const existing = registrationsByCourse.get(courseId) || [];
+          existing.push(row);
+          registrationsByCourse.set(courseId, existing);
+        });
+
+        // Determine which registrations can be accepted
+        const acceptedRows: typeof registrationsResult.rows = [];
+        const rejectedRows: Array<{
+          row: (typeof registrationsResult.rows)[0];
+          reason: string;
+        }> = [];
+
+        registrationsByCourse.forEach((rows, courseId) => {
+          const activityData = activitiesMap.get(courseId);
+          const sizeMax = activityData?.sizeMax;
+
+          if (sizeMax === undefined) {
+            // No capacity limit - accept all
+            acceptedRows.push(...rows);
+          } else {
+            const currentCount = registrationCounts.get(courseId) || 0;
+            const availableSpots = sizeMax - currentCount;
+
+            if (availableSpots <= 0) {
+              // Activity is full - reject all
+              rows.forEach(row => {
+                rejectedRows.push({
+                  row,
+                  reason: 'Activity is full',
+                });
+              });
+            } else if (rows.length <= availableSpots) {
+              // All registrations can fit
+              acceptedRows.push(...rows);
+            } else {
+              // Partial acceptance - take as many as we can
+              acceptedRows.push(...rows.slice(0, availableSpots));
+              rows.slice(availableSpots).forEach(row => {
+                rejectedRows.push({
+                  row,
+                  reason: 'Activity is full',
+                });
+              });
+            }
+          }
+        });
+
+        // Only reserve the accepted registrations
+        if (acceptedRows.length > 0) {
+          const acceptedIds = acceptedRows.map(row => row.registration_id);
+          await client.query(
+            `UPDATE registration
+             SET reserved_at = NOW()
+             WHERE id = ANY($1)
+               AND payment_id IS NULL`,
+            [acceptedIds]
+          );
+        }
+
+        // Process accepted registrations
+        const registrations = acceptedRows.map(row => {
+          const activityData = activitiesMap.get(row.course.toLowerCase());
           const courseName = activityData?.name || row.course;
           const courseKind = activityData?.kind || null;
           const cost = parseFloat(row.cost) || 0;
@@ -115,7 +200,20 @@ export const POST: APIRoute = async ({ request }) => {
           };
         });
 
-        // Calculate total cost
+        // Process rejected registrations for the response
+        const rejected = rejectedRows.map(({ row, reason }) => {
+          const activityData = activitiesMap.get(row.course.toLowerCase());
+          return {
+            registrationId: row.registration_id,
+            courseId: row.course,
+            courseName: activityData?.name || row.course,
+            studentFirstName: row.student_firstname,
+            studentLastName: row.student_lastname,
+            reason,
+          };
+        });
+
+        // Calculate total cost (only for accepted registrations)
         const totalCost = registrations.reduce(
           (sum, reg) => sum + reg.totalAmount,
           0
@@ -126,6 +224,7 @@ export const POST: APIRoute = async ({ request }) => {
             registrations: registrations,
             totalCost: totalCost,
             count: registrations.length,
+            rejected: rejected.length > 0 ? rejected : undefined,
           }),
           {
             status: 200,

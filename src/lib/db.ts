@@ -18,7 +18,8 @@ export function createPool(connectionString: string): Pool {
  * Get the count of active registrations for an activity.
  * Active registrations are those that:
  * - Are not cancelled (cancelled_at IS NULL)
- * - Have completed payment (payment_id IS NOT NULL)
+ * - Either have completed payment (payment_id IS NOT NULL)
+ *   OR are reserved within the last 15 minutes (reserved_at > NOW() - 15 minutes)
  */
 export async function getActiveRegistrationCount(
   client: PoolClient,
@@ -29,7 +30,10 @@ export async function getActiveRegistrationCount(
      FROM registration
      WHERE LOWER(course) = LOWER($1)
        AND cancelled_at IS NULL
-       AND payment_id IS NOT NULL`,
+       AND (
+         payment_id IS NOT NULL
+         OR (reserved_at IS NOT NULL AND reserved_at > NOW() - INTERVAL '15 minutes')
+       )`,
     [activityId]
   );
   return parseInt(result.rows[0].count, 10);
@@ -37,6 +41,7 @@ export async function getActiveRegistrationCount(
 
 /**
  * Get active registration counts for multiple activities at once.
+ * Includes both paid registrations and those reserved within the last 15 minutes.
  */
 export async function getActiveRegistrationCounts(
   client: PoolClient,
@@ -49,7 +54,10 @@ export async function getActiveRegistrationCounts(
     FROM registration
     WHERE LOWER(course) = ANY($1)
       AND cancelled_at IS NULL
-      AND payment_id IS NOT NULL
+      AND (
+        payment_id IS NOT NULL
+        OR (reserved_at IS NOT NULL AND reserved_at > NOW() - INTERVAL '15 minutes')
+      )
     GROUP BY LOWER(course)`,
     [activityIds.map(id => id.toLowerCase())]
   );
@@ -60,4 +68,3 @@ export async function getActiveRegistrationCounts(
   });
   return counts;
 }
-
