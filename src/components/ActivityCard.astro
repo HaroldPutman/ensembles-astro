@@ -1,5 +1,5 @@
 ---
-import { getFirstAndLastDates, shortDescription } from '../lib/datelib';
+import { getFirstAndLastDates } from '../lib/datelib';
 import ActivityDateTime from './ActivityDateTime.astro';
 
 interface Props {
@@ -14,18 +14,21 @@ interface Props {
   ageMax?: number | 'adult';
   cost?: number;
   instructors: string[];
+  sizeMax?: number;
+  kind: string;
 }
 
-const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors } = Astro.props;
+const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, sizeMax, kind } = Astro.props;
 
 const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
-const isUpcoming = firstDate.epochMilliseconds > Date.now();
 ---
 
 <article
-  class="activity-card"
+  id={activityId}
+  class:list={["activity-card", `kind-${kind}`]}
   data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
   data-end={lastDate ? Math.floor(lastDate.epochMilliseconds / 1000) : Math.floor(firstDate.epochMilliseconds / 1000)}
+  data-kind={kind}
 >
   <a href={`/activities/${activityId}`} class="card-link">
     <div class="activity-image">
@@ -43,27 +46,42 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
           <strong>Instructor:</strong> {instructors.join(', ')}
         </p>
       )}
-      {isUpcoming && ageMin && ageMax && (
+      {ageMin !== undefined && ageMax && (
         <p class="age-range">
           <strong>Ages:</strong> {ageMin}-{ageMax}
         </p>
       )}
-      {isUpcoming && cost !== undefined && (
+      {cost !== undefined && (
         <p class="cost">
           <strong>Cost:</strong> {cost === 0 ? 'Free' : `$${cost}`}
         </p>
       )}
     </div>
+
     <div class="card-actions">
       <a href={`/activities/${activityId}`} class="details-btn">View Details</a>
-      {isUpcoming && (
-        <a href={`/register/${activityId}`} class="register-btn">Register</a>
-      )}
+      <a href={`/register/${activityId}`} class="register-btn">Register Now</a>
+      <p class="registration-status"></p>
     </div>
   </div>
 </article>
 
 <style>
+  .activity-card.current {
+    .age-range {
+      display: none;
+    }
+    .cost {
+      display: none;
+    }
+    .register-btn {
+      display: none;
+    }
+    .registration-status {
+      display: none;
+    }
+  }
+
   .activity-card {
     display: flex;
     flex-direction: column;
@@ -138,6 +156,7 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
 
   .card-actions {
     display: flex;
+    flex-direction: column;
     gap: 0.5rem;
     margin-top: 1rem;
   }
@@ -177,4 +196,13 @@ const isUpcoming = firstDate.epochMilliseconds > Date.now();
     color: var(--color-button-primary-hover-text);
     border-color: var(--color-button-primary-hover-border);
   }
-</style> 
+
+  .registration-status {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin: 0;
+    font-style: italic;
+  }
+
+</style>

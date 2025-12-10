@@ -1,0 +1,89 @@
+---
+import { getPool, getActiveRegistrationCount } from '../lib/db';
+
+interface Props {
+  activityId: string;
+  sizeMax: number;
+}
+
+const { activityId, sizeMax } = Astro.props;
+
+// Cache this server island response for up to 15 minutes
+Astro.response.headers.set('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=60');
+
+// Fetch registration count from database
+let registeredCount = 0;
+let error = false;
+
+try {
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    registeredCount = await getActiveRegistrationCount(client, activityId);
+  } finally {
+    client.release();
+  }
+} catch (e) {
+  console.error('Failed to fetch activity status:', e);
+  error = true;
+}
+
+const isFull = registeredCount >= sizeMax;
+const spotsRemaining = Math.max(0, sizeMax - registeredCount);
+const isLow = spotsRemaining > 0 && spotsRemaining <= 3;
+---
+
+{error ? (
+  <p class="spots-remaining">
+    <strong>Spots:</strong> <span class="spots-count">{sizeMax} max</span>
+  </p>
+) : (
+  <>
+    <p class:list={['spots-remaining', { 'spots-low': isLow, 'spots-full': isFull }]}>
+      <strong>Spots:</strong> 
+      <span class="spots-count">
+        {isFull ? 'Full' : `${spotsRemaining} of ${sizeMax} available`}
+      </span>
+    </p>
+    
+    {isFull ? (
+      <div class="activity-full-message">
+        Sorry, this activity is full
+      </div>
+    ) : (
+      <slot />
+    )}
+  </>
+)}
+
+<style>
+  .spots-remaining {
+    margin: 0.75rem 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .spots-remaining .spots-count {
+    font-weight: 600;
+  }
+
+  .spots-remaining.spots-low .spots-count {
+    color: #d97706;
+  }
+
+  .spots-remaining.spots-full .spots-count {
+    color: #991b1b;
+  }
+
+  .activity-full-message {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 2px solid #fecaca;
+    border-radius: var(--radius-button);
+    font-weight: 600;
+  }
+</style>
+

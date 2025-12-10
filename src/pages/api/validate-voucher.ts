@@ -1,27 +1,12 @@
 import type { APIRoute } from 'astro';
-import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
+import { getPool } from '../../lib/db';
 
 export const prerender = false;
 
-// Create a function to get a database connection
-async function getDbConnection() {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // Serverless-optimized configuration
-    max: 1,
-    idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 10000,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  });
-
-  return pool;
-}
-
 export const POST: APIRoute = async ({ request }) => {
   console.log('Validate voucher API called');
-  
-  let pool: Pool | undefined;
+
   let client: PoolClient | undefined;
 
   try {
@@ -64,7 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     try {
       // Get database connection
-      pool = await getDbConnection();
+      const pool = getPool();
       client = await pool.connect();
 
       // Look up the voucher code
@@ -79,8 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Check if voucher exists
       if (voucherResult.rows.length === 0) {
         client.release();
-        await pool.end();
-        
+
         return new Response(
           JSON.stringify({
             valid: false,
@@ -100,8 +84,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Validate voucher status
       if (!voucher.active) {
         client.release();
-        await pool.end();
-        
+
         return new Response(
           JSON.stringify({
             valid: false,
@@ -120,8 +103,7 @@ export const POST: APIRoute = async ({ request }) => {
       const now = new Date();
       if (voucher.valid_from && new Date(voucher.valid_from) > now) {
         client.release();
-        await pool.end();
-        
+
         return new Response(
           JSON.stringify({
             valid: false,
@@ -138,8 +120,7 @@ export const POST: APIRoute = async ({ request }) => {
 
       if (voucher.valid_until && new Date(voucher.valid_until) < now) {
         client.release();
-        await pool.end();
-        
+
         return new Response(
           JSON.stringify({
             valid: false,
@@ -157,8 +138,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Check usage limits
       if (voucher.max_uses && voucher.times_used >= voucher.max_uses) {
         client.release();
-        await pool.end();
-        
+
         return new Response(
           JSON.stringify({
             valid: false,
@@ -175,7 +155,6 @@ export const POST: APIRoute = async ({ request }) => {
 
       // Voucher is valid - return the details
       client.release();
-      await pool.end();
 
       return new Response(
         JSON.stringify({
@@ -206,9 +185,6 @@ export const POST: APIRoute = async ({ request }) => {
       try {
         if (client) {
           client.release();
-        }
-        if (pool) {
-          await pool.end();
         }
       } catch (cleanupError) {
         console.error('Error during cleanup:', cleanupError);

@@ -1,66 +1,53 @@
 ---
-import { getCollection, render } from 'astro:content';
-import type { CollectionEntry } from 'astro:content';
+import { getCollection } from 'astro:content';
 import FullWidthLayout from '../layouts/FullWidthLayout.astro';
 import ActivityCard from '../components/ActivityCard.astro';
 import { Temporal } from '@js-temporal/polyfill';
 import { getHourAndMinute } from '../lib/datelib';
+import { Icon } from 'astro-icon/components';
 
 const activities = await getCollection('activities');
-const now = Date.now();
 
-// Sort and render activities
-const renderedActivities = await Promise.all(
-  activities
-    .sort((a, b) => {
-      const [monthA, dayA, yearA] = a.data.startDate.split('/').map(Number);
-      const [monthB, dayB, yearB] = b.data.startDate.split('/').map(Number);
-      const startTimeA = getHourAndMinute(a.data.startTime);
-      const startTimeB = getHourAndMinute(b.data.startTime);
-      const dateA = Temporal.PlainDateTime.from({
-        year: yearA,
-        month: monthA,
-        day: dayA,
-        ...startTimeA,
-      });
-      const dateB = Temporal.PlainDateTime.from({
-        year: yearB,
-        month: monthB,
-        day: dayB,
-        ...startTimeB,
-      });
-      return Temporal.PlainDateTime.compare(dateA, dateB);
-    })
-    .map(async (activity: CollectionEntry<'activities'>) => {
-      const { Content } = await render(activity);
-      const [month, day, year] = activity.data.startDate.split('/').map(Number);
-      const startDateTime = new Date(year, month - 1, day).getTime();
-      return {
-        ...activity,
-        Content,
-        isCurrent: startDateTime < now,
-        isUpcoming: startDateTime >= now,
-      };
-    })
-);
-
-// Split into current and upcoming
-const currentActivities = renderedActivities.filter(a => a.isCurrent);
-const upcomingActivities = renderedActivities.filter(a => a.isUpcoming);
+// Sort activities by start date/time
+const sortedActivities = activities.sort((a, b) => {
+  const [monthA, dayA, yearA] = a.data.startDate.split('/').map(Number);
+  const [monthB, dayB, yearB] = b.data.startDate.split('/').map(Number);
+  const startTimeA = getHourAndMinute(a.data.startTime);
+  const startTimeB = getHourAndMinute(b.data.startTime);
+  const dateA = Temporal.PlainDateTime.from({
+    year: yearA,
+    month: monthA,
+    day: dayA,
+    ...startTimeA,
+  });
+  const dateB = Temporal.PlainDateTime.from({
+    year: yearB,
+    month: monthB,
+    day: dayB,
+    ...startTimeB,
+  });
+  return Temporal.PlainDateTime.compare(dateA, dateB);
+});
 ---
 
 
 <FullWidthLayout>
+  {/* Hidden icon sprite definitions - prevents symbols from being removed with cards */}
+  <div class="icon-sprites" aria-hidden="true">
+    <Icon name="mdi:calendar" width="16" height="16" />
+    <Icon name="mdi:access-time" width="16" height="16" />
+    <Icon name="mdi:calendar-repeat" width="16" height="16" />
+  </div>
+
   <section class="activities-section">
     <h1>Activities</h1>
-    {currentActivities.length > 0 && (
       <details class="activity-group">
         <summary>
-          <span class="summary-text">Current Activities</span>
-          <span class="summary-count">{currentActivities.length}</span>
+          <span class="summary-text">Happening now</span>
+          <span class="summary-count current">--</span>
         </summary>
-        <div class="activities-grid">
-          {currentActivities.map((activity) => (
+        <div class="activities-grid current">
+          {sortedActivities.map((activity) => (
             <ActivityCard
               activityId={activity.id}
               name={activity.data.name}
@@ -73,42 +60,34 @@ const upcomingActivities = renderedActivities.filter(a => a.isUpcoming);
               ageMax={activity.data.ageMax}
               cost={activity.data.cost}
               instructors={activity.data.instructors}
+              sizeMax={activity.data.sizeMax}
+              kind={activity.data.kind}
             />
           ))}
         </div>
       </details>
-    )}
 
-    {upcomingActivities.length > 0 && (
       <details class="activity-group" open>
         <summary>
-          <span class="summary-text">Upcoming Activities</span>
-          <span class="summary-count">{upcomingActivities.length}</span>
+          <span class="summary-text">Upcoming</span>
+          <span class="summary-count upcoming">--</span>
         </summary>
-        <div class="activities-grid">
-          {upcomingActivities.map((activity) => (
-            <ActivityCard
-              activityId={activity.id}
-              name={activity.data.name}
-              image={activity.data.image}
-              startDate={activity.data.startDate}
-              startTime={activity.data.startTime}
-              duration={activity.data.duration}
-              repeat={activity.data.repeat}
-              ageMin={activity.data.ageMin}
-              ageMax={activity.data.ageMax}
-              cost={activity.data.cost}
-              instructors={activity.data.instructors}
-            />
-          ))}
+        <div class="activities-grid upcoming">
+          <p class="placeholder">Check back soon for upcoming activities!</p>
         </div>
       </details>
-    )}
-
   </section>
 </FullWidthLayout>
 
 <style>
+  /* Hidden sprite container for icon symbol definitions */
+  .icon-sprites {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
   .activities-section {
     padding: 2rem;
   }
@@ -200,4 +179,146 @@ const upcomingActivities = renderedActivities.filter(a => a.isUpcoming);
       padding: 0.75rem;
     }
   }
-</style> 
+
+  /* Hide sections with no activities */
+  .activity-group.empty {
+    display: none;
+  }
+
+  .activities-grid .placeholder {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #666;
+    padding: 2rem;
+  }
+</style>
+
+<script>
+  interface ActivityStatus {
+    activityId: string;
+    registeredCount: number;
+    maxParticipants: number | null;
+    isFull: boolean;
+    spotsRemaining: number | null;
+  }
+
+  function categorizeActivities(): string[] {
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const cards = document.querySelectorAll('.activity-card');
+    const currentGrid = document.querySelector('.activities-grid.current');
+    const upcomingGrid = document.querySelector('.activities-grid.upcoming');
+    const currentCount = document.querySelector('.summary-count.current');
+    const upcomingCount = document.querySelector('.summary-count.upcoming');
+    const currentGroup = currentGrid?.closest('.activity-group');
+    const upcomingGroup = upcomingGrid?.closest('.activity-group');
+    const placeholder = upcomingGrid?.querySelector('.placeholder');
+
+    if (!currentGrid || !upcomingGrid) return [];
+
+    let currentActivities = 0;
+    let upcomingActivities = 0;
+    const upcomingIds: string[] = [];
+
+    cards.forEach(card => {
+      const startTime = parseInt(card.getAttribute('data-start') || '0', 10);
+      const endTime = parseInt(card.getAttribute('data-end') || '0', 10);
+
+      if (endTime < now) {
+        // Activity has ended - remove it
+        card.remove();
+      } else if (startTime > now || card.getAttribute('data-kind') === 'group') {
+        // Activity Available for registration - move to upcoming
+        upcomingGrid.appendChild(card);
+        card.classList.add('upcoming');
+        upcomingActivities++;
+        upcomingIds.push(card.id);
+      } else {
+        // Activity is currently running - keep in current
+        card.classList.add('current');
+        currentActivities++;
+      }
+    });
+
+    // Update counts
+    if (currentCount) {
+      currentCount.textContent = currentActivities.toString();
+    }
+    if (upcomingCount) {
+      upcomingCount.textContent = upcomingActivities.toString();
+    }
+
+    // Hide empty sections
+    if (currentActivities === 0 && currentGroup) {
+      currentGroup.classList.add('empty');
+    }
+    if (upcomingActivities === 0 && upcomingGroup) {
+      // Keep placeholder visible if no upcoming activities
+      if (placeholder instanceof HTMLElement) {
+        placeholder.style.display = 'block';
+      }
+    } else if (placeholder) {
+      // Remove placeholder if there are upcoming activities
+      placeholder.remove();
+    }
+
+    // Open the section that has activities
+    if (upcomingActivities == 0 && currentGroup) {
+      (currentGroup as HTMLDetailsElement).open = true;
+    }
+    if (upcomingGroup) {
+      (upcomingGroup as HTMLDetailsElement).open = true;
+    }
+
+    return upcomingIds;
+  }
+
+  async function updateRegistrationStatus(activityIds: string[]) {
+    if (activityIds.length === 0) return;
+
+    try {
+      const url = '/api/activity-status?' + activityIds.map(id => 'id=' + encodeURIComponent(id)).join('&');
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const activities: ActivityStatus[] = data.activities;
+
+      activities.forEach(status => {
+        const card = document.getElementById(status.activityId);
+        if (!card) return;
+
+        const registerBtn = card.querySelector('.register-btn') as HTMLElement;
+        const statusEl = card.querySelector('.registration-status') as HTMLElement;
+
+        if (status.isFull) {
+          // Activity is full - hide register button and show message
+          if (registerBtn) {
+            registerBtn.style.display = 'none';
+          }
+          if (statusEl) {
+            statusEl.textContent = 'Sorry, this activity is full';
+            statusEl.style.color = '#991b1b';
+          }
+        } else if (status.spotsRemaining !== null && status.spotsRemaining <= 3) {
+          // Low spots - show warning
+          if (statusEl) {
+            statusEl.textContent = `Only ${status.spotsRemaining} spot${status.spotsRemaining === 1 ? '' : 's'} left!`;
+            statusEl.style.color = '#d97706';
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch activity status:', error);
+    }
+  }
+
+  // Run on page load
+  document.addEventListener('DOMContentLoaded', async () => {
+    const upcomingIds = categorizeActivities();
+    await updateRegistrationStatus(upcomingIds);
+  });
+</script> 

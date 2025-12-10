@@ -45,7 +45,7 @@ const durationISO = makeICalDuration(activity.data.duration);
 // Format age range
 function formatAgeRange(ageMin?: number, ageMax?: number | 'adult') {
   if (!ageMin && !ageMax) return null;
-  if (ageMax === 'adult') return `Ages ${ageMin}+`;
+  if (ageMin && ageMax === 'adult') return `Ages ${ageMin}-adult`;
   if (ageMin && ageMax) return `Ages ${ageMin}-${ageMax}`;
   if (ageMin) return `Ages ${ageMin}+`;
   if (ageMax) return `Ages up to ${ageMax}`;
