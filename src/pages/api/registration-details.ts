@@ -104,6 +104,9 @@ export const POST: APIRoute = async ({ request }) => {
           ),
         ];
 
+        // Start transaction for atomic capacity check and reservation
+        await client.query('BEGIN');
+
         // Get current registration counts for capacity checking
         const registrationCounts = await getActiveRegistrationCounts(
           client,
@@ -176,6 +179,8 @@ export const POST: APIRoute = async ({ request }) => {
             [acceptedIds]
           );
         }
+        await client.query('COMMIT');
+
 
         // Process accepted registrations
         const registrations = acceptedRows.map(row => {
@@ -233,6 +238,9 @@ export const POST: APIRoute = async ({ request }) => {
             },
           }
         );
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
       } finally {
         client.release();
       }
