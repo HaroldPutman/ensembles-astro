@@ -37,9 +37,26 @@ import Layout from '../../layouts/Layout.astro';
       </div>
       
       <div class="payment-form">
+        <div class="voucher-input-group">
+          <label for="voucher-code">Have a voucher code?</label>
+          <div class="voucher-input-wrapper">
+            <input 
+              type="text" 
+              id="voucher-code" 
+              name="voucher-code" 
+              placeholder="Enter voucher code"
+              class="voucher-input"
+            />
+            <button type="button" id="apply-voucher-btn" class="apply-voucher-btn" disabled>
+              Apply
+            </button>
+          </div>
+          <p id="voucher-message" class="voucher-message" style="display: none;"></p>
+        </div>
+
         <h2>Payment Information</h2>
-        <div class="payment-note">
-          <p>You don't need a PayPal account to pay with Credit or Debit card. </p>
+      <div class="payment-note">
+          <p>You don't need a PayPal account to pay with Debit or Credit Card. </p>
         </div>
         <div id="paypal-button-container"></div>
         
@@ -58,22 +75,6 @@ import Layout from '../../layouts/Layout.astro';
             <button type="button" id="alternate-payment-btn" class="alternate-payment-btn">
               Pay by check
             </button>
-          </div>
-            <div class="voucher-input-group">
-            <label for="voucher-code">Have a voucher code?</label>
-            <div class="voucher-input-wrapper">
-              <input 
-                type="text" 
-                id="voucher-code" 
-                name="voucher-code" 
-                placeholder="Enter voucher code"
-                class="voucher-input"
-              />
-              <button type="button" id="apply-voucher-btn" class="apply-voucher-btn" disabled>
-                Apply
-              </button>
-            </div>
-            <p id="voucher-message" class="voucher-message" style="display: none;"></p>
           </div>
         </div>
         
