@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { Pool } from 'pg';
 import { getCollection } from 'astro:content';
+import { getActiveRegistrationCounts } from '../../lib/db';
 
 export const prerender = false;
 
@@ -22,6 +23,7 @@ interface ActivityStatus {
 
 export const GET: APIRoute = async ({ url }) => {
   const activityIds = url.searchParams.getAll('id');
+  const noCache = url.searchParams.has('no-cache');
 
   if (!activityIds || activityIds.length === 0) {
     return new Response(
@@ -35,7 +37,7 @@ export const GET: APIRoute = async ({ url }) => {
     );
   }
 
-  return getActivityStatus(activityIds);
+  return getActivityStatus(activityIds, noCache);
 };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -66,10 +68,13 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  return getActivityStatus(activityIds);
+  return getActivityStatus(activityIds, false);
 };
 
-async function getActivityStatus(activityIds: string[]): Promise<Response> {
+async function getActivityStatus(
+  activityIds: string[],
+  noCache: boolean
+): Promise<Response> {
   try {
     // Get activities collection to find sizeMax for each activity
     const activities = await getCollection('activities');
@@ -83,23 +88,10 @@ async function getActivityStatus(activityIds: string[]): Promise<Response> {
     const client = await pool.connect();
 
     try {
-      // Get count of active registrations (not cancelled) for each activity
-      const result = await client.query(
-        `SELECT 
-          LOWER(course) as course,
-          COUNT(*) as count
-        FROM registration
-        WHERE LOWER(course) = ANY($1)
-          AND cancelled_at IS NULL
-        GROUP BY LOWER(course)`,
-        [activityIds.map(id => id.toLowerCase())]
+      const registrationCounts = await getActiveRegistrationCounts(
+        client,
+        activityIds
       );
-
-      // Build registration counts map
-      const registrationCounts = new Map<string, number>();
-      result.rows.forEach(row => {
-        registrationCounts.set(row.course, parseInt(row.count, 10));
-      });
 
       // Build response for each requested activity
       const statuses: ActivityStatus[] = activityIds.map(activityId => {
@@ -121,17 +113,21 @@ async function getActivityStatus(activityIds: string[]): Promise<Response> {
         };
       });
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (!noCache) {
+        headers['Cache-Control'] =
+          'public, max-age=600, s-maxage=600, stale-while-revalidate=60';
+      }
+
       return new Response(
         JSON.stringify({
           activities: statuses,
         }),
         {
           status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control':
-              'public, max-age=600, s-maxage=600, stale-while-revalidate=60',
-          },
+          headers,
         }
       );
     } finally {

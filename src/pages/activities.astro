@@ -4,6 +4,7 @@ import FullWidthLayout from '../layouts/FullWidthLayout.astro';
 import ActivityCard from '../components/ActivityCard.astro';
 import { Temporal } from '@js-temporal/polyfill';
 import { getHourAndMinute } from '../lib/datelib';
+import { Icon } from 'astro-icon/components';
 
 const activities = await getCollection('activities');
 
@@ -31,6 +32,13 @@ const sortedActivities = activities.sort((a, b) => {
 
 
 <FullWidthLayout>
+  {/* Hidden icon sprite definitions - prevents symbols from being removed with cards */}
+  <div class="icon-sprites" aria-hidden="true">
+    <Icon name="mdi:calendar" width="16" height="16" />
+    <Icon name="mdi:access-time" width="16" height="16" />
+    <Icon name="mdi:calendar-repeat" width="16" height="16" />
+  </div>
+
   <section class="activities-section">
     <h1>Activities</h1>
       <details class="activity-group">
@@ -72,6 +80,14 @@ const sortedActivities = activities.sort((a, b) => {
 </FullWidthLayout>
 
 <style>
+  /* Hidden sprite container for icon symbol definitions */
+  .icon-sprites {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
   .activities-section {
     padding: 2rem;
   }
