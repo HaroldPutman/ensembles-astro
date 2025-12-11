@@ -1,0 +1,382 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+---
+
+<Layout>
+  <div class="get-involved-page">
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1>Get Involved</h1>
+      <p class="subtitle">Join us in bringing music and art to our community</p>
+    </section>
+
+    <!-- Intro Section -->
+    <section class="intro-section">
+      <p>
+        Ensembles is powered by people who believe in the transformative power of music and art. 
+        Whether you have time, talent, or resources to share, there's a meaningful way for you to contribute 
+        to our mission of making the arts accessible to everyone.
+      </p>
+    </section>
+
+    <!-- Ways to Get Involved -->
+    <section class="involvement-section">
+      <div class="involvement-card teach">
+        <div class="card-icon">
+          <Icon name="mdi:music-note" width="48" height="48" />
+        </div>
+        <div class="card-content">
+          <h2>Teach</h2>
+          <p>
+            Share your passion and expertise with eager students of all ages. We're always looking for 
+            talented musicians and artists to join our team of instructors. Whether you specialize in 
+            piano, voice, guitar, strings, art, or other disciplines, your skills can help nurture 
+            the next generation of artists.
+          </p>
+          <ul class="benefits-list">
+            <li>Flexible scheduling to fit your availability</li>
+            <li>Supportive community of fellow instructors</li>
+            <li>Opportunity to shape curriculum and programs</li>
+            <li>Make a lasting impact on students' lives</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="involvement-card volunteer">
+        <div class="card-icon">
+          <Icon name="mdi:hand-heart" width="48" height="48" />
+        </div>
+        <div class="card-content">
+          <h2>Volunteer</h2>
+          <p>
+            Our events and programs run smoothly thanks to dedicated volunteers. From helping at 
+            concerts and art shows to assisting with administrative tasks, there are many ways to 
+            lend a hand. No musical experience required—just a willingness to help!
+          </p>
+          <ul class="benefits-list">
+            <li>Help at concerts, recitals, and art shows</li>
+            <li>Assist with event setup and coordination</li>
+            <li>Support administrative operations</li>
+            <li>Welcome and guide families at events</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="involvement-card give">
+        <div class="card-icon">
+          <Icon name="mdi:gift-outline" width="48" height="48" />
+        </div>
+        <div class="card-content">
+          <h2>Give</h2>
+          <p>
+            Your financial support helps us keep our programs affordable and accessible to all families, 
+            regardless of their financial situation. Donations fund scholarships, purchase instruments 
+            and supplies, and help us expand our reach in the community.    
+          </p>
+          <ul class="benefits-list">
+            <li>Provide scholarships for students in need</li>
+            <li>Help purchase instruments and art supplies</li>
+            <li>Support venue costs and program expansion</li>
+            <li>Ensembles is a 501(c)(3) nonprofit organization</li>
+          </ul>
+          <a href="https://www.paypal.com/donate/?hosted_button_id=XD9PM5ZS77HAY"
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="btn btn-give">
+            Give Now
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <h2>Ready to Make a Difference?</h2>
+      <p>We'd love to hear from you! Reach out to learn more about how you can get involved.</p>
+      <div class="cta-buttons">
+        <a href="/contact" class="btn btn-primary">
+          Contact Us
+          <Icon name="mdi:arrow-right" width="20" height="20" />
+        </a>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .get-involved-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  /* Hero Section */
+  .hero {
+    text-align: center;
+    padding: 4rem 1rem 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    margin: 0 0 1rem;
+    color: #1a1a1a;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    color: #666;
+    margin: 0;
+  }
+
+  /* Intro Section */
+  .intro-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem 1rem 3rem;
+    text-align: center;
+  }
+
+  .intro-section p {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: #444;
+    margin: 0;
+  }
+
+  /* Involvement Section */
+  .involvement-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+
+  .involvement-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2rem;
+    background: #fafafa;
+    border-radius: 16px;
+    padding: 2.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .involvement-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .teach .card-icon {
+    background: linear-gradient(135deg, #4a90a4 0%, #2c6e8a 100%);
+  }
+
+  .volunteer .card-icon {
+    background: linear-gradient(135deg, #6b8e5e 0%, #4a6b3d 100%);
+  }
+
+  .give .card-icon {
+    background: linear-gradient(135deg, #9b7b5e 0%, #7a5d43 100%);
+  }
+
+  .card-content h2 {
+    font-size: 1.75rem;
+    margin: 0 0 1rem;
+    color: #1a1a1a;
+  }
+
+  .card-content p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #555;
+    margin: 0 0 1.5rem;
+  }
+
+  .benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .benefits-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.4;
+  }
+
+  .benefits-list li::before {
+    content: '✓';
+    color: #4a90a4;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .volunteer .benefits-list li::before {
+    color: #6b8e5e;
+  }
+
+  .give .benefits-list li::before {
+    color: #9b7b5e;
+  }
+
+  .btn-give {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--radius-button);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    background: var(--color-button-primary-background);
+    color: var(--color-button-primary-text);
+    border: 1px solid var(--color-button-primary-border);
+  }
+
+  .btn-give:hover {
+    background: var(--color-button-primary-hover-background);
+    color: var(--color-button-primary-hover-text);
+    border-color: var(--color-button-primary-hover-border);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* CTA Section */
+  .cta-section {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, #2c2e2f 0%, #404244 100%);
+    border-radius: 16px;
+    margin: 3rem 0 4rem;
+    color: white;
+  }
+
+  .cta-section h2 {
+    font-size: 2rem;
+    margin: 0 0 1rem;
+    color: white;
+  }
+
+  .cta-section p {
+    font-size: 1.1rem;
+    margin: 0 0 2rem;
+    opacity: 0.9;
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--radius-button);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background: white;
+    color: #2c2e2f;
+    border: 1px solid white;
+  }
+
+  .btn-primary:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .btn-primary svg {
+    transition: transform 0.2s ease;
+  }
+
+  .btn-primary:hover svg {
+    transform: translateX(4px);
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 968px) {
+    .hero h1 {
+      font-size: 2.5rem;
+    }
+
+    .involvement-card {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+
+    .card-icon {
+      margin: 0 auto;
+    }
+
+    .benefits-list {
+      grid-template-columns: 1fr;
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .hero {
+      padding: 3rem 1rem 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: 2rem;
+    }
+
+    .involvement-card {
+      padding: 1.5rem;
+    }
+
+    .card-icon {
+      width: 64px;
+      height: 64px;
+    }
+
+    .card-content h2 {
+      font-size: 1.5rem;
+    }
+
+    .cta-section {
+      padding: 3rem 1.5rem;
+      margin: 2rem 0 3rem;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
