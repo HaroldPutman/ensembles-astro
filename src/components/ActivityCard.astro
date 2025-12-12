@@ -24,6 +24,7 @@ const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax
 const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
 if (!firstDate) {
   console.error('Missing firstDate for activity:', activityId);
+  return null; // render nothing.
 }
 ---
 

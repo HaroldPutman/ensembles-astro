@@ -40,7 +40,8 @@ const sortedActivities = activities.sort((a, b) => {
   </div>
 
   <section class="activities-section">
-    <h1>Activities</h1>
+    <h1 id="page-title">Activities</h1>
+    <a href="/activities" id="show-all-link" class="show-all-link" hidden>Show all activities &rarr;</a>
       <details class="activity-group">
         <summary>
           <span class="summary-text">Happening now</span>
@@ -73,7 +74,7 @@ const sortedActivities = activities.sort((a, b) => {
           <span class="summary-count upcoming">--</span>
         </summary>
         <div class="activities-grid upcoming">
-          <p class="placeholder">Check back soon for upcoming activities!</p>
+          <p class="placeholder">Check back soon for upcoming <span class="kind-word">activities</span>, or <a href="/activities" class="show-all-link">Show all activities</a>.</p>
         </div>
       </details>
   </section>
@@ -93,10 +94,27 @@ const sortedActivities = activities.sort((a, b) => {
   }
 
   h1 {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     font-size: 2.5rem;
     color: #333;
     padding: 0 1rem;
+  }
+
+  .show-all-link {
+    display: block;
+    padding: 0 1rem;
+    margin-bottom: 1rem;
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+
+  .show-all-link:hover {
+    text-decoration: underline;
+  }
+
+  .show-all-link[hidden] {
+    display: none;
   }
 
   .activity-group {
@@ -213,6 +231,33 @@ const sortedActivities = activities.sort((a, b) => {
     const upcomingGroup = upcomingGrid?.closest('.activity-group');
     const placeholder = upcomingGrid?.querySelector('.placeholder');
 
+    // Check for kind filter in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const kindFilter = urlParams.get('kind');
+
+    // Update title and show "Show all" link if filtering by kind
+    if (kindFilter) {
+      const pageTitle = document.getElementById('page-title');
+      const kindWords = document.querySelectorAll('.kind-word');
+      const showAllLink = document.getElementById('show-all-link');
+      const kindTitles: Record<string, string> = {
+        class: 'Classes',
+        group: 'Groups',
+        event: 'Events',
+      };
+      if (pageTitle && kindTitles[kindFilter]) {
+        pageTitle.textContent = kindTitles[kindFilter];
+      }
+      if (kindWords) {
+        kindWords.forEach(word => {
+          word.textContent = kindTitles[kindFilter] || 'activities';
+        });
+      }
+      if (showAllLink) {
+        showAllLink.hidden = false;
+      }
+    }
+
     if (!currentGrid || !upcomingGrid) return [];
 
     let currentActivities = 0;
@@ -222,11 +267,18 @@ const sortedActivities = activities.sort((a, b) => {
     cards.forEach(card => {
       const startTime = parseInt(card.getAttribute('data-start') || '0', 10);
       const endTime = parseInt(card.getAttribute('data-end') || '0', 10);
+      const cardKind = card.getAttribute('data-kind');
+
+      // Filter by kind if specified in URL
+      if (kindFilter && cardKind !== kindFilter) {
+        card.remove();
+        return;
+      }
 
       if (endTime < now) {
         // Activity has ended - remove it
         card.remove();
-      } else if (startTime > now || card.getAttribute('data-kind') === 'group') {
+      } else if (startTime > now || cardKind === 'group') {
         // Activity Available for registration - move to upcoming
         upcomingGrid.appendChild(card);
         card.classList.add('upcoming');
