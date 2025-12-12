@@ -1,88 +1,60 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import { Icon } from 'astro-icon/components';
+import FullWidthLayout from '../layouts/FullWidthLayout.astro';
 ---
 
-<Layout>
+<FullWidthLayout>
   <div class="homepage">
     <!-- Hero Section -->
     <section class="hero">
-      <div class="hero-images">
-        <div class="image-card image-1">
-          <img 
-            src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=600&h=400&fit=crop" 
-            alt="Children playing musical instruments together"
-            loading="eager"
-          />
-        </div>
-        <div class="image-card image-2">
-          <img 
-            src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=600&h=400&fit=crop" 
-            alt="Piano keys with warm lighting"
-            loading="eager"
-          />
-        </div>
-      </div>
-      
-      <div class="hero-content">
-        <p class="tagline">
-          Making music and art accessible to the community of Charlestown and surrounding areas regardless of age, skill level, background or financial means.
-        </p>
-        <div class="hero-actions">
-          <a href="/about" class="btn btn-secondary">Learn More</a>
-          <a href="/activities" class="btn btn-primary">
-            Register for Activities
-            <Icon name="mdi:arrow-right" width="20" height="20" />
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Feature Image -->
-    <section class="feature-section">
-      <div class="feature-image">
+      <div class="hero-image">
         <img 
-          src="https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=1200&h=600&fit=crop" 
-          alt="Orchestra performing on stage"
-          loading="lazy"
+          src="/heroes/classes.jpg" 
+          alt="Students working on art projects together"
+          loading="eager"
         />
       </div>
-      <div class="feature-overlay">
-        <h2>Discover Your Place in the Arts</h2>
-        <p>From piano lessons to ensemble performances, find the perfect program for you or your child.</p>
+      <div class="hero-content">
+        <h1>Affordable Group Music and Art Classes</h1>
+        <a href="/activities?kind=class" class="cta-button">
+          Sign Up Now <span class="arrow">▶</span>
+        </a>
       </div>
     </section>
 
-    <!-- Info Cards -->
-    <section class="info-section">
-      <div class="info-card">
-        <div class="info-icon">
-          <Icon name="mdi:education-outline" width="32" height="32" />
+    <!-- Two Column Section -->
+    <section class="two-column">
+      <div class="column column-groups">
+        <h2>Performance Groups</h2>
+        <div class="column-image">
+          <img 
+            src="/heroes/groups.jpg" 
+            alt="Jazz band performing outdoors"
+            loading="lazy"
+          />
         </div>
-        <h3>Music & Art Classes</h3>
-        <p>Ensembles offers affordable group music and art lessons for all ages and skill levels.</p>
+        <a href="/activities?kind=group" class="cta-button">
+          Join Now <span class="arrow">▶</span>
+        </a>
       </div>
-      <div class="info-card">
-        <div class="info-icon">
-          <Icon name="mdi:people" width="32" height="32" />
+      <div class="column column-events">
+        <h2>Special Events</h2>
+        <div class="column-image">
+          <img 
+            src="/heroes/events.jpg" 
+            alt="Art gallery paint pouring event"
+            loading="lazy"
+          />
         </div>
-        <h3>Performance Groups</h3>
-        <p>Experience the joy of making music with others in our community.</p>
-      </div>
-      <div class="info-card">
-        <div class="info-icon">
-          <Icon name="mdi:calendar-blank" width="32" height="32" />
-        </div>
-        <h3>Events</h3>
-        <p>Join us for art shows, tailgate concerts, and more throughout the year.</p>
+        <a href="/activities?kind=event" class="cta-button cta-button-light">
+          Learn More <span class="arrow">▶</span>
+        </a>
       </div>
     </section>
   </div>
-</Layout>
+</FullWidthLayout>
 
 <style>
   .homepage {
-    max-width: 100%;
     margin: 0;
     padding: 0;
   }
@@ -91,270 +63,198 @@ import { Icon } from 'astro-icon/components';
   .hero {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    padding: 2rem 0;
-    max-width: 1200px;
-    margin: 0 auto;
+    background: #000;
+    min-height: 450px;
   }
 
-  .hero-images {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+  .hero-image {
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .image-card {
-    border-radius: 12px;
-    overflow: hidden;
-    aspect-ratio: 4/3;
-    background: #f0f0f0;
-  }
-
-  .image-card img {
-    width: 100%;
-    height: 100%;
+  .hero-image img {
+    max-width: 100%;
+    max-height: 380px;
     object-fit: cover;
-    transition: transform 0.5s ease;
-  }
-
-  .image-card:hover img {
-    transform: scale(1.05);
+    border-radius: 4px;
   }
 
   .hero-content {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 1rem 2rem;
+    align-items: flex-start;
+    padding: 2rem 3rem;
+    gap: 2rem;
   }
 
-  .brand {
-    margin-bottom: 1.5rem;
+  .hero-content h1 {
+    color: #fff;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+    font-style: italic;
   }
 
-  .hero-logo {
-    height: 3rem;
-    width: auto;
-  }
-
-  .tagline {
-    font-size: 1.5rem;
-    line-height: 1.4;
-    color: #333;
-    margin: 0 0 2rem;
-    font-weight: 400;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .btn {
+  /* CTA Button */
+  .cta-button {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    background: #000;
+    color: #fff;
     padding: 0.875rem 1.5rem;
-    border-radius: var(--radius-button);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-    cursor: pointer;
-  }
-
-  .btn-primary {
-    background: var(--color-button-primary-background);
-    color: var(--color-button-primary-text);
-    border: 1px solid var(--color-button-primary-border);
-  }
-
-  .btn-primary:hover {
-    background: var(--color-button-primary-hover-background);
-    color: var(--color-button-primary-hover-text);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .btn-primary svg {
-    transition: transform 0.2s ease;
-  }
-
-  .btn-primary:hover svg {
-    transform: translateX(4px);
-  }
-
-  .btn-secondary {
-    background: var(--color-button-secondary-background);
-    color: var(--color-button-secondary-text);
-    border: 1px solid var(--color-button-secondary-border);
-  }
-
-  .btn-secondary:hover {
-    background: var(--color-button-secondary-hover-background);
-    color: var(--color-button-secondary-hover-text);
-  }
-
-  /* Feature Section */
-  .feature-section {
-    position: relative;
-    margin: 3rem 0;
-    border-radius: 16px;
-    overflow: hidden;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .feature-image {
-    aspect-ratio: 2/1;
-    background: #1a1a1a;
-  }
-
-  .feature-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.85;
-  }
-
-  .feature-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 3rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
-    color: white;
-  }
-
-  .feature-overlay h2 {
-    font-size: 2rem;
-    margin: 0 0 0.5rem;
-    color: white;
-  }
-
-  .feature-overlay p {
     font-size: 1.1rem;
-    margin: 0;
-    opacity: 0.9;
-    max-width: 600px;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 3px solid #fff;
+    transition: all 0.2s ease;
   }
 
-  /* Info Section */
-  .info-section {
+  .cta-button:hover {
+    background: #fff;
+    color: #000;
+  }
+
+  .cta-button .arrow {
+    font-size: 0.9rem;
+  }
+
+  .cta-button-light {
+    background: transparent;
+    border-color: #fff;
+  }
+
+  .cta-button-light:hover {
+    background: #fff;
+    color: #00a0a0;
+  }
+
+  /* Two Column Section */
+  .two-column {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-    padding: 4rem 0;
-    max-width: 1200px;
-    margin: 0 auto;
+    grid-template-columns: 1fr 1fr;
   }
 
-  .info-card {
-    background: #fafafa;
-    border-radius: 12px;
-    padding: 2rem;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .info-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  }
-
-  .info-icon {
-    width: 56px;
-    height: 56px;
-    background: #2c2e2f;
-    border-radius: 12px;
+  .column {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    color: white;
+    padding: 2.5rem 2rem;
+    gap: 1.5rem;
   }
 
-  .info-card h3 {
-    font-size: 1.25rem;
-    margin: 0 0 0.75rem;
-    color: #1a1a1a;
-  }
-
-  .info-card p {
-    font-size: 1rem;
-    color: #666;
+  .column h2 {
+    font-size: 2rem;
+    font-weight: 700;
     margin: 0;
-    line-height: 1.6;
+    text-align: center;
+  }
+
+  .column-image {
+    max-width: 320px;
+  }
+
+  .column-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
+  /* Groups Column */
+  .column-groups {
+    background: #e8e8e8;
+  }
+
+  .column-groups h2 {
+    color: #000;
+  }
+
+  .column-groups .cta-button {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+  }
+
+  .column-groups .cta-button:hover {
+    background: #333;
+    border-color: #333;
+  }
+
+  /* Events Column */
+  .column-events {
+    background: #00b8b8;
+  }
+
+  .column-events h2 {
+    color: #fff;
+    font-style: italic;
+  }
+
+  .column-events .cta-button {
+    background: transparent;
+    color: #fff;
+    border-color: #fff;
+  }
+
+  .column-events .cta-button:hover {
+    background: #fff;
+    color: #00b8b8;
   }
 
   /* Mobile Styles */
-  @media (max-width: 968px) {
+  @media (max-width: 768px) {
     .hero {
       grid-template-columns: 1fr;
-      gap: 2rem;
-      padding: 1.5rem;
-    }
-
-    .hero-images {
-      order: 1;
+      min-height: auto;
     }
 
     .hero-content {
-      order: 2;
-      padding: 0;
-      text-align: center;
+      order: -1;
+      padding: 2rem 1.5rem 0;
       align-items: center;
+      text-align: center;
     }
 
-    .tagline {
-      font-size: 1.25rem;
+    .hero-content h1 {
+      font-size: 1.75rem;
     }
 
-    .hero-actions {
-      justify-content: center;
+    .hero-image {
+      position: relative;
+      padding: 1rem 1.5rem 2rem;
     }
 
-    .info-section {
+    .hero-image img {
+      max-height: 300px;
+      width: 100%;
+    }
+
+    .hero .cta-button {
+      position: absolute;
+      bottom: 3rem;
+      right: 2rem;
+    }
+
+    .two-column {
       grid-template-columns: 1fr;
+    }
+
+    .column {
       padding: 2rem 1.5rem;
     }
 
-    .feature-section {
-      margin: 2rem 1rem;
-      border-radius: 12px;
+    .column h2 {
+      font-size: 1.75rem;
     }
 
-    .feature-overlay {
-      padding: 1.5rem;
-    }
-
-    .feature-overlay h2 {
-      font-size: 1.5rem;
-    }
-
-    .feature-overlay p {
-      font-size: 1rem;
-    }
-  }
-
-  @media (max-width: 600px) {
-    .hero-images {
-      grid-template-columns: 1fr;
-    }
-
-    .image-card {
-      aspect-ratio: 16/9;
-    }
-
-    .btn {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .feature-image {
-      aspect-ratio: 4/3;
+    .column-image {
+      max-width: 280px;
     }
   }
 </style>
