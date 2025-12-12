@@ -1,5 +1,6 @@
 ---
 import { getFirstAndLastDates } from '../lib/datelib';
+import { formatAgeRange } from '../lib/agelib';
 import ActivityDateTime from './ActivityDateTime.astro';
 
 interface Props {
@@ -18,9 +19,12 @@ interface Props {
   kind: string;
 }
 
-const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, sizeMax, kind } = Astro.props;
+const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, image, kind } = Astro.props;
 
 const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
+if (!firstDate) {
+  console.error('Missing firstDate for activity:', activityId);
+}
 ---
 
 <article
@@ -32,7 +36,7 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
 >
   <a href={`/activities/${activityId}`} class="card-link">
     <div class="activity-image">
-      <img src="https://picsum.photos/960/420" alt={name} />
+      <img src={image ?? "/activity/placeholder.jpg"} alt={name} />
     </div>
     <div class="activity-header">
       <h2>{name}</h2>
@@ -46,11 +50,9 @@ const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duratio
           <strong>Instructor:</strong> {instructors.join(', ')}
         </p>
       )}
-      {ageMin !== undefined && ageMax && (
-        <p class="age-range">
-          <strong>Ages:</strong> {ageMin}-{ageMax}
-        </p>
-      )}
+      <p class="age-range">
+        <strong>Ages:</strong> {formatAgeRange(ageMin, ageMax)}
+      </p>
       {cost !== undefined && (
         <p class="cost">
           <strong>Cost:</strong> {cost === 0 ? 'Free' : `$${cost}`}
