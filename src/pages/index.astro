@@ -1,54 +1,51 @@
 ---
 import FullWidthLayout from '../layouts/FullWidthLayout.astro';
+import { Icon } from 'astro-icon/components';
 ---
 
 <FullWidthLayout>
-  <div class="homepage">
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-image">
+  <div class="hero-container">
+    <section class="hero-one">
+      <h1>Affordable Group Music and Art Classes</h1>
+      <div class="hero-image primary">
         <img 
           src="/heroes/classes.jpg" 
           alt="Students working on art projects together"
           loading="eager"
         />
       </div>
-      <div class="hero-content">
-        <h1>Affordable Group Music and Art Classes</h1>
-        <a href="/activities?kind=class" class="cta-button">
-          Sign Up Now <span class="arrow">▶</span>
-        </a>
+      <div class="cta-container">
+        <a href="/activities?kind=class" class="cta-button oswald-cta">
+          Sign Up Now
+          <Icon name="mdi:arrow-right-thick" width="28" height="28" />
+        </a>  
       </div>
     </section>
-
-    <!-- Two Column Section -->
-    <section class="two-column">
-      <div class="column column-groups">
-        <h2>Performance Groups</h2>
-        <div class="column-image">
-          <img 
-            src="/heroes/groups.jpg" 
-            alt="Jazz band performing outdoors"
-            loading="lazy"
-          />
-        </div>
-        <a href="/activities?kind=group" class="cta-button">
-          Join Now <span class="arrow">▶</span>
-        </a>
+    <section class="hero-two">
+      <h1>Performance Groups</h1>
+      <div class="hero-image">
+        <img 
+          src="/heroes/groups.jpg" 
+          alt="Jazz band performing outdoors"
+          loading="eager"
+        />
       </div>
-      <div class="column column-events">
-        <h2>Special Events</h2>
-        <div class="column-image">
-          <img 
-            src="/heroes/events.jpg" 
-            alt="Art gallery paint pouring event"
-            loading="lazy"
-          />
-        </div>
-        <a href="/activities?kind=event" class="cta-button cta-button-light">
-          Learn More <span class="arrow">▶</span>
-        </a>
+      <a href="/activities?kind=group" class="cta-button oswald-cta">
+        Join Now <span class="arrow">▶</span>
+      </a>
+    </section>
+    <section class="hero-three">
+      <h1>Special Events</h1>
+      <div class="hero-image">
+        <img 
+          src="/heroes/events.jpg" 
+          alt="Art gallery paint pouring event"
+          loading="eager"
+        />
       </div>
+      <a href="/activities?kind=event" class="cta-button oswald-cta">
+        Learn More <span class="arrow">▶</span>
+      </a>
     </section>
   </div>
 </FullWidthLayout>
@@ -60,45 +57,45 @@ import FullWidthLayout from '../layouts/FullWidthLayout.astro';
   }
 
   /* Hero Section */
-  .hero {
+  .hero-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    background: #000;
     min-height: 450px;
   }
 
-  .hero-image {
-    padding: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .hero-one {
+    grid-column: 1 / 3;
+    background-color: var(--color-background-secondary);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 1rem;
+  }
+  .hero-one h1 {
+    color: var(--color-text-secondary);
+    padding: 1rem;
+  }
+  .hero-one .cta-container {
+    padding: 1rem;
+  }
+  .hero-two {
+
   }
 
-  .hero-image img {
+  .hero-image.primary {
+    order: -1;
+    grid-row: 1/3;
+    text-align: center;
+  }
+  .hero-image.primary img {
+    display: block;
+    margin: 0 auto;
     max-width: 100%;
-    max-height: 380px;
-    object-fit: cover;
-    border-radius: 4px;
+    max-height: 500px;
   }
 
-  .hero-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 2rem 3rem;
-    gap: 2rem;
+  .hero-container section {
+    max-width: 100dvw;
   }
-
-  .hero-content h1 {
-    color: #fff;
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin: 0;
-    font-style: italic;
-  }
-
   /* CTA Button */
   .cta-button {
     display: inline-flex;
@@ -121,10 +118,6 @@ import FullWidthLayout from '../layouts/FullWidthLayout.astro';
     color: #000;
   }
 
-  .cta-button .arrow {
-    font-size: 0.9rem;
-  }
-
   .cta-button-light {
     background: transparent;
     border-color: #fff;
@@ -135,126 +128,37 @@ import FullWidthLayout from '../layouts/FullWidthLayout.astro';
     color: #00a0a0;
   }
 
-  /* Two Column Section */
-  .two-column {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
+  
+  @media (max-width: 648px) {
+    .hero-one {
+      grid-template-columns: 1fr;
+      grid-gap: 0;
+    }
 
-  .column {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2.5rem 2rem;
-    gap: 1.5rem;
-  }
-
-  .column h2 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    text-align: center;
-  }
-
-  .column-image {
-    max-width: 320px;
-  }
-
-  .column-image img {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-  }
-
-  /* Groups Column */
-  .column-groups {
-    background: #e8e8e8;
-  }
-
-  .column-groups h2 {
-    color: #000;
-  }
-
-  .column-groups .cta-button {
-    background: #000;
-    color: #fff;
-    border-color: #000;
-  }
-
-  .column-groups .cta-button:hover {
-    background: #333;
-    border-color: #333;
-  }
-
-  /* Events Column */
-  .column-events {
-    background: #00b8b8;
-  }
-
-  .column-events h2 {
-    color: #fff;
-    font-style: italic;
-  }
-
-  .column-events .cta-button {
-    background: transparent;
-    color: #fff;
-    border-color: #fff;
-  }
-
-  .column-events .cta-button:hover {
-    background: #fff;
-    color: #00b8b8;
+    .hero-one h1 {
+      text-align: center;
+      padding: 0.2em;
+      font-size: 1.5rem;
+    }
+    .hero-one .cta-container {
+      text-align: center;
+    }
+    .hero-image.primary {
+      order: unset;
+      grid-row: auto;
+      margin-top:-1rem;
+      margin-bottom:-4rem;
+    }
   }
 
   /* Mobile Styles */
   @media (max-width: 768px) {
-    .hero {
+    .hero-container {
       grid-template-columns: 1fr;
       min-height: auto;
     }
-
-    .hero-content {
-      order: -1;
-      padding: 2rem 1.5rem 0;
-      align-items: center;
-      text-align: center;
-    }
-
-    .hero-content h1 {
-      font-size: 1.75rem;
-    }
-
-    .hero-image {
-      position: relative;
-      padding: 1rem 1.5rem 2rem;
-    }
-
-    .hero-image img {
-      max-height: 300px;
-      width: 100%;
-    }
-
-    .hero .cta-button {
-      position: absolute;
-      bottom: 3rem;
-      right: 2rem;
-    }
-
-    .two-column {
-      grid-template-columns: 1fr;
-    }
-
-    .column {
-      padding: 2rem 1.5rem;
-    }
-
-    .column h2 {
-      font-size: 1.75rem;
-    }
-
-    .column-image {
-      max-width: 280px;
+    .hero-one {
+      grid-column: 1 / 2;
     }
   }
 </style>
