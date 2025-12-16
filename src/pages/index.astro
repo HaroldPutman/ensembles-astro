@@ -131,23 +131,40 @@ import { Icon } from 'astro-icon/components';
   
   @media (max-width: 648px) {
     .hero-one {
-      grid-template-columns: 1fr;
-      grid-gap: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      min-height: 600px;
     }
 
     .hero-one h1 {
+      position: relative;
+      z-index: 1;
       text-align: center;
-      padding: 0.2em;
+      padding: 1rem 0.5rem;
       font-size: 1.5rem;
+      background-color: var(--color-background-secondary);
     }
     .hero-one .cta-container {
+      position: relative;
+      z-index: 1;
       text-align: center;
+      padding: 1rem 1rem 4rem 1rem;
     }
     .hero-image.primary {
+      position: absolute;
+      inset: 0;
       order: unset;
       grid-row: auto;
-      margin-top:-1rem;
-      margin-bottom:-4rem;
+      margin: 0;
+      width: 100%;
+    }
+    .hero-image.primary img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      max-height: none;
     }
   }
 
