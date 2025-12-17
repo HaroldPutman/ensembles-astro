@@ -1,4 +1,6 @@
 ---
+import { Icon } from 'astro-icon/components';
+
 const currentYear = new Date().getFullYear();
 ---
 
@@ -20,14 +22,17 @@ const currentYear = new Date().getFullYear();
           </div>
     
         <div class="footer-section">
-        <a href="/contact" class="footer-link">Contact Us</a>
+        <a href="/contact" class="footer-link">
+          <Icon name="mdi:email" width="28" height="28" />
+          Contact Us
+        </a>
         <a 
           href="https://facebook.com/charlestownensembles" 
           class="footer-link"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Facebook
+         <Icon name="mdi:facebook" width="28" height="28" /> Facebook
         </a>
       </div>
 
@@ -120,6 +125,9 @@ const currentYear = new Date().getFullYear();
 
   .footer-link {
     color: #333;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
     text-decoration: none;
     transition: color 0.3s;
   }
