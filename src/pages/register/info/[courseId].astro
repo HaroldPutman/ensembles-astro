@@ -19,7 +19,7 @@ const { activity } = Astro.props;
 
 ---
 
-<Layout title="Ensembles - {activity.data.name} - Additional Information">
+<Layout title={`Ensembles - ${activity.data.name} - Additional Information`}>
   <section class="registration-section">
     <h1>Additional Information</h1>
     <p class="intro">Please provide this additional information to complete your registration for <strong>{activity.name}</strong>.</p>
