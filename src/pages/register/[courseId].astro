@@ -25,7 +25,7 @@ const firstDate = getFirstDate(activity.data.startDate, activity.data.startTime,
 const dtstart = firstDate.toPlainDate().toString();
 ---
 
-<Layout>
+<Layout title="Ensembles - Register for {activity.data.name}">
   <section class="registration-section">
     <h1><span id="courseName">{activity.data.name}</span></h1>
     <div class="activity-datetime">

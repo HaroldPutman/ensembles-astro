@@ -62,7 +62,7 @@ function getKindLabel(kind: string) {
 }
 ---
 
-<Layout>
+<Layout title={`Ensembles - ${activity.data.name}`}>
   <article class="activity-detail">
     <!-- Header -->
     <header class="activity-header">
@@ -311,8 +311,7 @@ function getKindLabel(kind: string) {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    max-height: 500px;
-    overflow-y: auto;
+    max-height: 600px;
   }
 
   .schedule-item {
