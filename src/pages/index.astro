@@ -3,13 +3,13 @@ import FullWidthLayout from '../layouts/FullWidthLayout.astro';
 import { Icon } from 'astro-icon/components';
 ---
 
-<FullWidthLayout>
+<FullWidthLayout title="Ensembles - Affordable Group Music and Art Classes">
   <div class="hero-container">
     <section class="hero-one">
       <h1>Affordable Group Music and Art Classes</h1>
       <div class="hero-image primary">
-        <img 
-          src="/heroes/classes.jpg" 
+        <img
+          src="/heroes/classes.jpg"
           alt="Students working on art projects together"
           loading="eager"
         />
@@ -18,20 +18,23 @@ import { Icon } from 'astro-icon/components';
         <a href="/activities?kind=class" class="cta-button oswald-cta">
           Sign Up Now
           <Icon name="mdi:arrow-right-thick" width="28" height="28" />
-        </a>  
+        </a>
       </div>
     </section>
     <section class="hero-two">
       <h2>Performance Groups</h2>
       <div class="hero-image secondary">
-        <img 
-          src="/heroes/groups.jpg" 
+        <img
+          src="/heroes/groups.jpg"
           alt="Jazz band performing outdoors"
           loading="eager"
         />
       </div>
       <div class="cta-container">
-        <a href="/activities?kind=group" class="cta-button oswald-cta">
+        <a
+          href="/activities?kind=group"
+          class="cta-button cta-button-inverse oswald-cta"
+        >
           Join Now <Icon name="mdi:arrow-right-thick" width="28" height="28" />
         </a>
       </div>
@@ -39,27 +42,26 @@ import { Icon } from 'astro-icon/components';
     <section class="hero-three">
       <h2>Special Events</h2>
       <div class="hero-image secondary">
-        <img 
-          src="/heroes/events.jpg" 
+        <img
+          src="/heroes/events.jpg"
           alt="Art gallery paint pouring event"
           loading="eager"
         />
       </div>
       <div class="cta-container">
         <a href="/activities?kind=event" class="cta-button oswald-cta">
-          Learn More <Icon name="mdi:arrow-right-thick" width="28" height="28" />
-        </a>  
+          Learn More <Icon
+            name="mdi:arrow-right-thick"
+            width="28"
+            height="28"
+          />
+        </a>
       </div>
     </section>
   </div>
 </FullWidthLayout>
 
 <style>
-  .homepage {
-    margin: 0;
-    padding: 0;
-  }
-
   /* Hero Section */
   .hero-container {
     display: grid;
@@ -72,7 +74,7 @@ import { Icon } from 'astro-icon/components';
     background-color: var(--color-background-secondary);
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-gap: 1rem;
+    gap: 1rem;
   }
   .hero-one h1 {
     color: var(--color-text-secondary);
@@ -85,7 +87,6 @@ import { Icon } from 'astro-icon/components';
   .hero-three h2 {
     text-align: center;
     font-size: 2rem;
-
   }
 
   .hero-three h2 {
@@ -111,7 +112,7 @@ import { Icon } from 'astro-icon/components';
   .hero-image.secondary img {
     display: block;
     margin: 0 auto;
-    width:80%;
+    width: 80%;
     border-radius: 24px;
   }
 
@@ -126,34 +127,44 @@ import { Icon } from 'astro-icon/components';
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
-    background: #000;
-    color: #fff;
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary);
     padding: 0.875rem 1.5rem;
     font-size: 1.1rem;
     font-weight: 700;
     text-decoration: none;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border: 3px solid #fff;
+    border: 3px solid var(--color-text-secondary);
     transition: all 0.2s ease;
   }
 
   .cta-button:hover {
-    background: #fff;
-    color: #000;
+    background: var(--color-text-secondary);
+    color: var(--color-background-secondary);
   }
 
-  .cta-button-light {
-    background: transparent;
-    border-color: #fff;
+  .cta-button.cta-button-inverse {
+    background: var(--color-text-secondary);
+    color: var(--color-background-secondary);
+    border-color: var(--color-background-secondary);
   }
 
-  .cta-button-light:hover {
-    background: #fff;
-    color: #00a0a0;
+  .cta-button.cta-button-inverse:hover {
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary);
   }
 
-  
+  /* Mobile Styles */
+  @media (max-width: 768px) {
+    .hero-container {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+    .hero-one {
+      grid-column: 1 / 2;
+    }
+  }
   @media (max-width: 648px) {
     .hero-one {
       display: flex;
@@ -196,17 +207,6 @@ import { Icon } from 'astro-icon/components';
       height: 100%;
       object-fit: cover;
       max-height: none;
-    }
-  }
-
-  /* Mobile Styles */
-  @media (max-width: 768px) {
-    .hero-container {
-      grid-template-columns: 1fr;
-      min-height: auto;
-    }
-    .hero-one {
-      grid-column: 1 / 2;
     }
   }
 </style>
