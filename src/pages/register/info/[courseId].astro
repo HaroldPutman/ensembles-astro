@@ -120,9 +120,9 @@ const { activity } = Astro.props;
         </div>
       </div>
 
-      <button type="submit" name="pay-now" class="submit-button">Continue to Payment</button>
+      <button type="submit" name="pay-now" class="submit-button oswald-cta">Continue to Payment</button>
       
-      <button type="submit" name="add-more" class="secondary-button" >Add Another Registration</button>
+      <button type="submit" name="add-more" class="secondary-button oswald-cta" >Add Another Registration</button>
 
       <div id="form-message" class="form-message"></div>
     </form>
@@ -419,6 +419,7 @@ const { activity } = Astro.props;
     transition: background-color 0.2s;
     width: 100%;
     margin-bottom: 1rem;
+    text-transform: uppercase;
   }
 
   .submit-button:hover:not(:disabled) {
@@ -440,6 +441,7 @@ const { activity } = Astro.props;
     cursor: pointer;
     transition: all 0.2s;
     width: 100%;
+    text-transform: uppercase;
   }
 
   .secondary-button:hover:not(:disabled) {
@@ -484,7 +486,9 @@ const { activity } = Astro.props;
     }
 
     .registration-form {
-      padding: 1.5rem;
+      padding: 1.5rem 0;
+      border-radius: 0;
+      box-shadow: none;
     }
   }
 </style>

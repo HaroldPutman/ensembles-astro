@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 
 ---
 
-<Layout title="Ensembles - Contact Information">
+<Layout>
   <section class="contact-section">
     <h1>Contact Information</h1>
     <p class="intro">Great! We're signing <strong class="student-firstname"></strong> <strong class="student-lastname"></strong> up for <strong class="course-name"></strong>. 
@@ -98,7 +98,7 @@ import Layout from '../../layouts/Layout.astro';
         </div>
       </div>
 
-      <button type="submit" class="submit-button">Next: Additional Information</button>
+      <button type="submit" class="submit-button oswald-cta">Next: Additional Information</button>
       
       <div id="form-message" class="form-message"></div>
     </form>
@@ -275,6 +275,7 @@ import Layout from '../../layouts/Layout.astro';
     cursor: pointer;
     transition: background-color 0.2s;
     width: 100%;
+    text-transform: uppercase;
   }
 
   .submit-button:hover:not(:disabled) {
@@ -316,7 +317,9 @@ import Layout from '../../layouts/Layout.astro';
     }
 
     .contact-form {
-      padding: 1.5rem;
+      padding: 1.5rem 0;
+      border-radius: 0;
+      box-shadow: none;
     }
 
     .form-row {

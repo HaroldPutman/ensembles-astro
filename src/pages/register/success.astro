@@ -62,8 +62,8 @@ const isCheck = paymentMethod === 'check';
       </div>
       
       <div class="action-buttons">
-        <a href="/activities" class="btn btn-primary">View More Activities</a>
-        <a href="/" class="btn btn-secondary">Return Home</a>
+        <a href="/activities" class="btn btn-primary oswald-cta">View More Activities</a>
+        <a href="/" class="btn btn-secondary oswald-cta">Return Home</a>
       </div>
     </div>
   </section>
@@ -238,6 +238,7 @@ const isCheck = paymentMethod === 'check';
     border-radius: 4px;
     font-weight: 500;
     transition: all 0.2s;
+    text-transform: uppercase;
   }
 
   .btn-primary {
@@ -263,9 +264,13 @@ const isCheck = paymentMethod === 'check';
   /* Mobile styles */
   @media (max-width: 768px) {
     .success-section {
-      padding: 2rem 1rem;
+      padding: 2rem 0;
     }
-
+    .success-content {
+      padding: 1.5rem 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
     h1 {
       font-size: 2rem;
     }
