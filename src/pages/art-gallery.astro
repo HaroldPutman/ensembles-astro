@@ -1,0 +1,356 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+---
+
+<Layout>
+  <div class="gallery-page">
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1>Deanne Moore Art Gallery</h1>
+      <p class="subtitle">Celebrating local art in the heart of Charlestown</p>
+    </section>
+
+    <!-- About Section -->
+    <section class="about-section">
+      <div class="about-content">
+        <div class="about-icon">
+          <Icon name="mdi:palette" width="48" height="48" />
+        </div>
+        <h2>About the Gallery</h2>
+        <p>
+          The Deanne Moore Art Gallery is a community art space dedicated to showcasing 
+          the work of local artists and providing a venue for creative expression. Located 
+          within the Ensembles facility, the gallery serves as both an exhibition space 
+          and a gathering place for art enthusiasts of all ages.
+        </p>
+        <p>
+          Named in honor of Deanne Moore, a beloved member of our community and passionate 
+          advocate for the arts, the gallery continues her legacy of making art accessible 
+          to everyone.
+        </p>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+      <h2>What We Offer</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <Icon name="mdi:image-multiple" width="32" height="32" />
+          </div>
+          <h3>Rotating Exhibitions</h3>
+          <p>We host regular exhibitions featuring works from local and regional artists across various mediums.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <Icon name="mdi:account-group" width="32" height="32" />
+          </div>
+          <h3>Artist Receptions</h3>
+          <p>Join us for opening receptions where you can meet the artists and learn about their creative process.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <Icon name="mdi:brush" width="32" height="32" />
+          </div>
+          <h3>Art Events</h3>
+          <p>From paint-pouring parties to art workshops, we host events that bring creativity to life.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <Icon name="mdi:shopping" width="32" height="32" />
+          </div>
+          <h3>Art Sales</h3>
+          <p>Many works on display are available for purchase, with all proceeds supporting our artists.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visit Section -->
+    <section class="visit-section">
+      <h2>Visit Us</h2>
+      <div class="visit-content">
+        <div class="visit-info">
+          <div class="info-item">
+            <Icon name="mdi:map-marker" width="24" height="24" />
+            <div>
+              <h4>Location</h4>
+              <p>1120 Monroe St.<br />Charlestown, IN 47111</p>
+            </div>
+          </div>
+          <div class="info-item">
+            <Icon name="mdi:clock-outline" width="24" height="24" />
+            <div>
+              <h4>Gallery Hours</h4>
+              <p>Open during scheduled events<br />and by appointment</p>
+            </div>
+          </div>
+          <div class="info-item">
+            <Icon name="mdi:currency-usd-off" width="24" height="24" />
+            <div>
+              <h4>Admission</h4>
+              <p>Free and open to the public</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <h2>Get Involved</h2>
+      <p>Interested in exhibiting your work or hosting an event at the gallery?</p>
+      <div class="cta-buttons">
+        <a href="/contact" class="btn btn-primary">
+          Contact Us
+          <Icon name="mdi:arrow-right" width="20" height="20" />
+        </a>
+        <a href="/activities?kind=event" class="btn btn-secondary">View Upcoming Events</a>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .gallery-page {
+    padding-bottom: 2rem;
+  }
+
+  /* Hero Section */
+  .hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .hero h1 {
+    margin: 0 0 0.5rem;
+    color: #333;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    color: #666;
+    margin: 0;
+  }
+
+  /* About Section */
+  .about-section {
+    margin-bottom: 3rem;
+  }
+
+  .about-content {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .about-icon {
+    width: 80px;
+    height: 80px;
+    background: #2c2e2f;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: white;
+  }
+
+  .about-content h2 {
+    margin-bottom: 1rem;
+  }
+
+  .about-content p {
+    color: #555;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+
+  /* Features Section */
+  .features-section {
+    margin-bottom: 3rem;
+  }
+
+  .features-section h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .feature-card {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .feature-icon {
+    width: 56px;
+    height: 56px;
+    background: #2c2e2f;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: white;
+  }
+
+  .feature-card h3 {
+    margin: 0 0 0.5rem;
+    color: #333;
+  }
+
+  .feature-card p {
+    margin: 0;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* Visit Section */
+  .visit-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .visit-section h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .visit-content {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .visit-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .info-item svg {
+    flex-shrink: 0;
+    color: #2c2e2f;
+  }
+
+  .info-item h4 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .info-item p {
+    margin: 0;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  /* CTA Section */
+  .cta-section {
+    text-align: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #2c2e2f 0%, #1a1a1a 100%);
+    border-radius: 12px;
+    color: white;
+  }
+
+  .cta-section h2 {
+    color: white;
+    margin-bottom: 0.5rem;
+  }
+
+  .cta-section p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 1.5rem;
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: white;
+    color: #2c2e2f;
+  }
+
+  .btn-primary:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 768px) {
+    .hero {
+      padding: 2rem 1rem;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+    }
+
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .visit-section {
+      padding: 1.5rem;
+    }
+
+    .cta-buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
