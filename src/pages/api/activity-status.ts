@@ -67,7 +67,7 @@ export const POST: APIRoute = async ({ request }) => {
  * Produce activity status objects for the provided activity IDs and return them as a JSON HTTP response.
  *
  * Retrieves configured max participant counts from the activities collection and live registration counts
- * from the database, then computes per-activity status including registeredCount, maxParticipants, isFull,
+ * from the database, then computes per-activity status including registeredCount, sizeMax, isFull,
  * and spotsRemaining.
  *
  * @param activityIds - Array of activity IDs to include (matching against stored activities is case-insensitive)
