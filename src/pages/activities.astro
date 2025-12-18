@@ -214,8 +214,9 @@ const sortedActivities = activities.sort((a, b) => {
 <script>
   interface ActivityStatus {
     activityId: string;
+    kind: string;
     registeredCount: number;
-    maxParticipants: number | null;
+    sizeMax: number | null;
     isFull: boolean;
     spotsRemaining: number | null;
   }
@@ -352,7 +353,7 @@ const sortedActivities = activities.sort((a, b) => {
             registerBtn.style.display = 'none';
           }
           if (statusEl) {
-            statusEl.textContent = 'Sorry, this activity is full';
+            statusEl.textContent = `Sorry, this ${status.kind} is full`;
             statusEl.style.color = '#991b1b';
           }
         } else if (status.spotsRemaining !== null && status.spotsRemaining <= 3) {
