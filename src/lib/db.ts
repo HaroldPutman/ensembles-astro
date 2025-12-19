@@ -60,7 +60,7 @@ export function createPool(connectionString: string): Pool {
  * Active registrations are those not cancelled and either have a payment recorded
  * or were reserved within the last 15 minutes.
  *
- * @param activityId - Activity identifier matched against the `course` column (case-insensitive)
+ * @param activityId - Activity identifier matched against the `activity` column (case-insensitive)
  * @returns The count of active registrations for the specified activity
  */
 export async function getActiveRegistrationCount(
@@ -70,7 +70,7 @@ export async function getActiveRegistrationCount(
   const result = await client.query(
     `SELECT COUNT(*) as count
      FROM registration
-     WHERE LOWER(course) = LOWER($1)
+     WHERE LOWER(activity) = LOWER($1)
        AND cancelled_at IS NULL
        AND (
          payment_id IS NOT NULL
@@ -95,22 +95,22 @@ export async function getActiveRegistrationCounts(
 ): Promise<Map<string, number>> {
   const result = await client.query(
     `SELECT 
-      LOWER(course) as course,
+      LOWER(activity) as activity,
       COUNT(*) as count
     FROM registration
-    WHERE LOWER(course) = ANY($1)
+    WHERE LOWER(activity) = ANY($1)
       AND cancelled_at IS NULL
       AND (
         payment_id IS NOT NULL
         OR (reserved_at IS NOT NULL AND reserved_at > NOW() - INTERVAL '15 minutes')
       )
-    GROUP BY LOWER(course)`,
+    GROUP BY LOWER(activity)`,
     [activityIds.map(id => id.toLowerCase())]
   );
 
   const counts = new Map<string, number>();
   result.rows.forEach(row => {
-    counts.set(row.course, parseInt(row.count, 10));
+    counts.set(row.activity, parseInt(row.count, 10));
   });
   return counts;
 }

@@ -55,13 +55,13 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     try {
-      // Get the registration to find the course ID
+      // Get the registration to find the activity ID
       const pool = getPool();
       const client = await pool.connect();
 
       try {
         const registrationResult = await client.query(
-          `SELECT course FROM registration WHERE id = $1`,
+          `SELECT activity FROM registration WHERE id = $1`,
           [registrationId]
         );
 
@@ -79,9 +79,9 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        const courseId = registrationResult.rows[0].course;
+        const courseId = registrationResult.rows[0].activity;
 
-        // Look up the course cost from the activities collection
+        // Look up the activity cost from the activities collection
         const activities = await getCollection('activities');
         const activity = activities.find(a => a.id.toLowerCase() === courseId);
 

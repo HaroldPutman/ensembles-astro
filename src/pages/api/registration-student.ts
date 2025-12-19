@@ -81,7 +81,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Create registration record
       try {
         const registrationResult = await client.query(
-          `INSERT INTO registration (course, student_id)
+          `INSERT INTO registration (activity, student_id)
            VALUES ($1, $2)
            RETURNING id`,
           [courseId, studentId]
@@ -115,7 +115,7 @@ export const POST: APIRoute = async ({ request }) => {
 
           return new Response(
             JSON.stringify({
-              message: 'Student already registered for this course',
+              message: 'Student already registered for this activity',
               alreadyRegistered: true,
               studentId: studentId,
               courseId: courseId,

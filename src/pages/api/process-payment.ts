@@ -137,7 +137,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Verify registrations exist and get their total cost
         const registrationsResult = await client.query(
-          `SELECT id, course, cost, donation FROM registration WHERE id = ANY($1)`,
+          `SELECT id, activity, cost, donation FROM registration WHERE id = ANY($1)`,
           [registrationIds]
         );
 
@@ -201,11 +201,11 @@ export const POST: APIRoute = async ({ request }) => {
             const voucher = voucherResult.rows[0];
             let discountableTotal = expectedTotal;
 
-            // If applies_to is set, only apply discount to matching course kinds
+            // If applies_to is set, only apply discount to matching activity kinds
             if (voucher.applies_to) {
               console.log('Voucher applies only to kind:', voucher.applies_to);
 
-              // Get activities collection to check course kinds
+              // Get activities collection to check activity kinds
               const activities = await getCollection('activities');
               const activitiesMap = new Map();
               activities.forEach((activity: any) => {
@@ -215,15 +215,15 @@ export const POST: APIRoute = async ({ request }) => {
                 );
               });
 
-              // Calculate total only for registrations with matching course kind
+              // Calculate total only for registrations with matching activity kind
               discountableTotal = registrationsResult.rows.reduce(
                 (sum, row) => {
-                  const courseId = row.course;
+                  const courseId = row.activity;
 
-                  // Safety check - skip if courseId is missing
+                  // Safety check - skip if activityId is missing
                   if (!courseId) {
                     console.log(
-                      'Warning: Registration missing course ID:',
+                      'Warning: Registration missing activity ID:',
                       row
                     );
                     return sum;
@@ -407,7 +407,7 @@ export const POST: APIRoute = async ({ request }) => {
           if (emailDataResult.rows.length > 0) {
             const contact = emailDataResult.rows[0];
 
-            // Get activities collection for course names
+            // Get activities collection for activity names
             const activities = await getCollection('activities');
             const activitiesMap = new Map<string, string>();
             activities.forEach((activity: any) => {
@@ -418,7 +418,7 @@ export const POST: APIRoute = async ({ request }) => {
             const registrationItems: RegistrationItem[] =
               registrationsResult.rows.map(row => {
                 const courseName =
-                  activitiesMap.get(row.course?.toLowerCase()) || row.course;
+                  activitiesMap.get(row.activity?.toLowerCase()) || row.activity;
                 return {
                   studentName: '', // Will be populated below
                   courseName: courseName,
