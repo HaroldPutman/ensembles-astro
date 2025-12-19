@@ -212,7 +212,7 @@ const dtstart = firstDate.toPlainDate().toString();
       } else if (response.status === 409 && result.alreadyRegistered) {
         // Student is already registered for this activity
         const activityName = document.getElementById('activityName')?.textContent || 'this class';
-        window.location.href = `/register/already-registered?firstName=${encodeURIComponent(data.firstName as string)}&activityId=${encodeURIComponent(activityName)}`;
+        window.location.href = `/register/already-registered?firstName=${encodeURIComponent(data.firstName as string)}&activityName=${encodeURIComponent(activityName)}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }
