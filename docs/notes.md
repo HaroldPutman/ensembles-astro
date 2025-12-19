@@ -3,7 +3,7 @@
 Every registration goes through four phases.
 
 1. Participant (student) is joined to an Activity (class). As soon as user enters
-the student name and birthdate that student is "registered" in the database.
+the participant name and birthdate that participant is "registered" in the database.
 2. Participant (student) is joined to contact info. When user submits contact info,
 that is connected to both the registration and the student. (Registration can be put into cart at this point.)
 3. On the payment page, registration is marked as pending payment. This reserves the slot for 15 minutes until payment is completed. 

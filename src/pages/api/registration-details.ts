@@ -180,16 +180,16 @@ export const POST: APIRoute = async ({ request }) => {
         // Process accepted registrations
         const registrations = acceptedRows.map(row => {
           const activityData = activitiesMap.get(row.activity.toLowerCase());
-          const courseName = activityData?.name || row.activity;
-          const courseKind = activityData?.kind || null;
+          const activityName = activityData?.name || row.activity;
+          const activityKind = activityData?.kind || null;
           const cost = parseFloat(row.cost) || 0;
           const donation = parseFloat(row.donation) || 0;
 
           return {
             registrationId: row.registration_id,
-            courseId: row.activity,
-            courseName: courseName,
-            courseKind: courseKind,
+            activityId: row.activity,
+            activityName: activityName,
+            activityKind: activityKind,
             studentFirstName: row.student_firstname,
             studentLastName: row.student_lastname,
             cost: cost,
@@ -205,8 +205,8 @@ export const POST: APIRoute = async ({ request }) => {
           const activityData = activitiesMap.get(row.activity.toLowerCase());
           return {
             registrationId: row.registration_id,
-            courseId: row.activity,
-            courseName: activityData?.name || row.activity,
+            activityId: row.activity,
+            activityName: activityData?.name || row.activity,
             studentFirstName: row.student_firstname,
             studentLastName: row.student_lastname,
             reason,

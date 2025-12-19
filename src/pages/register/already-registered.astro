@@ -4,10 +4,10 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 
-// Get the student name and course from URL parameters
+// Get the participant name and activity from URL parameters
 const url = new URL(Astro.request.url);
 const firstName = url.searchParams.get('firstName') || 'Student';
-const courseId = url.searchParams.get('courseId') || 'this class';
+const activityId = url.searchParams.get('activityId') || 'this class';
 ---
 
 <Layout>
@@ -19,7 +19,7 @@ const courseId = url.searchParams.get('courseId') || 'this class';
       
       <h1>Good News!</h1>
       <p class="already-registered-message">
-        {firstName} is already registered for {courseId}.
+        {firstName} is already registered for {activityId}.
       </p>
       
       <div class="info-box">
@@ -33,8 +33,8 @@ const courseId = url.searchParams.get('courseId') || 'this class';
       </div>
       
       <div class="action-buttons">
-        <a href="/activities" class="btn btn-primary">View More Activities</a>
-        <a href="/" class="btn btn-secondary">Return Home</a>
+        <a href="/activities" class="btn btn-primary oswald-cta">View More Activities</a>
+        <a href="/" class="btn btn-secondary oswald-cta">Return Home</a>
       </div>
     </div>
   </section>
@@ -124,6 +124,7 @@ const courseId = url.searchParams.get('courseId') || 'this class';
     border-radius: 4px;
     font-weight: 500;
     transition: all 0.2s;
+    text-transform: uppercase;
   }
 
   .btn-primary {

@@ -211,8 +211,8 @@ import Layout from '../../layouts/Layout.astro';
   function handleRejectedRegistrations(
     rejected: Array<{
       registrationId: string;
-      courseId: string;
-      courseName: string;
+      activityId: string;
+      activityName: string;
       studentFirstName: string;
       studentLastName: string;
       reason: string;
@@ -223,7 +223,7 @@ import Layout from '../../layouts/Layout.astro';
     const rejectedList = rejected
       .map(
         r =>
-          `${r.studentFirstName} ${r.studentLastName} - ${r.courseName} (${r.reason})`
+          `${r.studentFirstName} ${r.studentLastName} - ${r.activityName} (${r.reason})`
       )
       .join('\n');
 
@@ -271,11 +271,11 @@ import Layout from '../../layouts/Layout.astro';
       registrationItem.innerHTML = `
         <div class="registration-info">
           <div class="student-name">${registration.studentFirstName} ${registration.studentLastName}</div>
-          <div class="course-name">${registration.courseName}</div>
+          <div class="activity-name">${registration.activityName}</div>
         </div>
         <div class="registration-costs">
           <div class="cost-breakdown">
-            <span>Course: $${(registration.cost || 0).toFixed(2)}</span>
+            <span>Registration: $${(registration.cost || 0).toFixed(2)}</span>
             ${registration.donation ? `<span>Donation: $${registration.donation.toFixed(2)}</span>` : ''}
           </div>
           <div class="item-total">$${totalAmount.toFixed(2)}</div>
@@ -338,7 +338,7 @@ import Layout from '../../layouts/Layout.astro';
       if (alternatePayment) alternatePayment.style.display = 'none';
       
       // Only show voucher input if the original cost was > 0 (voucher made it free)
-      // Hide voucher input if courses are naturally free
+      // Hide voucher input if activities are naturally free
       if (voucherInputGroup) {
         voucherInputGroup.style.display = originalTotal > 0 ? 'block' : 'none';
       }
@@ -402,7 +402,7 @@ import Layout from '../../layouts/Layout.astro';
               breakdown: breakdown
             },
             items: registrationDetails.map(r => ({
-              name: r.courseName,
+              name: r.activityName,
               category: 'DIGITAL_GOODS',
               quantity: 1,
               unit_amount: {
@@ -410,7 +410,7 @@ import Layout from '../../layouts/Layout.astro';
                 value: ((r.cost || 0) + (r.donation || 0)).toFixed(2)
               }
             })),
-            description: `Registration for ${registrationDetails.length} course(s)`,
+            description: `Registration for ${registrationDetails.length} ${registrationDetails.length === 1 ? 'activity' : 'activities'}`,
             custom_id: JSON.stringify(registrationDetails.map(r => r.registrationId))
           }],
           application_context: {
@@ -471,7 +471,7 @@ import Layout from '../../layouts/Layout.astro';
         // Use server-confirmed amount to ensure consistency with database/email records
         sessionStorage.setItem('paymentAmount', result.amount.toFixed(2));
         sessionStorage.removeItem('registrations');
-        sessionStorage.removeItem('courseId');
+        sessionStorage.removeItem('activityId');
         sessionStorage.removeItem('appliedVoucher');
         appliedVoucher = null;
         window.location.href = '/register/success?method=check';
@@ -527,7 +527,7 @@ import Layout from '../../layouts/Layout.astro';
           sessionStorage.setItem('confirmationCode', result.shortCode);
         }
         sessionStorage.removeItem('registrations');
-        sessionStorage.removeItem('courseId');
+        sessionStorage.removeItem('activityId');
         sessionStorage.removeItem('appliedVoucher');
         appliedVoucher = null;
         window.location.href = '/register/success?method=none';
@@ -576,7 +576,7 @@ import Layout from '../../layouts/Layout.astro';
           sessionStorage.setItem('confirmationCode', result.shortCode);
         }
         sessionStorage.removeItem('registrations');
-        sessionStorage.removeItem('courseId');
+        sessionStorage.removeItem('activityId');
         sessionStorage.removeItem('appliedVoucher');
         appliedVoucher = null;
         window.location.href = '/register/success?method=paypal';
@@ -659,13 +659,13 @@ import Layout from '../../layouts/Layout.astro';
         // Voucher is valid
         const { voucher } = data;
         
-        // Calculate discount - only apply to matching course kinds if appliesTo is set
+        // Calculate discount - only apply to matching activity kinds if appliesTo is set
         let discountableTotal = totalCost;
         
         if (voucher.appliesTo) {
           // Only calculate total for registrations with matching kind
           discountableTotal = registrationDetails
-            .filter(r => r.courseKind === voucher.appliesTo)
+            .filter(r => r.activityKind === voucher.appliesTo)
             .reduce((sum, r) => sum + (r.cost || 0) + (r.donation || 0), 0);
           
           console.log(`Voucher applies to "${voucher.appliesTo}" only. Discountable total: $${discountableTotal}`);
@@ -853,7 +853,7 @@ import Layout from '../../layouts/Layout.astro';
     margin-bottom: 0.25rem;
   }
 
-  :global(.course-name) {
+  :global(.activity-name) {
     color: #666;
     font-size: 0.9rem;
   }

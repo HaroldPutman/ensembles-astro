@@ -8,13 +8,13 @@ export async function getStaticPaths() {
   const activities = await getCollection('activities');
   return activities.map(activity => ({
     // collection filenames get converted to lowercase ids
-    params: { courseId: activity.id.toLowerCase() },
+    params: { activityId: activity.id.toLowerCase() },
     props: { activity }
   }));
 }
 
-// Get the course ID from the URL parameters
-const { courseId } = Astro.params;
+// Get the activity ID from the URL parameters
+const { activityId } = Astro.params;
 const { activity } = Astro.props;
 
 ---
@@ -25,7 +25,7 @@ const { activity } = Astro.props;
     <p class="intro">Please provide this additional information to complete your registration for <strong>{activity.name}</strong>.</p>
     
     <form id="registration-info-form" class="registration-form">
-      <input type="hidden" id="courseId" name="courseId" value={courseId} />
+      <input type="hidden" id="activityId" name="activityId" value={activityId} />
       
       {activity.data.question && (
         <div class="form-group">
@@ -77,7 +77,9 @@ const { activity } = Astro.props;
             <li>I hold Ensembles harmless against all claims or demands arising from participation in class.</li>
             <li>I give Ensembles permission for medical treatment, in the event I cannot be reached in a timely manner.</li>
             <li>Ensembles is not responsible for lost or stolen items. Please bring only what you need for class.</li>
-            <li>All photographs and videos resulting from participation in Ensembles activities will become property of Ensembles to be used in promotion on website, social media and promotional materials. For confidentiality, no student names will be associated with photos.</li>
+            <li>All photographs and videos resulting from participation in Ensembles activities will become
+               property of Ensembles to be used in promotion on website, social media and promotional materials. 
+               For confidentiality, no names will be associated with photos.</li>
           </ul>
         </div>
         
@@ -85,7 +87,7 @@ const { activity } = Astro.props;
         <div class="release-text">
           <p>I understand and agree to abide by and follow these guidelines and expectations listed below. I (we) understand that failing to do so will constitute grounds for dismissal from the program without refund of tuition.</p>
           <ul>
-            <li>Arrive no earlier than 10 minutes before start of the event</li>
+            <li>Arrive no earlier than 10 minutes before the scheduled start time</li>
             <li>An adult must come into the building to pick up any child under 13</li>
             <li>Participants will conduct themselves in a courteous, respectful manner toward the teachers and fellow students.</li>
             <li>Participants will come prepared and ready to learn new skills.</li>

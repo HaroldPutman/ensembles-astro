@@ -122,7 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
         );
       }
       // Note: voucherId is optional for free registrations
-      // Courses can be naturally free (cost = 0) or made free by a voucher
+      // Activities can be naturally free (cost = 0) or made free by a voucher
     }
 
     let client: PoolClient | undefined;
@@ -218,10 +218,10 @@ export const POST: APIRoute = async ({ request }) => {
               // Calculate total only for registrations with matching activity kind
               discountableTotal = registrationsResult.rows.reduce(
                 (sum, row) => {
-                  const courseId = row.activity;
+                  const activityId = row.activity;
 
                   // Safety check - skip if activityId is missing
-                  if (!courseId) {
+                  if (!activityId) {
                     console.log(
                       'Warning: Registration missing activity ID:',
                       row
@@ -229,21 +229,21 @@ export const POST: APIRoute = async ({ request }) => {
                     return sum;
                   }
 
-                  const courseKind = activitiesMap.get(
-                    courseId.toString().toLowerCase()
+                  const activityKind = activitiesMap.get(
+                    activityId.toString().toLowerCase()
                   );
 
-                  if (courseKind === voucher.applies_to) {
+                  if (activityKind === voucher.applies_to) {
                     const cost =
                       (parseFloat(row.cost) || 0) +
                       (parseFloat(row.donation) || 0);
                     console.log(
-                      `Including ${courseId} (kind: ${courseKind}) in discount: $${cost}`
+                      `Including ${activityId} (kind: ${activityKind}) in discount: $${cost}`
                     );
                     return sum + cost;
                   } else {
                     console.log(
-                      `Excluding ${courseId} (kind: ${courseKind}) from discount`
+                      `Excluding ${activityId} (kind: ${activityKind}) from discount`
                     );
                     return sum;
                   }
@@ -417,17 +417,17 @@ export const POST: APIRoute = async ({ request }) => {
             // Build registration items for the email
             const registrationItems: RegistrationItem[] =
               registrationsResult.rows.map(row => {
-                const courseName =
+                const activityName =
                   activitiesMap.get(row.activity?.toLowerCase()) || row.activity;
                 return {
                   studentName: '', // Will be populated below
-                  courseName: courseName,
+                  activityName,
                   cost: parseFloat(row.cost) || 0,
                   donation: row.donation ? parseFloat(row.donation) : undefined,
                 };
               });
 
-            // Get student names for each registration
+            // Get participant names for each registration
             const studentNamesResult = await client.query(
               `SELECT r.id as registration_id, s.firstname, s.lastname
               FROM registration r
@@ -447,7 +447,7 @@ export const POST: APIRoute = async ({ request }) => {
               });
             });
 
-            // Update registration items with student names
+            // Update registration items with participant names
             registrationsResult.rows.forEach((row, index) => {
               const studentInfo = studentNamesMap.get(row.id);
               if (studentInfo) {

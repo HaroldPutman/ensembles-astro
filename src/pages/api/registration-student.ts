@@ -26,12 +26,12 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { firstName, lastName, birthdate, courseId } = body;
+    const { firstName, lastName, birthdate, activityId } = body;
 
-    if (!firstName || !lastName || !birthdate || !courseId) {
+    if (!firstName || !lastName || !birthdate || !activityId) {
       return new Response(
         JSON.stringify({
-          message: `Missing required field(s): ${!firstName ? 'firstName' : ''} ${!lastName ? 'lastName' : ''} ${!birthdate ? 'birthdate' : ''} ${!courseId ? 'courseId' : ''}`,
+          message: `Missing required field(s): ${!firstName ? 'firstName' : ''} ${!lastName ? 'lastName' : ''} ${!birthdate ? 'birthdate' : ''} ${!activityId ? 'activityId' : ''}`,
         }),
         {
           status: 400,
@@ -84,7 +84,7 @@ export const POST: APIRoute = async ({ request }) => {
           `INSERT INTO registration (activity, student_id)
            VALUES ($1, $2)
            RETURNING id`,
-          [courseId, studentId]
+          [activityId, studentId]
         );
 
         client.release();
@@ -94,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
             message: 'Student and registration saved successfully',
             studentId: studentId,
             registrationId: registrationResult.rows[0].id,
-            courseId: courseId,
+            activityId: activityId,
           }),
           {
             status: 200,
@@ -107,7 +107,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (
           (registrationError as any).code === '23505' &&
           (registrationError as any).constraint ===
-            'unique_registration_course_student'
+            'unique_registration_activity_student'
         ) {
 
           // Already registered
@@ -118,7 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
               message: 'Student already registered for this activity',
               alreadyRegistered: true,
               studentId: studentId,
-              courseId: courseId,
+              activityId: activityId,
             }),
             {
               status: 409,
