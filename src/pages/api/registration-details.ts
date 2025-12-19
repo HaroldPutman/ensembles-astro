@@ -48,11 +48,11 @@ export const POST: APIRoute = async ({ request }) => {
       const client = await pool.connect();
 
       try {
-        // Get registration details with student and course information
+        // Get registration details with student and activity information
         const registrationsResult = await client.query(
           `SELECT 
             r.id as registration_id,
-            r.course,
+            r.activity,
             r.cost,
             r.donation,
             r.note,
@@ -79,7 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Get activities collection to map course IDs to course names, kinds, and sizeMax
+        // Get activities collection to map activity IDs to names, kinds, and sizeMax
         const activities = await getCollection('activities');
         const activitiesMap = new Map<
           string,
@@ -93,10 +93,10 @@ export const POST: APIRoute = async ({ request }) => {
           });
         });
 
-        // Get unique course IDs from the registrations
-        const courseIds = [
+        // Get unique activity IDs from the registrations
+        const activityIds = [
           ...new Set(
-            registrationsResult.rows.map(row => row.course.toLowerCase())
+            registrationsResult.rows.map(row => row.activity.toLowerCase())
           ),
         ];
 
@@ -106,20 +106,20 @@ export const POST: APIRoute = async ({ request }) => {
         // Get current registration counts for capacity checking
         const registrationCounts = await getActiveRegistrationCounts(
           client,
-          courseIds
+          activityIds
         );
 
         // Check capacity and determine which registrations can proceed
-        // Group registrations by course to handle multiple registrations for the same course
-        const registrationsByCourse = new Map<
+        // Group registrations by activity to handle multiple registrations for the same activity
+        const registrationsByActivity = new Map<
           string,
           typeof registrationsResult.rows
         >();
         registrationsResult.rows.forEach(row => {
-          const courseId = row.course.toLowerCase();
-          const existing = registrationsByCourse.get(courseId) || [];
+          const activityId = row.activity.toLowerCase();
+          const existing = registrationsByActivity.get(activityId) || [];
           existing.push(row);
-          registrationsByCourse.set(courseId, existing);
+          registrationsByActivity.set(activityId, existing);
         });
 
         // Determine which registrations can be accepted
@@ -129,15 +129,15 @@ export const POST: APIRoute = async ({ request }) => {
           reason: string;
         }> = [];
 
-        registrationsByCourse.forEach((rows, courseId) => {
-          const activityData = activitiesMap.get(courseId);
+        registrationsByActivity.forEach((rows, activityId) => {
+          const activityData = activitiesMap.get(activityId);
           const sizeMax = activityData?.sizeMax;
 
           if (sizeMax === undefined) {
             // No capacity limit - accept all
             acceptedRows.push(...rows);
           } else {
-            const currentCount = registrationCounts.get(courseId) || 0;
+            const currentCount = registrationCounts.get(activityId) || 0;
             const availableSpots = sizeMax - currentCount;
 
             if (availableSpots <= 0) {
@@ -179,17 +179,17 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Process accepted registrations
         const registrations = acceptedRows.map(row => {
-          const activityData = activitiesMap.get(row.course.toLowerCase());
-          const courseName = activityData?.name || row.course;
-          const courseKind = activityData?.kind || null;
+          const activityData = activitiesMap.get(row.activity.toLowerCase());
+          const activityName = activityData?.name || row.activity;
+          const activityKind = activityData?.kind || null;
           const cost = parseFloat(row.cost) || 0;
           const donation = parseFloat(row.donation) || 0;
 
           return {
             registrationId: row.registration_id,
-            courseId: row.course,
-            courseName: courseName,
-            courseKind: courseKind,
+            activityId: row.activity,
+            activityName: activityName,
+            activityKind: activityKind,
             studentFirstName: row.student_firstname,
             studentLastName: row.student_lastname,
             cost: cost,
@@ -202,11 +202,11 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Process rejected registrations for the response
         const rejected = rejectedRows.map(({ row, reason }) => {
-          const activityData = activitiesMap.get(row.course.toLowerCase());
+          const activityData = activitiesMap.get(row.activity.toLowerCase());
           return {
             registrationId: row.registration_id,
-            courseId: row.course,
-            courseName: activityData?.name || row.course,
+            activityId: row.activity,
+            activityName: activityData?.name || row.activity,
             studentFirstName: row.student_firstname,
             studentLastName: row.student_lastname,
             reason,

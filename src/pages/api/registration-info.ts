@@ -55,13 +55,13 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     try {
-      // Get the registration to find the course ID
+      // Get the registration to find the activity ID
       const pool = getPool();
       const client = await pool.connect();
 
       try {
         const registrationResult = await client.query(
-          `SELECT course FROM registration WHERE id = $1`,
+          `SELECT activity FROM registration WHERE id = $1`,
           [registrationId]
         );
 
@@ -79,16 +79,18 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        const courseId = registrationResult.rows[0].course;
+        const activityId = registrationResult.rows[0].activity;
 
-        // Look up the course cost from the activities collection
+        // Look up the activity cost from the activities collection
         const activities = await getCollection('activities');
-        const activity = activities.find(a => a.id.toLowerCase() === courseId);
+        const activity = activities.find(
+          a => a.id.toLowerCase() === activityId
+        );
 
         if (!activity) {
           return new Response(
             JSON.stringify({
-              message: 'Course not found',
+              message: 'Activity not found',
             }),
             {
               status: 404,
@@ -99,7 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        const courseCost = activity.data.cost || 0;
+        const activityCost = activity.data.cost || 0;
 
         // Update the registration with additional information
         await client.query(
@@ -107,7 +109,7 @@ export const POST: APIRoute = async ({ request }) => {
            SET cost = $1, donation = $2, note = $3, answer = $4, terms_agreement = $5
            WHERE id = $6`,
           [
-            courseCost,
+            activityCost,
             donationAmount,
             note,
             answer,
@@ -123,9 +125,9 @@ export const POST: APIRoute = async ({ request }) => {
           JSON.stringify({
             message: 'Registration information saved successfully',
             registrationId: registrationId,
-            courseCost: courseCost || 0,
+            activityCost: activityCost || 0,
             donationAmount: donationAmount,
-            totalAmount: courseCost + (donationAmount || 0),
+            totalAmount: activityCost + (donationAmount || 0),
           }),
           {
             status: 200,

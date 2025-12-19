@@ -6,7 +6,7 @@ import Layout from '../../layouts/Layout.astro';
 <Layout>
   <section class="contact-section">
     <h1>Contact Information</h1>
-    <p class="intro">Great! We're signing <strong class="student-firstname"></strong> <strong class="student-lastname"></strong> up for <strong class="course-name"></strong>. 
+    <p class="intro">Great! We're signing <strong class="student-firstname"></strong> <strong class="student-lastname"></strong> up for <strong class="activity-name"></strong>. 
       Please provide <strong>YOUR</strong> contact information.</p>
     
     <form id="contact-form" class="contact-form">
@@ -114,7 +114,7 @@ import Layout from '../../layouts/Layout.astro';
     const searchParams = new URLSearchParams(window.location.search);
     const registrationId = searchParams.get('rid');
     const studentId = searchParams.get('sid');
-    const courseName = sessionStorage.getItem('courseName');
+    const activityName = sessionStorage.getItem('activityName');
     let participant = null;
     try {
       participant = JSON.parse(sessionStorage.getItem('participant') || 'null');
@@ -127,8 +127,8 @@ import Layout from '../../layouts/Layout.astro';
     firstNameEls.forEach(el => el.textContent = studentFirstName);
     const lastNameEls = document.querySelectorAll('.student-lastname');
     lastNameEls.forEach(el => el.textContent = studentLastName);
-    const courseNameEls = document.querySelectorAll('.course-name');
-    courseNameEls.forEach(el => el.textContent = courseName);
+    const activityNameEls = document.querySelectorAll('.activity-name');
+    activityNameEls.forEach(el => el.textContent = activityName);
     
     // Validate required parameters
     if (!registrationId ) {
@@ -187,7 +187,7 @@ import Layout from '../../layouts/Layout.astro';
           lastName: data.lastName
         }));
         
-        window.location.href = `/register/info/${sessionStorage.getItem('courseId')}`;
+        window.location.href = `/register/info/${sessionStorage.getItem('activityId')}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }

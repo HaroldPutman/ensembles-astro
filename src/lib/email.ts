@@ -4,7 +4,7 @@
 
 interface RegistrationItem {
   studentName: string;
-  courseName: string;
+  activityName: string;
   cost: number;
   donation?: number;
 }
@@ -60,7 +60,7 @@ function generateRegistrationsHtml(registrations: RegistrationItem[]): string {
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; font-family: ${fontStack};">
           <strong>${escapeHtml(reg.studentName)}</strong><br>
-          <span style="color: #666;">${escapeHtml(reg.courseName)}</span>
+          <span style="color: #666;">${escapeHtml(reg.activityName)}</span>
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right; font-family: ${fontStack};">
           ${formatCurrency(reg.cost)}`;
@@ -122,7 +122,7 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
             </tr>
           </table>
           <p style="color: #856404; margin-top: 15px; background: white; padding: 10px; border-radius: 4px; font-family: ${fontStack};">
-            <strong>Important:</strong> Please include your confirmation code <strong style="font-family: 'Courier New', Courier, monospace;">${formattedCode}</strong> or student name on the check memo line.
+            <strong>Important:</strong> Please include your confirmation code <strong style="font-family: 'Courier New', Courier, monospace;">${formattedCode}</strong> or participant name on the check memo line.
           </p>
         </td>
       </tr>
@@ -213,7 +213,7 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
                   <td style="background: #e8f4fd; border-radius: 8px; padding: 20px;">
                     <h3 style="margin-top: 0; color: #2c3e50; font-family: ${fontStack};">What's Next?</h3>
                     <ul style="margin: 0; padding-left: 20px; color: #555; font-family: ${fontStack};">
-                      <li>Please arrive 10 minutes before your first class</li>
+                      <li>Please arrive no earlier than 10 minutes before the scheduled start time</li>
                       <li>If you have any questions, please contact us</li>
                     </ul>
                   </td>
@@ -270,7 +270,7 @@ function generateEmailText(data: PaymentConfirmationData): string {
 
   const registrationsList = data.registrations
     .map(reg => {
-      let line = `- ${reg.studentName}: ${reg.courseName} - ${formatCurrency(reg.cost)}`;
+      let line = `- ${reg.studentName}: ${reg.activityName} - ${formatCurrency(reg.cost)}`;
       if (reg.donation && reg.donation > 0) {
         line += ` (+ ${formatCurrency(reg.donation)} donation)`;
       }
@@ -289,7 +289,7 @@ Ensembles, Inc.
 1120 Monroe St.
 Charlestown, IN
 
-Important: Please include your confirmation code ${formattedCode} or student name on the check memo line.
+Important: Please include your confirmation code ${formattedCode} or participant name on the check memo line.
 `
       : '';
 
@@ -317,7 +317,7 @@ ${checkInstructions}
 
 WHAT'S NEXT?
 ------------
-- Please arrive 10 minutes before your first class
+- Please arrive no earlier than 10 minutes before the scheduled start time
 - If you have any questions, please contact us
 
 Questions? Contact us at info@ensemblesmusic.org

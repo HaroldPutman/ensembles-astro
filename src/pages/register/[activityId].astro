@@ -7,16 +7,15 @@ import ActivityDateTime from '../../components/ActivityDateTime.astro';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
-  console.log('Course IDs:', activities.map(activity => activity.id));
   return activities.map(activity => ({
     // collection filenames get converted to lowercase ids
-    params: { courseId: activity.id.toLowerCase() },
+    params: { activityId: activity.id.toLowerCase() },
     props: { activity }
   }));
 }
 
-// Get the course ID from the URL parameters
-const { courseId } = Astro.params;
+// Get the activity ID from the URL parameters
+const { activityId } = Astro.params;
 const { activity } = Astro.props;
 
 const isFree = typeof activity.data.cost === 'number' && activity.data.cost === 0;
@@ -27,16 +26,16 @@ const dtstart = firstDate.toPlainDate().toString();
 
 <Layout title={`Ensembles - Register for ${activity.data.name}`}>
   <section class="registration-section">
-    <h1><span id="courseName">{activity.data.name}</span></h1>
+    <h1><span id="activityName">{activity.data.name}</span></h1>
     <div class="activity-datetime">
       <ActivityDateTime startDate={activity.data.startDate} startTime={activity.data.startTime} duration={activity.data.duration} repeat={activity.data.repeat} />
     </div>
     {!isFree && activity.data.cost && (
       <p>The cost of the class is {activity.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
     )}
-    <form id="registration-form" class="registration-form" data-course-start={dtstart} 
-        data-course-age-min={activity.data.ageMin} data-course-age-max={activity.data.ageMax}>
-      <input type="hidden" id="courseId" name="courseId" value={courseId} />
+    <form id="registration-form" class="registration-form" data-activity-start={dtstart} 
+        data-activity-age-min={activity.data.ageMin} data-activity-age-max={activity.data.ageMax}>
+      <input type="hidden" id="activityId" name="activityId" value={activityId} />
       
       <div class="form-group">
         <label for="birthdate">{possessiveParticipant} Birth Date</label>
@@ -85,13 +84,13 @@ const dtstart = firstDate.toPlainDate().toString();
   const birthdateInput = document.getElementById('birthdate');
 
   /**
-   * Calculate the age of student at the course start date. 
+   * Calculate the age of student at the activity start date. 
    * @param birthdate - the birthdate to calculate the age of
    * @returns the age of the student as a floating point number. 
    */
   function calculateAge(birthdate: Date) {
-      const courseStart = form?.getAttribute('data-course-start');
-      const dateParts = courseStart?.split('-');
+      const activityStart = form?.getAttribute('data-activity-start');
+      const dateParts = activityStart?.split('-');
       let refDay = new Date();
       if (dateParts) {
         const year = parseInt(dateParts[0]);
@@ -99,7 +98,7 @@ const dtstart = firstDate.toPlainDate().toString();
         const day = parseInt(dateParts[2]);
         refDay = new Date(year, month, day);
       } else {
-        console.error('Something went wrong with the course start date:', courseStart);
+        console.error('Something went wrong with the activity start date:', activityStart);
       }
       const msPerDay = 1000 * 60 * 60 * 24;
       const daysOld = (refDay.getTime() - birthdate.getTime()) / msPerDay;
@@ -135,8 +134,8 @@ const dtstart = firstDate.toPlainDate().toString();
     if (birthdate) {
       const ageFudgeFactor = 0.5833; // 7 months
       const age = calculateAge(birthdate);
-      const minAge = parseInt(form?.getAttribute('data-course-age-min') || '0');
-      const maxAge = parseInt(form?.getAttribute('data-course-age-max') || '199');
+      const minAge = parseInt(form?.getAttribute('data-activity-age-min') || '0');
+      const maxAge = parseInt(form?.getAttribute('data-activity-age-max') || '199');
       if (age + ageFudgeFactor < minAge) {
         target.setCustomValidity(`Student must be at least ${minAge} years old`);
       } else if (age - ageFudgeFactor > maxAge) {
@@ -171,7 +170,7 @@ const dtstart = firstDate.toPlainDate().toString();
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
       birthdate: formData.get('birthdate'),
-      courseId: formData.get('courseId'),
+      activityId: formData.get('activityId'),
     };
 
     try {
@@ -204,16 +203,16 @@ const dtstart = firstDate.toPlainDate().toString();
           registrations.push(result.registrationId);
           sessionStorage.setItem('registrations', JSON.stringify(registrations));
         }
-        const courseName = document.getElementById('courseName')?.textContent;
-        courseName && sessionStorage.setItem('courseName', courseName);
-        sessionStorage.setItem('courseId', result.courseId);
+        const activityName = document.getElementById('activityName')?.textContent;
+        activityName && sessionStorage.setItem('activityName', activityName);
+        sessionStorage.setItem('activityId', result.activityId);
         sessionStorage.setItem('participant', JSON.stringify(data));
-        // Redirect to the next step with course ID
+        // Redirect to the next step with activity ID
         window.location.href = `/register/contact?rid=${result.registrationId}&sid=${result.studentId}`;
       } else if (response.status === 409 && result.alreadyRegistered) {
-        // Student is already registered for this course
-        const courseName = document.getElementById('courseName')?.textContent || 'this class';
-        window.location.href = `/register/already-registered?firstName=${encodeURIComponent(data.firstName as string)}&courseId=${encodeURIComponent(courseName)}`;
+        // Student is already registered for this activity
+        const activityName = document.getElementById('activityName')?.textContent || 'this class';
+        window.location.href = `/register/already-registered?firstName=${encodeURIComponent(data.firstName as string)}&activityName=${encodeURIComponent(activityName)}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }
