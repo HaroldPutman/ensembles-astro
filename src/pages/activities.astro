@@ -31,7 +31,7 @@ const sortedActivities = activities.sort((a, b) => {
 ---
 
 
-<FullWidthLayout>
+<FullWidthLayout title="Ensembles - Activities">
   {/* Hidden icon sprite definitions - prevents symbols from being removed with cards */}
   <div class="icon-sprites" aria-hidden="true">
     <Icon name="mdi:calendar" width="16" height="16" />
@@ -41,10 +41,9 @@ const sortedActivities = activities.sort((a, b) => {
 
   <section class="activities-section">
     <h1 id="page-title">Activities</h1>
-    <a href="/activities" id="show-all-link" class="show-all-link" hidden>Show all activities &rarr;</a>
       <details class="activity-group">
         <summary>
-          <span class="summary-text">Happening now</span>
+          <span class="summary-text">Current</span>
           <span class="summary-count current">--</span>
         </summary>
         <div class="activities-grid current">
@@ -77,6 +76,7 @@ const sortedActivities = activities.sort((a, b) => {
           <p class="placeholder">Check back soon for upcoming <span class="kind-word">activities</span>, or <a href="/activities" class="show-all-link">Show all activities</a>.</p>
         </div>
       </details>
+      <a href="/activities" id="show-all-link" class="show-all-link" hidden>Show all activities &rarr;</a>
   </section>
 </FullWidthLayout>
 
@@ -214,8 +214,9 @@ const sortedActivities = activities.sort((a, b) => {
 <script>
   interface ActivityStatus {
     activityId: string;
+    kind: string;
     registeredCount: number;
-    maxParticipants: number | null;
+    sizeMax: number | null;
     isFull: boolean;
     spotsRemaining: number | null;
   }
@@ -352,7 +353,7 @@ const sortedActivities = activities.sort((a, b) => {
             registerBtn.style.display = 'none';
           }
           if (statusEl) {
-            statusEl.textContent = 'Sorry, this activity is full';
+            statusEl.textContent = `Sorry, this ${status.kind} is full`;
             statusEl.style.color = '#991b1b';
           }
         } else if (status.spotsRemaining !== null && status.spotsRemaining <= 3) {

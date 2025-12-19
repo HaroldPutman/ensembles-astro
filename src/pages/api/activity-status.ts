@@ -7,9 +7,10 @@ export const prerender = false;
 interface ActivityStatus {
   activityId: string;
   registeredCount: number;
-  maxParticipants: number | null;
+  sizeMax: number | null;
   isFull: boolean;
   spotsRemaining: number | null;
+  kind: string;
 }
 
 export const GET: APIRoute = async ({ url }) => {
@@ -66,7 +67,7 @@ export const POST: APIRoute = async ({ request }) => {
  * Produce activity status objects for the provided activity IDs and return them as a JSON HTTP response.
  *
  * Retrieves configured max participant counts from the activities collection and live registration counts
- * from the database, then computes per-activity status including registeredCount, maxParticipants, isFull,
+ * from the database, then computes per-activity status including registeredCount, sizeMax, isFull,
  * and spotsRemaining.
  *
  * @param activityIds - Array of activity IDs to include (matching against stored activities is case-insensitive)
@@ -80,10 +81,13 @@ async function getActivityStatus(
   try {
     // Get activities collection to find sizeMax for each activity
     const activities = await getCollection('activities');
-    const activitiesMap = new Map<string, number | undefined>();
+    const activitiesMap = new Map<string, { sizeMax: number | undefined; kind: string }>();
 
     activities.forEach(activity => {
-      activitiesMap.set(activity.id.toLowerCase(), activity.data.sizeMax);
+      activitiesMap.set(activity.id.toLowerCase(), {
+        sizeMax: activity.data.sizeMax,
+        kind: activity.data.kind,
+      });
     });
 
     // Query database for registration counts
@@ -100,19 +104,22 @@ async function getActivityStatus(
       const statuses: ActivityStatus[] = activityIds.map(activityId => {
         const id = activityId.toLowerCase();
         const registeredCount = registrationCounts.get(id) || 0;
-        const maxParticipants = activitiesMap.get(id) ?? null;
-        const isFull =
-          maxParticipants !== null && registeredCount >= maxParticipants;
-        const spotsRemaining =
-          maxParticipants !== null ? maxParticipants - registeredCount : null;
+        const activity = activitiesMap.get(id);
+        const sizeMax = activity?.sizeMax ?? null;
+        const kind = activity?.kind ?? 'class';
+        const isFull = sizeMax !== null && registeredCount >= sizeMax;
+        const spotsRemaining = sizeMax !== null
+          ? Math.max(0, sizeMax - registeredCount)
+          : null;
 
         return {
           activityId,
           registeredCount,
-          maxParticipants,
+          sizeMax,
           isFull,
           spotsRemaining:
             spotsRemaining !== null ? Math.max(0, spotsRemaining) : null,
+          kind,
         };
       });
 

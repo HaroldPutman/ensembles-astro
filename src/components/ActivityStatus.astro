@@ -3,10 +3,11 @@ import { getPool, getActiveRegistrationCount } from '../lib/db';
 
 interface Props {
   activityId: string;
-  sizeMax: number;
+  kind: string;
+  sizeMax?: number;
 }
 
-const { activityId, sizeMax } = Astro.props;
+const { activityId, kind, sizeMax } = Astro.props;
 
 // Cache this server island response for up to 15 minutes
 Astro.response.headers.set('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=60');
@@ -28,35 +29,53 @@ try {
   error = true;
 }
 
-const isFull = registeredCount >= sizeMax;
-const spotsRemaining = Math.max(0, sizeMax - registeredCount);
-const isLow = spotsRemaining > 0 && spotsRemaining <= 3;
+// If no sizeMax, there's no capacity limit
+const hasCapacity = sizeMax !== undefined && sizeMax > 0;
+const isFull = hasCapacity && registeredCount >= sizeMax;
+const spotsRemaining = hasCapacity ? Math.max(0, sizeMax - registeredCount) : null;
+const isLow = spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <= 3;
 ---
 
-{error ? (
-  <p class="spots-remaining">
-    <strong>Spots:</strong> <span class="spots-count">{sizeMax} max</span>
-  </p>
-) : (
-  <>
-    <p class:list={['spots-remaining', { 'spots-low': isLow, 'spots-full': isFull }]}>
-      <strong>Spots:</strong> 
-      <span class="spots-count">
-        {isFull ? 'Full' : `${spotsRemaining} of ${sizeMax} available`}
-      </span>
-    </p>
-    
-    {isFull ? (
-      <div class="activity-full-message">
-        Sorry, this activity is full
+<>
+  {error ? (
+    <>
+      <div class="error-message">
+        Sorry, we couldn't check the status of this {kind}
       </div>
-    ) : (
       <slot />
-    )}
-  </>
-)}
+    </>
+  ) : (
+    <>
+      {isLow && (
+        <div class="spots-low-message">
+          Only {spotsRemaining} spot{spotsRemaining === 1 ? '' : 's'} left!
+        </div>
+      )}
+      
+      {isFull ? (
+        <div class="activity-full-message">
+          Sorry, this {kind} is full
+        </div>
+      ) : (
+        <slot />
+      )}
+    </>
+  )}
+</>
+
 
 <style>
+  .error-message {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-button);
+    font-size: 0.9rem;
+  }
+
   .spots-remaining {
     margin: 0.75rem 0;
     color: #666;
@@ -73,6 +92,17 @@ const isLow = spotsRemaining > 0 && spotsRemaining <= 3;
 
   .spots-remaining.spots-full .spots-count {
     color: #991b1b;
+  }
+
+  .spots-low-message {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px solid #fde68a;
+    border-radius: var(--radius-button);
+    font-weight: 600;
   }
 
   .activity-full-message {

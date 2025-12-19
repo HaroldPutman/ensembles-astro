@@ -4,7 +4,7 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 ---
 
-<Layout>
+<Layout title="Ensembles - Payment">
   <section class="payment-section">
     <h1>Payment</h1>
     <p class="intro">Please review your registrations and complete payment.</p>
@@ -47,7 +47,7 @@ import Layout from '../../layouts/Layout.astro';
               placeholder="Enter voucher code"
               class="voucher-input"
             />
-            <button type="button" id="apply-voucher-btn" class="apply-voucher-btn" disabled>
+            <button type="button" id="apply-voucher-btn" class="apply-voucher-btn oswald-cta" disabled>
               Apply
             </button>
           </div>
@@ -61,8 +61,8 @@ import Layout from '../../layouts/Layout.astro';
         <div id="paypal-button-container"></div>
         
         <div id="free-registration-container" style="display: none;" class="free-registration">
-          <p class="free-message">Your voucher covers the full cost! No payment required.</p>
-          <button type="button" id="complete-free-registration-btn" class="complete-registration-btn">
+          <p class="free-message">No payment required.</p>
+          <button type="button" id="complete-free-registration-btn" class="complete-registration-btn oswald-cta">
             Complete Registration
           </button>
         </div>
@@ -72,7 +72,7 @@ import Layout from '../../layouts/Layout.astro';
             <span>or</span>
           </div>
           <div class="alternate-payment">
-            <button type="button" id="alternate-payment-btn" class="alternate-payment-btn">
+            <button type="button" id="alternate-payment-btn" class="alternate-payment-btn oswald-cta">
               Pay by check
             </button>
           </div>
@@ -843,37 +843,43 @@ import Layout from '../../layouts/Layout.astro';
     border-bottom: none;
   }
 
-  .registration-info {
+  :global(.registration-info) {
     flex: 1;
   }
 
-  .student-name {
+  :global(.student-name) {
     font-weight: 600;
     color: #333;
     margin-bottom: 0.25rem;
   }
 
-  .course-name {
+  :global(.course-name) {
     color: #666;
     font-size: 0.9rem;
   }
 
-  .registration-costs {
-    text-align: right;
+  :global(.registration-costs) {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
   }
 
-  .cost-breakdown {
+  :global(.cost-breakdown) {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    text-align: left;
     font-size: 0.9rem;
     color: #666;
     margin-bottom: 0.5rem;
   }
 
-  .item-total {
+  :global(.item-total) {
     font-weight: 600;
     color: #333;
+    text-align: right;
+    white-space: nowrap;
   }
 
   .total-section {
@@ -960,6 +966,7 @@ import Layout from '../../layouts/Layout.astro';
     transition: all 0.2s ease;
     width: 100%;
     max-width: 400px;
+    text-transform: uppercase;
   }
 
   .complete-registration-btn:hover {
@@ -1083,6 +1090,7 @@ import Layout from '../../layouts/Layout.astro';
     cursor: pointer;
     transition: background-color 0.2s ease;
     white-space: nowrap;
+    text-transform: uppercase;
   }
   
   .apply-voucher-btn:hover {
@@ -1132,11 +1140,20 @@ import Layout from '../../layouts/Layout.astro';
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
   }
   
   .alternate-payment-btn:hover {
     background: var(--color-button-secondary-hover-background);
     border-color: var(--color-button-secondary-hover-border);
     color: var(--color-button-secondary-hover-text);
+  }
+
+  @media (max-width: 768px) {
+    .payment-form {
+      padding: 1.5rem 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
   }
 </style> 

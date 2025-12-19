@@ -25,7 +25,7 @@ const firstDate = getFirstDate(activity.data.startDate, activity.data.startTime,
 const dtstart = firstDate.toPlainDate().toString();
 ---
 
-<Layout>
+<Layout title={`Ensembles - Register for ${activity.data.name}`}>
   <section class="registration-section">
     <h1><span id="courseName">{activity.data.name}</span></h1>
     <div class="activity-datetime">
@@ -71,7 +71,7 @@ const dtstart = firstDate.toPlainDate().toString();
         />
       </div>
 
-      <button type="submit" class="submit-button">Next: Contact Information</button>
+      <button type="submit" class="submit-button oswald-cta">Next: Contact Information</button>
       
       <div id="form-message" class="form-message"></div>
     </form>
@@ -319,6 +319,7 @@ const dtstart = firstDate.toPlainDate().toString();
     cursor: pointer;
     transition: background-color 0.2s;
     width: 100%;
+    text-transform: uppercase;
   }
 
   .submit-button:hover:not(:disabled) {
@@ -354,7 +355,9 @@ const dtstart = firstDate.toPlainDate().toString();
     }
 
     .registration-form {
-      padding: 1.5rem;
+      padding: 1.5rem 0;
+      border-radius: 0;
+      box-shadow: none;
     }
   }
 </style> 
