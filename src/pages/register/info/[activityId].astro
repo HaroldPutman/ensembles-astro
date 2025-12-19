@@ -22,7 +22,7 @@ const { activity } = Astro.props;
 <Layout title={`Ensembles - ${activity.data.name} - Additional Information`}>
   <section class="registration-section">
     <h1>Additional Information</h1>
-    <p class="intro">Please provide this additional information to complete your registration for <strong>{activity.name}</strong>.</p>
+    <p class="intro">Please provide this additional information to complete your registration for <strong>{activity.data.name}</strong>.</p>
     
     <form id="registration-info-form" class="registration-form">
       <input type="hidden" id="activityId" name="activityId" value={activityId} />
