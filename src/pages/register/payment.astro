@@ -61,8 +61,8 @@ import Layout from '../../layouts/Layout.astro';
         <div id="paypal-button-container"></div>
         
         <div id="free-registration-container" style="display: none;" class="free-registration">
-          <p class="free-message">Your voucher covers the full cost! No payment required.</p>
-          <button type="button" id="complete-free-registration-btn" class="complete-registration-btn">
+          <p class="free-message">No payment required.</p>
+          <button type="button" id="complete-free-registration-btn" class="complete-registration-btn oswald-cta">
             Complete Registration
           </button>
         </div>
@@ -843,37 +843,43 @@ import Layout from '../../layouts/Layout.astro';
     border-bottom: none;
   }
 
-  .registration-info {
+  :global(.registration-info) {
     flex: 1;
   }
 
-  .student-name {
+  :global(.student-name) {
     font-weight: 600;
     color: #333;
     margin-bottom: 0.25rem;
   }
 
-  .course-name {
+  :global(.course-name) {
     color: #666;
     font-size: 0.9rem;
   }
 
-  .registration-costs {
-    text-align: right;
+  :global(.registration-costs) {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
   }
 
-  .cost-breakdown {
+  :global(.cost-breakdown) {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    text-align: left;
     font-size: 0.9rem;
     color: #666;
     margin-bottom: 0.5rem;
   }
 
-  .item-total {
+  :global(.item-total) {
     font-weight: 600;
     color: #333;
+    text-align: right;
+    white-space: nowrap;
   }
 
   .total-section {
@@ -960,6 +966,7 @@ import Layout from '../../layouts/Layout.astro';
     transition: all 0.2s ease;
     width: 100%;
     max-width: 400px;
+    text-transform: uppercase;
   }
 
   .complete-registration-btn:hover {
