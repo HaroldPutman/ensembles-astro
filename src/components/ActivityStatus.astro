@@ -38,29 +38,44 @@ const isLow = spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <=
 
 <>
   {error ? (
-    <div class="error-message">
-      Sorry, we couldn't check the status of this {kind}
-    </div>
-    <slot />
-  ) : null}
-
-  {isLow && (
-    <div class="spots-low-message">
-      Only {spotsRemaining} spot{spotsRemaining === 1 ? '' : 's'} left!
-    </div>
-  )}
-  
-  {isFull ? (
-    <div class="activity-full-message">
-      Sorry, this {kind} is full
-    </div>
+    <>
+      <div class="error-message">
+        Sorry, we couldn't check the status of this {kind}
+      </div>
+      <slot />
+    </>
   ) : (
-    <slot />
+    <>
+      {isLow && (
+        <div class="spots-low-message">
+          Only {spotsRemaining} spot{spotsRemaining === 1 ? '' : 's'} left!
+        </div>
+      )}
+      
+      {isFull ? (
+        <div class="activity-full-message">
+          Sorry, this {kind} is full
+        </div>
+      ) : (
+        <slot />
+      )}
+    </>
   )}
 </>
 
 
 <style>
+  .error-message {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-button);
+    font-size: 0.9rem;
+  }
+
   .spots-remaining {
     margin: 0.75rem 0;
     color: #666;
