@@ -5,6 +5,7 @@ import { generateShortCode } from '../../lib/shortcode';
 import {
   sendPaymentConfirmationEmail,
   type RegistrationItem,
+  type VoucherInfo,
 } from '../../lib/email';
 import { getPool } from '../../lib/db';
 
@@ -157,8 +158,8 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        // Calculate expected total
-        let expectedTotal = registrationsResult.rows.reduce((sum, row) => {
+        // Calculate expected total (subtotal before any discounts)
+        const subtotal = registrationsResult.rows.reduce((sum, row) => {
           console.log({ row, sum });
           return (
             sum +
@@ -167,7 +168,10 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }, 0);
 
-        console.log('Original expected total:', expectedTotal);
+        let expectedTotal = subtotal;
+        let voucherInfo: VoucherInfo | undefined;
+
+        console.log('Original expected total (subtotal):', expectedTotal);
 
         // If a voucher is applied, subtract the discount from expected total
         if (voucherId) {
@@ -179,7 +183,7 @@ export const POST: APIRoute = async ({ request }) => {
           );
 
           const voucherResult = await client.query(
-            `SELECT percentage, amount, applies_to FROM voucher WHERE id = $1`,
+            `SELECT code, percentage, amount, applies_to, description FROM voucher WHERE id = $1`,
             [voucherId]
           );
 
@@ -259,6 +263,12 @@ export const POST: APIRoute = async ({ request }) => {
               console.log(
                 `Applying ${voucher.percentage}% discount to $${discountableTotal}: ${discount}`
               );
+              voucherInfo = {
+                code: voucher.code,
+                discountAmount: discount,
+                discountType: 'percentage',
+                description: voucher.description || undefined,
+              };
             } else if (voucher.amount) {
               discount = Math.min(
                 parseFloat(voucher.amount),
@@ -267,6 +277,12 @@ export const POST: APIRoute = async ({ request }) => {
               console.log(
                 `Applying $${voucher.amount} discount to $${discountableTotal}: ${discount}`
               );
+              voucherInfo = {
+                code: voucher.code,
+                discountAmount: discount,
+                discountType: 'fixed',
+                description: voucher.description || undefined,
+              };
             }
 
             expectedTotal = Math.max(0, expectedTotal - discount);
@@ -446,9 +462,11 @@ export const POST: APIRoute = async ({ request }) => {
               recipientName: `${contact.firstname} ${contact.lastname}`,
               confirmationCode: paymentShortCode,
               registrations: registrationItems,
+              subtotal: subtotal,
               totalAmount: totalAmount,
               paymentMethod: paymentMethod as 'paypal' | 'check' | 'none',
               transactionId: transactionId,
+              voucher: voucherInfo,
             });
 
             if (!emailResult.success) {

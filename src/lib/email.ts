@@ -9,14 +9,23 @@ interface RegistrationItem {
   donation?: number;
 }
 
+interface VoucherInfo {
+  code: string;
+  discountAmount: number;
+  discountType: 'percentage' | 'fixed';
+  description?: string;
+}
+
 interface PaymentConfirmationData {
   recipientEmail: string;
   recipientName: string;
   confirmationCode: string;
   registrations: RegistrationItem[];
+  subtotal: number;
   totalAmount: number;
   paymentMethod: 'paypal' | 'check' | 'none';
   transactionId?: string;
+  voucher?: VoucherInfo;
 }
 
 /**
@@ -160,6 +169,19 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
                   ${generateRegistrationsHtml(data.registrations)}
                 </tbody>
                 <tfoot>
+                  ${data.voucher ? `
+                  <tr>
+                    <td style="padding: 12px; font-family: ${fontStack};">Subtotal</td>
+                    <td style="padding: 12px; text-align: right; font-family: ${fontStack};">${formatCurrency(data.subtotal)}</td>
+                  </tr>
+                  <tr style="color: #28a745;">
+                    <td style="padding: 12px; font-family: ${fontStack};">
+                      Voucher: 
+                      ${data.voucher.description ? `<br><span style="font-size: 0.85em; color: #666;">${escapeHtml(data.voucher.description)}</span>` : ''}
+                    </td>
+                    <td style="padding: 12px; text-align: right; font-family: ${fontStack};">-${formatCurrency(data.voucher.discountAmount)}</td>
+                  </tr>
+                  ` : ''}
                   <tr style="background: #f8f9fa;">
                     <td style="padding: 12px; font-weight: bold; font-family: ${fontStack};">Total</td>
                     <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 1.2em; color: #2c3e50; font-family: ${fontStack};">${formatCurrency(data.totalAmount)}</td>
@@ -284,7 +306,10 @@ Your registration has been confirmed. Here's a summary of your enrollment:
 REGISTRATION DETAILS
 --------------------
 ${registrationsList}
-
+${data.voucher ? `
+Subtotal: ${formatCurrency(data.subtotal)}
+Voucher: -${formatCurrency(data.voucher.discountAmount)}${data.voucher.description ? ` - ${data.voucher.description}` : ''}
+` : ''}
 Total: ${formatCurrency(data.totalAmount)}
 
 Status: ${paymentStatus}
@@ -397,4 +422,4 @@ export async function sendPaymentConfirmationEmail(
   }
 }
 
-export type { PaymentConfirmationData, RegistrationItem };
+export type { PaymentConfirmationData, RegistrationItem, VoucherInfo };
