@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
       name: 'Ensembles Contact Form',
       email: senderEmail,
     };
-    sendSmtpEmail.to = [{ email: 'harold@charlestownensembles.com' }];
+    sendSmtpEmail.to = [{ email: 'info@charlestownensembles.com' }];
     sendSmtpEmail.replyTo = { email, name };
     sendSmtpEmail.subject = `New Contact Form Submission from ${name}`;
     sendSmtpEmail.htmlContent = `
