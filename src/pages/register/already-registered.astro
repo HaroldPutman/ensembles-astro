@@ -1,13 +1,6 @@
 ---
-export const prerender = false;
-
 import Layout from '../../layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
-
-// Get the participant name and activity from URL parameters
-const url = new URL(Astro.request.url);
-const firstName = url.searchParams.get('firstName') || 'Student';
-const activityId = url.searchParams.get('activityName') || 'this class';
 ---
 
 <Layout>
@@ -19,7 +12,7 @@ const activityId = url.searchParams.get('activityName') || 'this class';
       
       <h1>Good News!</h1>
       <p class="already-registered-message">
-        {firstName} is already registered for {activityId}.
+        <span id="participant-name">This participant</span> is already registered for <span id="activity-name">this activity</span>.
       </p>
       
       <div class="info-box">
@@ -166,4 +159,20 @@ const activityId = url.searchParams.get('activityName') || 'this class';
       text-align: center;
     }
   }
-</style> 
+</style>
+
+<script>
+  const data = sessionStorage.getItem('alreadyRegistered');
+  if (data) {
+    try {
+      const { firstName, activityName } = JSON.parse(data);
+      const nameEl = document.getElementById('participant-name');
+      const activityEl = document.getElementById('activity-name');
+      if (nameEl && firstName) nameEl.textContent = firstName;
+      if (activityEl && activityName) activityEl.textContent = activityName;
+      sessionStorage.removeItem('alreadyRegistered');
+    } catch (e) {
+      console.error('Error parsing alreadyRegistered data:', e);
+    }
+  }
+</script>
