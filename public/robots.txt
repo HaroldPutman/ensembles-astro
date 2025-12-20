@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ensemblesinc.org/sitemap-index.xml
