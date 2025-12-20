@@ -6,28 +6,35 @@ interface Props {
   activityId: string;
   kind: string;
   sizeMax?: number;
+  startTimestamp?: number; // Unix timestamp in milliseconds
 }
 
-const { activityId, kind, sizeMax } = Astro.props;
+const { activityId, kind, sizeMax, startTimestamp } = Astro.props;
 
 // Cache this server island response for up to 15 minutes
 Astro.response.headers.set('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=60');
+
+// Check if class has already started
+const hasStarted = kind === 'class' && startTimestamp && startTimestamp < Date.now();
 
 // Fetch registration count from database
 let registeredCount = 0;
 let error = false;
 
-try {
-  const pool = getPool();
-  const client = await pool.connect();
+// Skip DB check if class has already started
+if (!hasStarted) {
   try {
-    registeredCount = await getActiveRegistrationCount(client, activityId);
-  } finally {
-    client.release();
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      registeredCount = await getActiveRegistrationCount(client, activityId);
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    console.error('Failed to fetch activity status:', e);
+    error = true;
   }
-} catch (e) {
-  console.error('Failed to fetch activity status:', e);
-  error = true;
 }
 
 // If no sizeMax, there's no capacity limit
@@ -38,7 +45,11 @@ const isLow = spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <=
 ---
 
 <>
-  {error ? (
+  {hasStarted ? (
+    <div class="activity-started-message">
+      This class has already started and is no longer open for registration.
+    </div>
+  ) : error ? (
     <>
       <div class="error-message">
         Sorry, we couldn't check the status of this {kind}
@@ -114,6 +125,16 @@ const isLow = spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <=
     border: 2px solid #fecaca;
     border-radius: var(--radius-button);
     font-weight: 600;
+  }
+
+  .activity-started-message {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+    border-radius: var(--radius-button);
   }
 </style>
 

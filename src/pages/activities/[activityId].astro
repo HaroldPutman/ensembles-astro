@@ -42,6 +42,11 @@ const allDates = getAllDates(
   activity.data.repeat
 );
 
+// Get the first date as a timestamp for status checking
+const startTimestamp = allDates.length > 0 
+  ? allDates[0].epochMilliseconds 
+  : undefined;
+
 const durationISO = makeICalDuration(activity.data.duration);
 
 const ageRange = formatAgeRange(activity.data.ageMin, activity.data.ageMax);
@@ -109,6 +114,7 @@ function getKindLabel(kind: string) {
             activityId={activity.id} 
             kind={activity.data.kind} 
             sizeMax={activity.data.sizeMax}
+            startTimestamp={startTimestamp}
           >
             <a href={`/register/${activity.id}`} class="btn btn-primary oswald-cta">
               Register Now
