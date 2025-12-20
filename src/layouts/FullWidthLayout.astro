@@ -12,6 +12,18 @@ const { title = 'Ensembles, Inc.' } = Astro.props;
 <!doctype html>
 <html lang="en">
   <head>
+    {import.meta.env.PROD && (
+      <>
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-QG5N2GWPQN"></script>
+        <script is:inline>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-QG5N2GWPQN');
+        </script>
+      </>
+    )}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
