@@ -10,6 +10,13 @@ import netlify from '@astrojs/netlify';
 export default defineConfig({
   site: 'https://ensemblesinc.org',
 
+  redirects: {
+    '/classes': '/activities?kind=class',
+    '/contact-us': '/contact',
+    '/mission': '/about',
+    '/events': '/activities?kind=event',
+  },
+
   markdown: {
     remarkPlugins: [remarkModifiedTime],
   },
