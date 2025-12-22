@@ -132,7 +132,7 @@ const dtstart = firstDate.toPlainDate().toString();
 
     const birthdate = validBirthdate(target.value);
     if (birthdate) {
-      const ageFudgeFactor = 0.5833; // 7 months
+      const ageFudgeFactor = 0.99; // 12 months
       const age = calculateAge(birthdate);
       const minAge = parseInt(form?.getAttribute('data-activity-age-min') || '0');
       const maxAge = parseInt(form?.getAttribute('data-activity-age-max') || '199');
