@@ -492,3 +492,75 @@ function getKindLabel(kind: string) {
   }
 </style>
 
+<script define:vars={{ 
+  itemId: activity.id, 
+  itemName: activity.data.name, 
+  itemCategory: activity.data.kind,
+  price: activity.data.cost || 0 
+}}>
+  // Track view_item event
+  if (typeof gtag === 'function') {
+    gtag('event', 'view_item', {
+      currency: 'USD',
+      value: price,
+      items: [{
+        item_id: itemId,
+        item_name: itemName,
+        item_category: itemCategory,
+        price: price,
+        quantity: 1
+      }]
+    });
+  }
+
+  // Watch for server island to load and check if activity is full
+  function checkActivityStatus() {
+    const ctaSection = document.querySelector('.cta-section');
+    if (!ctaSection) return;
+
+    const isFull = ctaSection.querySelector('.activity-full-message') !== null;
+    const hasStarted = ctaSection.querySelector('.activity-started-message') !== null;
+    const isLowSpots = ctaSection.querySelector('.spots-low-message') !== null;
+
+    if (typeof gtag === 'function' && (isFull || hasStarted)) {
+      gtag('event', 'view_unavailable_item', {
+        item_id: itemId,
+        item_name: itemName,
+        item_category: itemCategory,
+        unavailable_reason: isFull ? 'full' : 'started',
+        price: price
+      });
+    }
+
+    // Also track low inventory as a separate event
+    if (typeof gtag === 'function' && isLowSpots) {
+      gtag('event', 'view_low_inventory_item', {
+        item_id: itemId,
+        item_name: itemName,
+        item_category: itemCategory,
+        price: price
+      });
+    }
+  }
+
+  // Use MutationObserver to detect when server island content loads
+  const observer = new MutationObserver((mutations, obs) => {
+    const ctaSection = document.querySelector('.cta-section');
+    // Check if the loading spinner is gone (server island has loaded)
+    if (ctaSection && !ctaSection.querySelector('.status-loading')) {
+      checkActivityStatus();
+      obs.disconnect();
+    }
+  });
+
+  // Start observing
+  const ctaSection = document.querySelector('.cta-section');
+  if (ctaSection) {
+    // Check immediately in case already loaded
+    if (!ctaSection.querySelector('.status-loading')) {
+      checkActivityStatus();
+    } else {
+      observer.observe(ctaSection, { childList: true, subtree: true });
+    }
+  }
+</script>

@@ -369,9 +369,52 @@ const sortedActivities = activities.sort((a, b) => {
     }
   }
 
+  // Track view_item_list event
+  function trackViewItemList() {
+    if (typeof gtag !== 'function') return;
+    
+    const cards = document.querySelectorAll('.activity-card');
+    const items: Array<{
+      item_id: string;
+      item_name: string;
+      item_category: string;
+      price: number;
+      index: number;
+    }> = [];
+    
+    cards.forEach((card, index) => {
+      const itemId = card.id;
+      const itemName = card.querySelector('.activity-name')?.textContent || '';
+      const itemCategory = card.getAttribute('data-kind') || '';
+      const priceText = card.querySelector('.activity-cost')?.textContent || '0';
+      const price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
+      
+      items.push({
+        item_id: itemId,
+        item_name: itemName,
+        item_category: itemCategory,
+        price: price,
+        index: index
+      });
+    });
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const kindFilter = urlParams.get('kind');
+    const listName = kindFilter 
+      ? `${kindFilter.charAt(0).toUpperCase() + kindFilter.slice(1)}es` 
+      : 'All Activities';
+    
+    gtag('event', 'view_item_list', {
+      item_list_id: kindFilter || 'all',
+      item_list_name: listName,
+      items: items
+    });
+  }
+
   // Run on page load
   document.addEventListener('DOMContentLoaded', async () => {
     const upcomingIds = categorizeActivities();
+    trackViewItemList();
     await updateRegistrationStatus(upcomingIds);
   });
 </script> 
