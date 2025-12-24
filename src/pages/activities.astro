@@ -3,31 +3,24 @@ import { getCollection } from 'astro:content';
 import FullWidthLayout from '../layouts/FullWidthLayout.astro';
 import ActivityCard from '../components/ActivityCard.astro';
 import { Temporal } from '@js-temporal/polyfill';
-import { getHourAndMinute } from '../lib/datelib';
+import { getFirstAndLastDates } from '../lib/datelib';
 import { Icon } from 'astro-icon/components';
 
 const activities = await getCollection('activities');
 
-// Sort activities by start date/time
-const sortedActivities = activities.sort((a, b) => {
-  const [monthA, dayA, yearA] = a.data.startDate.split('/').map(Number);
-  const [monthB, dayB, yearB] = b.data.startDate.split('/').map(Number);
-  const startTimeA = getHourAndMinute(a.data.startTime);
-  const startTimeB = getHourAndMinute(b.data.startTime);
-  const dateA = Temporal.PlainDateTime.from({
-    year: yearA,
-    month: monthA,
-    day: dayA,
-    ...startTimeA,
-  });
-  const dateB = Temporal.PlainDateTime.from({
-    year: yearB,
-    month: monthB,
-    day: dayB,
-    ...startTimeB,
-  });
-  return Temporal.PlainDateTime.compare(dateA, dateB);
-});
+// Compute firstDate for each activity and sort by it
+const sortedActivities = activities
+  .map((activity) => {
+    const [firstDate] = getFirstAndLastDates(
+      activity.data.startDate,
+      activity.data.startTime,
+      activity.data.duration,
+      activity.data.repeat
+    );
+    return { activity, firstDate };
+  })
+  .sort((a, b) => Temporal.ZonedDateTime.compare(a.firstDate, b.firstDate))
+  .map(({ activity }) => activity);
 ---
 
 
