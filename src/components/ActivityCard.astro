@@ -14,7 +14,7 @@ interface Props {
   ageMin?: number;
   ageMax?: number | 'adult';
   cost?: number;
-  instructors: string[];
+  instructors?: string[];
   sizeMax?: number;
   kind: string;
 }
@@ -46,7 +46,7 @@ if (!firstDate) {
   <div class="activity-content">
     <div class="activity-details">
       <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
-      {instructors.length > 0 && (
+      {instructors && instructors.length > 0 && (
         <p class="instructors">
           <strong>Instructor:</strong> {instructors.join(', ')}
         </p>
