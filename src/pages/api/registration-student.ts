@@ -109,33 +109,60 @@ export const POST: APIRoute = async ({ request }) => {
           (registrationError as any).constraint ===
             'unique_registration_activity_student'
         ) {
+          // Check if existing registration is complete (has payment)
+          const existingReg = await client.query(
+            `SELECT id, payment_id, contact_id FROM registration 
+             WHERE activity = $1 AND student_id = $2`,
+            [activityId, studentId]
+          );
 
-          // Already registered
           client.release();
 
-          return new Response(
-            JSON.stringify({
-              message: 'Student already registered for this activity',
-              alreadyRegistered: true,
-              studentId: studentId,
-              activityId: activityId,
-            }),
-            {
-              status: 409,
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            }
-          );
+          if (existingReg.rows.length > 0 && existingReg.rows[0].payment_id) {
+            // Registration is complete (paid)
+            return new Response(
+              JSON.stringify({
+                message: 'Student already registered for this activity',
+                alreadyRegistered: true,
+                studentId: studentId,
+                activityId: activityId,
+              }),
+              {
+                status: 409,
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+          } else {
+            // Registration exists but is incomplete - return it to continue
+            return new Response(
+              JSON.stringify({
+                message: 'Registration in progress',
+                registrationInProgress: true,
+                studentId: studentId,
+                registrationId: existingReg.rows[0]?.id,
+                contactId: existingReg.rows[0]?.contact_id,
+                activityId: activityId,
+              }),
+              {
+                status: 200,
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+          }
         } else {
           throw registrationError;
         }
       }
     } catch (error: unknown) {
       console.error('Error Creating Registration:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       const errorCode = (error as any)?.code || 'UNKNOWN';
-      
+
       // Try to clean up the connection if it exists
       try {
         if (typeof client !== 'undefined') {
@@ -144,7 +171,7 @@ export const POST: APIRoute = async ({ request }) => {
       } catch (cleanupError) {
         console.error('Error during cleanup:', cleanupError);
       }
-      
+
       return new Response(
         JSON.stringify({
           message: 'Failed to create registration',
@@ -162,9 +189,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
   } catch (error) {
     console.error('Error in student API:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     const errorCode = (error as any)?.code || 'UNKNOWN';
-    
+
     return new Response(
       JSON.stringify({
         message: 'Failed to save student and registration',
