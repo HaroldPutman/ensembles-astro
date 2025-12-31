@@ -111,7 +111,7 @@ export const POST: APIRoute = async ({ request }) => {
         ) {
           // Check if existing registration is complete (has payment)
           const existingReg = await client.query(
-            `SELECT id, payment_id FROM registration 
+            `SELECT id, payment_id, contact_id FROM registration 
              WHERE activity = $1 AND student_id = $2`,
             [activityId, studentId]
           );
