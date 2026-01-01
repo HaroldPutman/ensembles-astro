@@ -36,7 +36,7 @@ const activities = defineCollection({
           message: 'duration in minutes (90) or hh:mm (1:30) or 1h30m',
         })
       ),
-    repeat: z.string(),
+    repeat: z.string().optional().default(''),
     cost: z.number().optional(),
     kind: z.enum(['class', 'group', 'event']),
     ageMin: z.number().optional(),
