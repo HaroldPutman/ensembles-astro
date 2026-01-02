@@ -6,8 +6,6 @@ export const onRequest = clerkMiddleware((auth, context) => {
   const { isAuthenticated, redirectToSignIn } = auth();
 
   if (!isAuthenticated && isProtectedRoute(context.request)) {
-    // Add custom logic to run before redirecting
-
-    return redirectToSignIn();
+    return redirectToSignIn({ returnBackUrl: context.request.url });
   }
 });
