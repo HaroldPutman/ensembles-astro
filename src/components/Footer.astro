@@ -34,6 +34,7 @@ const currentYear = new Date().getFullYear();
         >
          <Icon name="mdi:facebook" width="28" height="28" /> Facebook
         </a>
+        <div id="clerk-user-button"></div>
       </div>
 
       <div class="footer-section newsletter">
@@ -239,4 +240,61 @@ const currentYear = new Date().getFullYear();
     outline: 2px solid #000;
     outline-offset: 2px;
   }
-</style> 
+
+  #clerk-user-button {
+    display: flex;
+    align-items: center;
+  }
+
+  .clerk-sign-in-link {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .clerk-sign-in-link:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<script>
+  // Wait for Clerk to be ready and mount user button
+  function initClerkUI() {
+    const container = document.getElementById('clerk-user-button');
+    if (!container) return;
+
+    // @ts-ignore - Clerk is loaded globally by the integration
+    if (typeof window.Clerk === 'undefined') {
+      // Clerk not loaded yet, try again
+      setTimeout(initClerkUI, 100);
+      return;
+    }
+
+    // @ts-ignore
+    window.Clerk.load().then(() => {
+      // @ts-ignore
+      const user = window.Clerk.user;
+      
+      if (user) {
+        // User is signed in - mount UserButton
+        // @ts-ignore
+        window.Clerk.mountUserButton(container, {
+          afterSignOutUrl: '/',
+        });
+      } else {
+        // User is signed out - show sign in link
+        container.innerHTML = `
+          <a href="/backstage" class="clerk-sign-in-link">
+            Sign In
+          </a>
+        `;
+      }
+    });
+  }
+
+  // Run on page load and after navigation
+  document.addEventListener('DOMContentLoaded', initClerkUI);
+  document.addEventListener('astro:page-load', initClerkUI);
+</script> 
