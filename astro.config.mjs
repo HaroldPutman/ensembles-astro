@@ -5,9 +5,11 @@ import icon from 'astro-icon';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import netlify from '@astrojs/netlify';
+import clerk from '@clerk/astro';
 
 // https://astro.build/config
 export default defineConfig({
+  output: 'server',
   site: 'https://ensemblesinc.org',
 
   redirects: {
@@ -21,7 +23,7 @@ export default defineConfig({
     remarkPlugins: [remarkModifiedTime],
   },
 
-  integrations: [mdx(), icon(), sitemap()],
+  integrations: [mdx(), icon(), sitemap(), clerk()],
 
   vite: {
     envPrefix: ['PUBLIC_'],

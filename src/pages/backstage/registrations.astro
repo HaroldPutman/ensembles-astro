@@ -1,0 +1,327 @@
+---
+export const prerender = false;
+
+import FullWidthLayout from '../../layouts/FullWidthLayout.astro';
+import { getPool } from '../../lib/db';
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+
+// Get all activities to map IDs to names
+const activities = await getCollection('activities');
+const activityMap = new Map(activities.map(a => [a.id, a.data.name]));
+
+// Query registrations grouped by activity
+const pool = getPool();
+const client = await pool.connect();
+
+interface RegistrationRow {
+  activity: string;
+  student_id: number;
+  firstname: string;
+  lastname: string;
+  dob: Date;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  payment_id: number | null;
+  cost: number | null;
+  created_at: Date;
+}
+
+let registrations: RegistrationRow[] = [];
+
+try {
+  const result = await client.query<RegistrationRow>(`
+    SELECT 
+      r.activity,
+      r.student_id,
+      s.firstname,
+      s.lastname,
+      s.dob,
+      c.firstname as contact_name,
+      c.email as contact_email,
+      c.phone as contact_phone,
+      r.payment_id,
+      r.cost,
+      r.created_at
+    FROM registration r
+    JOIN student s ON r.student_id = s.id
+    LEFT JOIN contact c ON r.contact_id = c.id
+    WHERE r.cancelled_at IS NULL
+    ORDER BY r.activity, s.lastname, s.firstname
+  `);
+  registrations = result.rows;
+} finally {
+  client.release();
+}
+
+// Group registrations by activity
+const groupedByActivity = registrations.reduce((acc, reg) => {
+  if (!acc.has(reg.activity)) {
+    acc.set(reg.activity, []);
+  }
+  acc.get(reg.activity)!.push(reg);
+  return acc;
+}, new Map<string, RegistrationRow[]>());
+
+// Format date for display
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+}
+
+function formatDob(date: Date): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  });
+}
+---
+
+<FullWidthLayout title="Ensembles - Registrations">
+  <section class="registrations-page">
+    <header class="page-header">
+      <a href="/backstage" class="back-link">
+        <Icon name="mdi:arrow-left" width="20" height="20" />
+        Back to Backstage
+      </a>
+      <h1>Registrations</h1>
+      <p class="subtitle">
+        {registrations.length} student{registrations.length !== 1 ? 's' : ''} registered across {groupedByActivity.size} activit{groupedByActivity.size !== 1 ? 'ies' : 'y'}
+      </p>
+    </header>
+
+    {groupedByActivity.size === 0 ? (
+      <div class="empty-state">
+        <Icon name="mdi:clipboard-text-outline" width="64" height="64" />
+        <p>No registrations found</p>
+      </div>
+    ) : (
+      Array.from(groupedByActivity.entries()).map(([activityId, regs]) => (
+        <div class="activity-section">
+          <h2>
+            <a href={`/activities/${activityId}`}>
+              {activityMap.get(activityId) || activityId}
+            </a>
+            <span class="count">{regs.length}</span>
+          </h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>DOB</th>
+                  <th>Contact</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Registered</th>
+                </tr>
+              </thead>
+              <tbody>
+                {regs.map((reg) => (
+                  <tr class={reg.payment_id ? 'paid' : 'pending'}>
+                    <td class="student-name">{reg.firstname} {reg.lastname}</td>
+                    <td class="dob">{formatDob(reg.dob)}</td>
+                    <td>{reg.contact_name || '—'}</td>
+                    <td class="email">{reg.contact_email || '—'}</td>
+                    <td class="phone">{reg.contact_phone || '—'}</td>
+                    <td class="status">
+                      {reg.payment_id ? (
+                        <span class="badge paid">
+                          <Icon name="mdi:check-circle" width="16" height="16" />
+                          Paid
+                        </span>
+                      ) : (
+                        <span class="badge pending">
+                          <Icon name="mdi:clock-outline" width="16" height="16" />
+                          Pending
+                        </span>
+                      )}
+                    </td>
+                    <td class="date">{formatDate(reg.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))
+    )}
+  </section>
+</FullWidthLayout>
+
+<style>
+  .registrations-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .back-link:hover {
+    color: #333;
+  }
+
+  .page-header h1 {
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: #666;
+    margin: 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #999;
+  }
+
+  .empty-state p {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+  }
+
+  .activity-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .activity-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+  }
+
+  .activity-section h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .activity-section h2 a:hover {
+    text-decoration: underline;
+  }
+
+  .count {
+    background: #e5e5e5;
+    color: #666;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  tbody tr:hover {
+    background: #fafafa;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .student-name {
+    font-weight: 500;
+  }
+
+  .dob, .date {
+    white-space: nowrap;
+    color: #666;
+  }
+
+  .email {
+    font-size: 0.85rem;
+  }
+
+  .phone {
+    white-space: nowrap;
+  }
+
+  .status {
+    white-space: nowrap;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .badge.paid {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  @media (max-width: 768px) {
+    .registrations-page {
+      padding: 1rem;
+    }
+
+    th, td {
+      padding: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    .email {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+</style>
+
