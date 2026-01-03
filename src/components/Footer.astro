@@ -246,31 +246,66 @@ const currentYear = new Date().getFullYear();
     align-items: center;
   }
 
-  .clerk-sign-in-link {
-    color: inherit;
+  :global(.clerk-sign-in-link) {
+    color: #888;
+    font-size: 0.8em;
     text-decoration: none;
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  .clerk-sign-in-link:hover {
+  :global(.clerk-sign-in-link:visited) {
+    color:#888;
+  }
+  :global(.clerk-sign-in-link:hover) {
     text-decoration: underline;
   }
 </style>
 
 <script>
   // Wait for Clerk to be ready and mount user button
+  const MAX_ATTEMPTS = 20;
+  const INITIAL_DELAY = 100;
+  let currentAttempt = 0;
+  let retryTimeoutId: number | null = null;
+
+  function showFallbackUI(container: HTMLElement) {
+    container.innerHTML = `
+      <a href="/backstage" class="clerk-sign-in-link">
+        Staff Sign In
+      </a>
+    `;
+  }
+
   function initClerkUI() {
     const container = document.getElementById('clerk-user-button');
     if (!container) return;
 
+    // Clear any pending retry
+    if (retryTimeoutId !== null) {
+      clearTimeout(retryTimeoutId);
+      retryTimeoutId = null;
+    }
+
     // @ts-ignore - Clerk is loaded globally by the integration
     if (typeof window.Clerk === 'undefined') {
-      // Clerk not loaded yet, try again
-      setTimeout(initClerkUI, 100);
+      currentAttempt++;
+      
+      if (currentAttempt >= MAX_ATTEMPTS) {
+        console.warn('Clerk failed to load after maximum attempts. Showing fallback UI.');
+        showFallbackUI(container);
+        return;
+      }
+
+      // Exponential backoff: 100ms, 200ms, 400ms... capped at 2s
+      const delay = Math.min(INITIAL_DELAY * Math.pow(2, currentAttempt - 1), 2000);
+      retryTimeoutId = setTimeout(initClerkUI, delay) as unknown as number;
       return;
     }
+
+    // Clerk is available - reset attempt counter for future navigations
+    currentAttempt = 0;
 
     // @ts-ignore
     window.Clerk.load().then(() => {
@@ -285,16 +320,22 @@ const currentYear = new Date().getFullYear();
         });
       } else {
         // User is signed out - show sign in link
-        container.innerHTML = `
-          <a href="/backstage" class="clerk-sign-in-link">
-            Sign In
-          </a>
-        `;
+        showFallbackUI(container);
       }
+    }).catch((err: Error) => {
+      console.error('Clerk load error:', err);
+      showFallbackUI(container);
     });
   }
 
   // Run on page load and after navigation
-  document.addEventListener('DOMContentLoaded', initClerkUI);
-  document.addEventListener('astro:page-load', initClerkUI);
-</script> 
+  document.addEventListener('DOMContentLoaded', () => {
+    currentAttempt = 0; // Reset on fresh page load
+    initClerkUI();
+  });
+  document.addEventListener('astro:page-load', () => {
+    currentAttempt = 0; // Reset on navigation
+    initClerkUI();
+  });
+</script>
+ 
