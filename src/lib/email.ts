@@ -223,7 +223,7 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
               <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
               
               <p style="color: #666; font-size: 14px; text-align: center; margin: 0; font-family: ${fontStack};">
-                Questions? Contact us at <a href="mailto:info@ensemblesmusic.org" style="color: #2c3e50;">info@ensemblesmusic.org</a>
+                Questions? Contact us at <a href="mailto:info@charlestownensembles.com" style="color: #2c3e50;">info@charlestownensembles.com</a>
               </p>
               
             </td>
@@ -320,7 +320,7 @@ WHAT'S NEXT?
 - Please arrive no earlier than 10 minutes before the scheduled start time
 - If you have any questions, please contact us
 
-Questions? Contact us at info@ensemblesmusic.org
+Questions? Contact us at info@charlestownensembles.com
 
 © ${new Date().getFullYear()} Ensembles, Inc. All rights reserved.
 `;
