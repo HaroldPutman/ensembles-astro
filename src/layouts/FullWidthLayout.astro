@@ -27,6 +27,13 @@ const { title = 'Ensembles, Inc.' } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:image" content="/image/poster.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://charlestownensembles.com" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content="Affordable Group Music and Art Classes" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
