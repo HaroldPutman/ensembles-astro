@@ -38,7 +38,7 @@ try {
       s.firstname,
       s.lastname,
       s.dob,
-      c.firstname as contact_name,
+      (c.firstname || '') || (CASE WHEN c.lastname IS NOT NULL THEN ' ' || c.lastname ELSE '' END) as contact_name,
       c.email as contact_email,
       c.phone as contact_phone,
       r.payment_id,
@@ -73,12 +73,16 @@ function formatDate(date: Date): string {
   });
 }
 
-function formatDob(date: Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric'
-  });
+
+function calculateAge(date: Date): string {
+  const today = new Date();
+  const dob = new Date(date);
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age > 18 ? 'Adult' : age.toString();
 }
 ---
 
@@ -114,7 +118,7 @@ function formatDob(date: Date): string {
               <thead>
                 <tr>
                   <th>Student Name</th>
-                  <th>DOB</th>
+                  <th>Age</th>
                   <th>Contact</th>
                   <th>Email</th>
                   <th>Phone</th>
@@ -126,7 +130,9 @@ function formatDob(date: Date): string {
                 {regs.map((reg) => (
                   <tr class={reg.payment_id ? 'paid' : 'pending'}>
                     <td class="student-name">{reg.firstname} {reg.lastname}</td>
-                    <td class="dob">{formatDob(reg.dob)}</td>
+                    <td class="age">
+                      {calculateAge(reg.dob)}
+                    </td>
                     <td>{reg.contact_name || '—'}</td>
                     <td class="email">{reg.contact_email || '—'}</td>
                     <td class="phone">{reg.contact_phone || '—'}</td>
