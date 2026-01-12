@@ -30,17 +30,57 @@ interface ActivityData {
 
 /**
  * GET /api/send-reminders
- * 
+ *
  * Sends reminder emails for classes starting within 2 calendar days.
  * Updates reminded_at column to prevent duplicate reminders.
- * 
+ *
+ * Authentication: Requires either:
+ *   - A valid Clerk session (for browser-based calls)
+ *   - A valid API key in Authorization header: "Bearer <REMINDER_API_KEY>"
+ *
  * Query params:
  *   - dry-run: If present, don't send emails or update DB, just return what would be sent
  */
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals, request }) => {
+  // Authentication check
+  const authHeader = request.headers.get('Authorization');
+  const expectedApiKey = process.env.REMINDER_API_KEY;
+
+  // Check for API key authentication (for cron jobs / automated calls)
+  const hasValidApiKey =
+    expectedApiKey &&
+    authHeader?.startsWith('Bearer ') &&
+    authHeader.slice(7) === expectedApiKey;
+
+  // Check for Clerk session authentication (for browser-based calls)
+  let hasValidSession = false;
+  try {
+    const auth = locals.auth?.();
+    hasValidSession = !!auth?.userId;
+  } catch {
+    // Clerk auth not available (e.g., on prerendered pages)
+    hasValidSession = false;
+  }
+
+  if (!hasValidApiKey && !hasValidSession) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Unauthorized. Provide a valid API key or sign in.',
+      }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
   const dryRun = url.searchParams.has('dry-run');
 
-  console.log(`Send reminders API called (dry-run: ${dryRun})`);
+  // eslint-disable-next-line no-console
+  console.log(
+    `Send reminders API called (dry-run: ${dryRun}, auth: ${hasValidSession ? 'session' : 'api-key'})`
+  );
 
   try {
     // Get all activities and calculate their first dates
