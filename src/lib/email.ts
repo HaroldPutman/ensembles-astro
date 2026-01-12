@@ -422,4 +422,236 @@ export async function sendPaymentConfirmationEmail(
   }
 }
 
-export type { PaymentConfirmationData, RegistrationItem, VoucherInfo };
+// =============================================================================
+// CLASS REMINDER EMAIL
+// =============================================================================
+
+interface ReminderParticipant {
+  studentName: string;
+}
+
+interface ClassReminderData {
+  recipientEmail: string;
+  recipientName: string;
+  activityName: string;
+  weekday: string; // formatted day like "Tuesday"
+  startDate: string; // formatted date like "January 14"
+  startTime: string; // formatted time like "2:00 PM"
+  participants: ReminderParticipant[];
+}
+
+/**
+ * Generates HTML for the reminder email
+ */
+function generateReminderEmailHtml(data: ClassReminderData): string {
+  const fontStack = 'Arial, Helvetica, sans-serif';
+  const safeName = escapeHtml(data.recipientName);
+  const safeActivityName = escapeHtml(data.activityName);
+
+  const participantList = data.participants
+    .map(
+      p =>
+        `<li style="margin-bottom: 4px; font-family: ${fontStack};">${escapeHtml(p.studentName)}</li>`
+    )
+    .join('');
+
+  const participantHtml =
+    data.participants.length > 1
+      ? `<p style="margin: 0 0 12px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+         The following students are registered for this class:
+      </p>
+      <ul style="margin: 0 0 24px; padding-left: 24px; color: #333;">
+        ${participantList}
+      </ul>`
+      : `<p style="margin: 0 0 12px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+        <strong>${escapeHtml(data.participants[0].studentName)}</strong> is registered for this class.
+      </p>`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Reminder - ${safeActivityName}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: ${fontStack};">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+    <tr>
+      <td style="padding: 20px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #2c5530; padding: 24px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold; font-family: ${fontStack};">
+                Class Reminder
+              </h1>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 32px 24px;">
+              <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                Hi ${safeName},
+              </p>
+              
+              <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                Your Ensembles class <strong>${safeActivityName}</strong> begins ${escapeHtml(data.weekday)} at ${escapeHtml(data.startTime)}.
+              </p>
+              
+              <!-- Class Details Box -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa; border-radius: 8px; margin: 24px 0;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 8px; font-size: 14px; color: #666; font-family: ${fontStack};">
+                      <strong>Class:</strong> ${safeActivityName}
+                    </p>
+                    <p style="margin: 0 0 8px; font-size: 14px; color: #666; font-family: ${fontStack};">
+                      <strong>Date:</strong> ${escapeHtml(data.weekday)}, ${escapeHtml(data.startDate)}
+                    </p>
+                    <p style="margin: 0; font-size: 14px; color: #666; font-family: ${fontStack};">
+                      <strong>Time:</strong> ${escapeHtml(data.startTime)}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+                           
+              ${participantHtml}
+              
+              <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                All classes are held at Charlestown Ensembles, 1120 Monroe St., Charlestown, IN.
+                We look forward to seeing you there!
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+              <p style="margin: 0; font-size: 14px; color: #666; font-family: ${fontStack};">
+                Ensembles, Inc.<br>
+                <a href="https://charlestownensembles.com" style="color: #2c5530;">CharlestownEnsembles.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+/**
+ * Generates plain text version of the reminder email
+ */
+function generateReminderEmailText(data: ClassReminderData): string {
+  const participantList = data.participants
+    .map(p => `  - ${p.studentName}`)
+    .join('\n');
+
+  return `
+CLASS REMINDER
+
+Hi ${data.recipientName},
+
+Your Ensembles class ${data.activityName} begins ${data.weekday} at ${data.startTime}.
+
+Class: ${data.activityName}
+Date: ${data.weekday}, ${data.startDate}
+Time: ${data.startTime}
+
+Registered participants:
+${participantList}
+
+All classes are held at Charlestown Ensembles, 1120 Monroe St., Charlestown, IN.
+We look forward to seeing you there! 
+
+---
+Ensembles, Inc.
+https://charlestownensembles.com
+`.trim();
+}
+
+/**
+ * Sends a class reminder email
+ */
+export async function sendClassReminderEmail(
+  data: ClassReminderData
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    console.error('BREVO_API_KEY is not set');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  // Validate inputs
+  if (!data.recipientEmail || !data.participants.length) {
+    return { success: false, error: 'Missing required email data' };
+  }
+
+  const subject = `Reminder: ${data.activityName} starts ${data.weekday}`;
+
+  const emailPayload = {
+    sender: {
+      name: 'Ensembles',
+      email: process.env.BREVO_SENDER_EMAIL || 'noreply@ensemblesinc.org',
+    },
+    to: [
+      {
+        email: data.recipientEmail,
+        name: data.recipientName,
+      },
+    ],
+    subject: subject,
+    htmlContent: generateReminderEmailHtml(data),
+    textContent: generateReminderEmailText(data),
+  };
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify(emailPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Brevo API error:', errorData);
+      return {
+        success: false,
+        error: errorData.message || 'Failed to send reminder email',
+      };
+    }
+
+    const result = await response.json();
+    // eslint-disable-next-line no-console
+    console.log('Reminder email sent successfully:', result);
+
+    return {
+      success: true,
+      messageId: result.messageId,
+    };
+  } catch (error) {
+    console.error('Error sending reminder email:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to send reminder email',
+    };
+  }
+}
+
+export type {
+  PaymentConfirmationData,
+  RegistrationItem,
+  VoucherInfo,
+  ClassReminderData,
+};
