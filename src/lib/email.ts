@@ -586,8 +586,20 @@ export async function sendClassReminderEmail(
     return { success: false, error: 'Email service not configured' };
   }
 
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  if (!senderEmail) {
+    console.error('BREVO_SENDER_EMAIL is not set');
+    return { success: false, error: 'Email sender not configured' };
+  }
+
   // Validate inputs
-  if (!data.recipientEmail || !data.participants.length) {
+  if (
+    !data.recipientEmail ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.recipientEmail)
+  ) {
+    return { success: false, error: 'Invalid recipient email address' };
+  }
+  if (!data.participants.length) {
     return { success: false, error: 'Missing required email data' };
   }
 
@@ -596,7 +608,7 @@ export async function sendClassReminderEmail(
   const emailPayload = {
     sender: {
       name: 'Ensembles',
-      email: process.env.BREVO_SENDER_EMAIL || 'noreply@ensemblesinc.org',
+      email: senderEmail,
     },
     to: [
       {

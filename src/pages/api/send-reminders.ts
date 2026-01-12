@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import crypto from 'node:crypto';
 import { getCollection } from 'astro:content';
 import { getPool } from '../../lib/db';
 import { sendClassReminderEmail } from '../../lib/email';
@@ -28,6 +29,15 @@ interface ActivityData {
   firstDate: Temporal.ZonedDateTime;
 }
 
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Compare against itself to maintain constant time
+    crypto.timingSafeEqual(Buffer.from(a), Buffer.from(a));
+    return false;
+  }
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
+
 /**
  * GET /api/send-reminders
  *
@@ -50,7 +60,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
   const hasValidApiKey =
     expectedApiKey &&
     authHeader?.startsWith('Bearer ') &&
-    authHeader.slice(7) === expectedApiKey;
+    timingSafeEqual(authHeader.slice(7), expectedApiKey);
 
   // Check for Clerk session authentication (for browser-based calls)
   let hasValidSession = false;
