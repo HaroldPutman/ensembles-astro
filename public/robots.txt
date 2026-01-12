@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /backstage
 
 Sitemap: https://ensemblesinc.org/sitemap-index.xml
