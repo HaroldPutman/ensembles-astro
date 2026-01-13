@@ -45,6 +45,7 @@ const activities = defineCollection({
     question: z.string().optional(),
     suggestedDonation: z.number().optional(),
     image: z.string().optional(),
+    hasRegistration: z.boolean().optional().default(true),
   }),
 });
 
