@@ -65,8 +65,10 @@ if (!firstDate) {
     <div class="card-actions">
       <a href={`/activities/${activityId}`} class="details-btn oswald-cta">View Details</a>
       {hasRegistration && (
-        <a href={`/register/${activityId}`} class="register-btn oswald-cta">Register Now</a>
-        <p class="registration-status"></p>
+        <>
+          <a href={`/register/${activityId}`} class="register-btn oswald-cta">Register Now</a>
+          <p class="registration-status"></p>
+        </>
       )}
     </div>
   </div>
