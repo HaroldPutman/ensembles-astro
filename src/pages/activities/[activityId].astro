@@ -93,10 +93,12 @@ function getKindLabel(kind: string) {
             <Icon name="mdi:tag" width="18" height="18" />
             {formatCost(activity.data.cost)}
           </span>
+          {allDates.length > 1 && (
           <span class="meta-item">
             <Icon name="mdi:clock-outline" width="18" height="18" />
-            {allDates.length} {allDates.length === 1 ? 'session' : 'sessions'}
+            {allDates.length} sessions
           </span>
+          )}
         </div>
       </div>
     </header>
@@ -105,11 +107,11 @@ function getKindLabel(kind: string) {
     <div class="activity-body">
       <!-- Description -->
       <section class="description-section">
-        <h2>About This {getKindLabel(activity.data.kind)}</h2>
         <div class="description-content">
           <Content />
         </div>
         
+        {activity.data.hasRegistration && (
         <div class="cta-section">
           <ActivityStatus 
             server:defer
@@ -127,7 +129,7 @@ function getKindLabel(kind: string) {
               Checking availability...
             </div>
           </ActivityStatus>
-        </div>
+        </div>)}
       </section>
 
       <!-- Schedule -->

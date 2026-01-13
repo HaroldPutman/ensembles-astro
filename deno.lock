@@ -13,6 +13,8 @@
       "dependencies": [
         "npm:@astrojs/mdx@^4.3.0",
         "npm:@astrojs/netlify@^6.5.3",
+        "npm:@astrojs/sitemap@^3.6.0",
+        "npm:@clerk/astro@^2.16.10",
         "npm:@eslint/js@^9.30.0",
         "npm:@getbrevo/brevo@^3.0.1",
         "npm:@iconify-json/mdi@^1.2.3",

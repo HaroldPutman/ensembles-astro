@@ -17,9 +17,10 @@ interface Props {
   instructors?: string[];
   sizeMax?: number;
   kind: string;
+  hasRegistration?: boolean;
 }
 
-const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, image, kind } = Astro.props;
+const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, image, kind, hasRegistration } = Astro.props;
 
 const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
 if (!firstDate) {
@@ -42,7 +43,7 @@ if (!firstDate) {
     <div class="activity-header">
       <h2>{name}</h2>
     </div>
-  </a>
+  </a> 
   <div class="activity-content">
     <div class="activity-details">
       <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
@@ -63,8 +64,10 @@ if (!firstDate) {
 
     <div class="card-actions">
       <a href={`/activities/${activityId}`} class="details-btn oswald-cta">View Details</a>
-      <a href={`/register/${activityId}`} class="register-btn oswald-cta">Register Now</a>
-      <p class="registration-status"></p>
+      {hasRegistration && (
+        <a href={`/register/${activityId}`} class="register-btn oswald-cta">Register Now</a>
+        <p class="registration-status"></p>
+      )}
     </div>
   </div>
 </article>
