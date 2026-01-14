@@ -548,9 +548,13 @@ import Layout from '../../layouts/Layout.astro';
   // Process successful payment
   async function processPaymentSuccess(paypalDetails: any) {
     try {
+      // Extract the capture ID (actual transaction ID) from PayPal response
+      const captureId = paypalDetails.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+      
       const paymentData = {
         registrationIds: registrationDetails.map(r => r.registrationId),
         paypalOrderId: paypalDetails.id,
+        paypalCaptureId: captureId,
         paypalPayerId: paypalDetails.payer.payer_id,
         totalAmount: totalCost,
         paymentMethod: 'paypal',
