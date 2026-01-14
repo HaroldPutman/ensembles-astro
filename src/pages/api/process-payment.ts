@@ -12,12 +12,10 @@ import { getPool } from '../../lib/db';
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
-  console.log('Process payment API called');
   try {
     let body;
     try {
       body = await request.json();
-      console.log('Request body:', body);
     } catch (_e) {
       console.error('Invalid JSON in request body:', _e);
       return new Response(
@@ -36,20 +34,13 @@ export const POST: APIRoute = async ({ request }) => {
     const {
       registrationIds,
       paypalOrderId,
+      paypalCaptureId,
       paypalPayerId,
       totalAmount,
       paymentMethod,
       voucherId,
     } = body;
 
-    console.log('Parsed values:', {
-      registrationIds,
-      paypalOrderId,
-      paypalPayerId,
-      totalAmount,
-      paymentMethod,
-      voucherId,
-    });
 
     // Validate required fields
     if (
@@ -141,7 +132,6 @@ export const POST: APIRoute = async ({ request }) => {
           [registrationIds]
         );
 
-        console.log('Registration query returned:', registrationsResult.rows);
 
         if (registrationsResult.rows.length !== registrationIds.length) {
           await client.query('ROLLBACK');
@@ -160,7 +150,6 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Calculate expected total (subtotal before any discounts)
         const subtotal = registrationsResult.rows.reduce((sum, row) => {
-          console.log({ row, sum });
           return (
             sum +
             (parseFloat(row.cost) || 0) +
@@ -171,31 +160,15 @@ export const POST: APIRoute = async ({ request }) => {
         let expectedTotal = subtotal;
         let voucherInfo: VoucherInfo | undefined;
 
-        console.log('Original expected total (subtotal):', expectedTotal);
 
         // If a voucher is applied, subtract the discount from expected total
         if (voucherId) {
-          console.log(
-            'Voucher ID provided:',
-            voucherId,
-            'Type:',
-            typeof voucherId
-          );
 
           const voucherResult = await client.query(
             `SELECT code, percentage, amount, applies_to, description FROM voucher WHERE id = $1`,
             [voucherId]
           );
 
-          console.log(
-            'Voucher query result rows count:',
-            voucherResult.rows.length
-          );
-          if (voucherResult.rows.length > 0) {
-            console.log('Voucher found:', voucherResult.rows[0]);
-          } else {
-            console.log('No voucher found with ID:', voucherId);
-          }
 
           if (voucherResult.rows.length > 0) {
             const voucher = voucherResult.rows[0];
@@ -203,7 +176,6 @@ export const POST: APIRoute = async ({ request }) => {
 
             // If applies_to is set, only apply discount to matching activity kinds
             if (voucher.applies_to) {
-              console.log('Voucher applies only to kind:', voucher.applies_to);
 
               // Get activities collection to check activity kinds
               const activities = await getCollection('activities');
@@ -297,14 +269,7 @@ export const POST: APIRoute = async ({ request }) => {
           );
         }
 
-        console.log(
-          'Final comparison - Expected:',
-          expectedTotal,
-          'Received:',
-          totalAmount,
-          'Difference:',
-          Math.abs(expectedTotal - totalAmount)
-        );
+
 
         if (Math.abs(expectedTotal - totalAmount) > 0.01) {
           await client.query('ROLLBACK');
@@ -329,7 +294,8 @@ export const POST: APIRoute = async ({ request }) => {
         } else if (paymentMethod === 'check') {
           transactionId = `CHECK-${Date.now()}`;
         } else {
-          transactionId = paypalOrderId;
+          // Use capture ID (actual transaction ID) if available, fall back to order ID
+          transactionId = paypalCaptureId || paypalOrderId;
         }
 
         // Generate unique short code with retry logic
