@@ -27,6 +27,13 @@ These are specs on images used on the site
 | Secondary | 900x1200, 960x720 | * | 
 | Activities | 960x420 | 4-5 character matching activity id prefix | 
 
+## Instructor PII
+
+The instructor contact information is maintained in an ecrypted file. This file is decripted at build time.
+If you change it you need to re-encrypt with `npm run lock`.
+
+
+
 
 
 

@@ -14,6 +14,16 @@ const board = defineCollection({
   }),
 });
 
+const instructors = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './collections/instructors' }),
+  schema: z.object({
+    name: z.string(),
+    specialties: z.array(z.string()).optional().default([]),
+    image: z.string().optional(),
+    active: z.boolean().optional().default(true),
+  }),
+});
+
 const activities = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './collections/activities' }),
   schema: z.object({
@@ -50,4 +60,4 @@ const activities = defineCollection({
 });
 
 // 4. Export a single `collections` object to register your collection(s)
-export const collections = { board, activities };
+export const collections = { board, activities, instructors };

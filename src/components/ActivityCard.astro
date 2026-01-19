@@ -1,6 +1,7 @@
 ---
 import { getFirstAndLastDates } from '../lib/datelib';
 import { formatAgeRange } from '../lib/agelib';
+import { getInstructors } from '../lib/instructors';
 import ActivityDateTime from './ActivityDateTime.astro';
 
 interface Props {
@@ -27,6 +28,11 @@ if (!firstDate) {
   console.error('Missing firstDate for activity:', activityId);
   return null; // render nothing.
 }
+
+// Look up instructor names from the collection
+const allInstructors = await getInstructors();
+const instructorNameMap = new Map(allInstructors.map(i => [i.id, i.data.name]));
+const instructorNames = instructors?.map(id => instructorNameMap.get(id) ?? id) ?? [];
 ---
 
 <article
@@ -47,9 +53,9 @@ if (!firstDate) {
   <div class="activity-content">
     <div class="activity-details">
       <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
-      {instructors && instructors.length > 0 && (
+      {instructorNames.length > 0 && (
         <p class="instructors">
-          <strong>Instructor:</strong> {instructors.join(', ')}
+          <strong>Instructor:</strong> {instructorNames.join(', ')}
         </p>
       )}
       <p class="age-range">
