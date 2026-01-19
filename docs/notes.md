@@ -29,7 +29,7 @@ These are specs on images used on the site
 
 ## Instructor PII
 
-The instructor contact information is maintained in an ecrypted file. This file is decripted at build time.
+The instructor contact information is maintained in an encrypted file. This file is decrypted at build time.
 If you change it you need to re-encrypt with `npm run lock`.
 
 
