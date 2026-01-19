@@ -31,8 +31,8 @@ if (!firstDate) {
 
 // Look up instructor names from the collection
 const allInstructors = await getInstructors();
-const instructorNameMap = new Map(allInstructors.map(i => [i.id, i.data.name]));
-const instructorNames = instructors?.map(id => instructorNameMap.get(id) ?? id) ?? [];
+const instructorMap = new Map(allInstructors.map(i => [i.id, { name: i.data.name, id: i.id }]));
+const instructorData = instructors?.map(id => instructorMap.get(id) ?? { name: id, id }) ?? [];
 ---
 
 <article
@@ -53,9 +53,14 @@ const instructorNames = instructors?.map(id => instructorNameMap.get(id) ?? id) 
   <div class="activity-content">
     <div class="activity-details">
       <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
-      {instructorNames.length > 0 && (
+      {instructorData.length > 0 && (
         <p class="instructors">
-          <strong>Instructor:</strong> {instructorNames.join(', ')}
+          <strong>Instructor:</strong>{' '}
+          {instructorData.map((inst, i) => (
+            <>
+              <a href={`/instructors/${inst.id}`} class="instructor-link">{inst.name}</a>{i < instructorData.length - 1 ? ', ' : ''}
+            </>
+          ))}
         </p>
       )}
       <p class="age-range">
@@ -166,6 +171,15 @@ const instructorNames = instructors?.map(id => instructorNameMap.get(id) ?? id) 
 
   .activity-details strong {
     color: #333;
+  }
+
+  .instructor-link {
+    color: #2563eb;
+    text-decoration: none;
+  }
+
+  .instructor-link:hover {
+    text-decoration: underline;
   }
 
   .card-actions {
