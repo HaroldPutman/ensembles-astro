@@ -100,16 +100,23 @@ if (process.argv[2] === 'unlock') {
       plainStats.mtime > encryptedStats.mtime
     ) {
       console.error(`Error: It looks like '${file.plaintext}' has been modified. Run 'npm run lock' to encrypt it first.`);
-      process.exit(-1);
+      process.exit(1);
     }
 
     decryptFile(file.encrypted, file.plaintext, password);
   });
 } else if (process.argv[2] === 'clean') {
-  // Remove the plaintext files
-  files.forEach(file => {
-    fs.unlinkSync(file.plaintext);
-  });
+    // Remove the plaintext files
+    files.forEach(file => {
+     try {
+       fs.unlinkSync(file.plaintext);
+     } catch (err) {
+       if (err.code !== 'ENOENT') {
+         throw err;
+       }
+      }
+       // File doesn't exist, nothing to clean
+    });
 } else {
   files.forEach(file => {
     encryptFile(file.plaintext, file.encrypted, password);
