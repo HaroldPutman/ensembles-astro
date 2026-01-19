@@ -1,0 +1,391 @@
+---
+export const prerender = true;
+
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+import { getFirstAndLastDates } from '../../lib/datelib';
+import { Temporal } from '@js-temporal/polyfill';
+
+export async function getStaticPaths() {
+  const instructors = await getCollection('instructors');
+  return instructors.map((instructor) => ({
+    params: { instructorId: instructor.id },
+    props: { instructor },
+  }));
+}
+
+const { instructor } = Astro.props;
+const { Content } = await render(instructor);
+
+// Get all activities and filter for ones this instructor teaches
+const activities = await getCollection('activities');
+const now = Temporal.Now.zonedDateTimeISO('America/Louisville');
+
+// Filter activities where this instructor is listed and the activity hasn't ended
+const instructorActivities = activities
+  .filter((activity) => {
+    // Check if instructor is in the activity's instructors array
+    if (!activity.data.instructors?.includes(instructor.id)) {
+      return false;
+    }
+    
+    // Check if activity is current or upcoming
+    try {
+      const [_firstDate, lastDate] = getFirstAndLastDates(
+        activity.data.startDate,
+        activity.data.startTime,
+        activity.data.duration,
+        activity.data.repeat
+      );
+      // If no end date (ongoing) or end date is in the future, include it
+      if (!lastDate || Temporal.ZonedDateTime.compare(lastDate, now) >= 0) {
+        return true;
+      }
+    } catch {
+      return false;
+    }
+    return false;
+  })
+  .sort((a, b) => {
+    // Sort by start date
+    const aFirst = getFirstAndLastDates(a.data.startDate, a.data.startTime, a.data.duration, a.data.repeat)[0];
+    const bFirst = getFirstAndLastDates(b.data.startDate, b.data.startTime, b.data.duration, b.data.repeat)[0];
+    return Temporal.ZonedDateTime.compare(aFirst, bFirst);
+  });
+
+// Get kind label
+function getKindLabel(kind: string) {
+  const labels: Record<string, string> = {
+    class: 'Class',
+    group: 'Performance Group',
+    event: 'Event',
+  };
+  return labels[kind] || kind;
+}
+---
+
+<Layout title={`Ensembles - ${instructor.data.name}`}>
+  <article class="instructor-detail">
+    <!-- Header -->
+    <header class="instructor-header">
+      <div class="header-content">
+        {instructor.data.image && (
+          <div class="instructor-photo">
+            <img src={instructor.data.image} alt={instructor.data.name} />
+          </div>
+        )}
+        <div class="instructor-info">
+          <h1>{instructor.data.name}</h1>
+          {instructor.data.specialties && instructor.data.specialties.length > 0 && (
+            <div class="specialties">
+              {instructor.data.specialties.map((specialty) => (
+                <span class="specialty-tag">{specialty}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="instructor-body">
+      <!-- Bio Section -->
+      <section class="bio-section">
+        <div class="bio-content">
+          <Content />
+        </div>
+      </section>
+
+      <!-- Current Activities -->
+      {instructorActivities.length > 0 && (
+        <aside class="activities-section">
+          <h2>
+            Classes & Activities
+          </h2>
+          <div class="activities-list">
+            {instructorActivities.map((activity) => {
+              const [firstDate] = getFirstAndLastDates(
+                activity.data.startDate,
+                activity.data.startTime,
+                activity.data.duration,
+                activity.data.repeat
+              );
+              return (
+                <a href={`/activities/${activity.id}`} class="activity-item">
+                  <div class="activity-info">
+                    <span class="activity-type">{getKindLabel(activity.data.kind)}</span>
+                    <span class="activity-name">{activity.data.name}</span>
+                    <span class="activity-time">
+                      {firstDate.toLocaleString('en-US', { weekday: 'long' })}s at {firstDate.toLocaleString('en-US', { timeStyle: 'short' })}
+                    </span>
+                  </div>
+                  <Icon name="mdi:chevron-right" width="20" height="20" />
+                </a>
+              );
+            })}
+          </div>
+        </aside>
+      )}
+    </div>
+
+    <!-- Back Link -->
+    <nav class="back-nav">
+      <a href="/activities" class="back-link">
+        <Icon name="mdi:arrow-left" width="20" height="20" />
+        Back to Activities
+      </a>
+    </nav>
+  </article>
+</Layout>
+
+<style>
+  .instructor-detail {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Header */
+  .instructor-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+    color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 2.5rem;
+  }
+
+  .instructor-photo {
+    flex-shrink: 0;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .instructor-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .instructor-info {
+    flex: 1;
+  }
+
+  .instructor-info h1 {
+    font-size: 2.5rem;
+    margin: 0 0 1rem;
+    color: white;
+    font-weight: 700;
+  }
+
+  .specialties {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .specialty-tag {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.375rem 0.875rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+  }
+
+  /* Body Layout */
+  .instructor-body {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Bio Section */
+  .bio-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .bio-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem;
+    color: #1a1a1a;
+  }
+
+  .bio-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #444;
+  }
+
+  .bio-content :global(p) {
+    margin: 0 0 1rem;
+  }
+
+  .bio-content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .bio-content :global(a) {
+    color: #2563eb;
+    text-decoration: none;
+  }
+
+  .bio-content :global(a:hover) {
+    text-decoration: underline;
+  }
+
+  /* Activities Section */
+  .activities-section {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .activities-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    margin: 0 0 1.25rem;
+    color: #1a1a1a;
+  }
+
+  .activities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .activity-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .activity-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .activity-type {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    font-weight: 600;
+  }
+
+  .activity-name {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 0.95rem;
+  }
+
+  .activity-time {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  /* Back Navigation */
+  .back-nav {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+
+  .back-link:hover {
+    color: #1a1a1a;
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 768px) {
+    .instructor-detail {
+      padding: 0;
+    }
+
+    .instructor-header {
+      border-radius: 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-content {
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .instructor-photo {
+      width: 140px;
+      height: 140px;
+    }
+
+    .instructor-info h1 {
+      font-size: 1.75rem;
+    }
+
+    .specialties {
+      justify-content: center;
+    }
+
+    .instructor-body {
+      grid-template-columns: 1fr;
+      padding: 0 1rem;
+    }
+
+    .bio-section {
+      padding: 1.5rem;
+    }
+
+    .activities-section {
+      position: static;
+    }
+
+    .back-nav {
+      padding: 1.5rem 1rem;
+    }
+  }
+</style>
+

@@ -5,6 +5,7 @@
   "scripts": {
     "start": "netlify dev",
     "dev": "astro dev",
+    "prebuild": "node scripts/encrypt-file.mjs unlock",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
@@ -17,7 +18,9 @@
     "lint": "eslint . --ext .ts,.js,.astro",
     "lint:fix": "eslint . --ext .ts,.js,.astro --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lock": "node scripts/encrypt-file.mjs lock",
+    "unlock": "node scripts/encrypt-file.mjs unlock"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",

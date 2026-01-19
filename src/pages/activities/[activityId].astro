@@ -13,6 +13,7 @@ import {
   makeICalDuration,
   getDayOfWeek,
 } from '../../lib/datelib';
+import { getInstructors } from '../../lib/instructors';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
@@ -23,6 +24,13 @@ export async function getStaticPaths() {
 }
 
 const { activity } = Astro.props;
+
+// Get instructor data
+const allInstructors = await getInstructors();
+const instructorMap = new Map(allInstructors.map(i => [i.id, { name: i.data.name, id: i.id, image: i.data.image }]));
+const activityInstructors = (activity.data.instructors ?? [])
+  .map(id => instructorMap.get(id))
+  .filter((inst): inst is { name: string; id: string; image: string | undefined } => inst !== undefined);
 const { Content } = await render(activity);
 
 // Get all dates for this activity
@@ -111,6 +119,24 @@ function getKindLabel(kind: string) {
           <Content />
         </div>
         
+        {activityInstructors.length > 0 && (
+          <div class="instructors-section">
+            <h3>
+              {activityInstructors.length === 1 ? 'Instructor' : 'Instructors'}
+            </h3>
+            <div class="instructor-list">
+              {activityInstructors.map((instructor) => (
+                <a href={`/instructors/${instructor.id}`} class="instructor-card">
+                  {instructor.image && (
+                    <img src={instructor.image} alt={instructor.name} class="instructor-avatar" />
+                  )}
+                  <span class="instructor-name">{instructor.name}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+        
         {activity.data.hasRegistration && (
         <div class="cta-section">
           <ActivityStatus 
@@ -139,7 +165,7 @@ function getKindLabel(kind: string) {
           Schedule
         </h2>
         <div class="schedule-list">
-          {allDates.map((date, index) => {
+          {allDates.map((date) => {
             const endTime = date.add(Temporal.Duration.from(durationISO));
             const isPast = Temporal.ZonedDateTime.compare(
               date,
@@ -281,6 +307,57 @@ function getKindLabel(kind: string) {
     margin-bottom: 0;
   }
 
+  /* Instructors Section */
+  .instructors-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+  }
+
+  .instructors-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    margin: 0 0 1rem;
+    color: #1a1a1a;
+  }
+
+  .instructor-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .instructor-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem 0.5rem 0.5rem;
+    background: #f5f5f5;
+    border-radius: 50px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .instructor-card:hover {
+    background: #e8e8e8;
+    transform: translateY(-2px);
+  }
+
+  .instructor-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .instructor-name {
+    font-weight: 500;
+    color: #333;
+  }
+
   .cta-section {
     margin-top: 2rem;
     padding-top: 2rem;
@@ -341,8 +418,6 @@ function getKindLabel(kind: string) {
     background: #fafafa;
     border-radius: 12px;
     padding: 1.5rem;
-    position: sticky;
-    top: 1rem;
   }
 
   .schedule-section h2 {
@@ -358,7 +433,6 @@ function getKindLabel(kind: string) {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    max-height: 600px;
   }
 
   .schedule-item {

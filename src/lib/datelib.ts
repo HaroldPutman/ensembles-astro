@@ -128,15 +128,15 @@ function rewriteExdate(repeat: string, iCalStartTime: string) {
   const rruleString = repeat.replace(
     /;?EXDATE=([\d/,]+)(;|$)/,
     (_wholeMatch, dates, _terminator) => {
-      const dateMatches = dates.matchAll(
+      const dateMatches = Array.from(dates.matchAll(
         /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})/g
-      );
-      dateMatches.forEach(dateMatch => {
+      ));
+      for (const dateMatch of dateMatches) {
         const [_, month, day, year] = dateMatch;
         exDates.push(
           `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}T${iCalStartTime}`
         );
-      });
+      }
       return '';
     }
   );

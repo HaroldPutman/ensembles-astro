@@ -28,3 +28,4 @@ prod.config.json
 
 # Local Netlify folder
 .netlify
+collections/instructors-private.json
