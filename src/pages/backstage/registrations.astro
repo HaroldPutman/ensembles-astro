@@ -67,11 +67,12 @@ const groupedByActivity = registrations.reduce((acc, reg) => {
 // Pre-compute email lists for each activity (paid registrations only, deduplicated)
 const emailListsByActivity = new Map<string, { list: string; count: number }>();
 for (const [activityId, regs] of groupedByActivity) {
-  const paidRegs = regs.filter(r => r.payment_id && r.contact_email);
+  const paidRegs = regs.filter(r => r.payment_id !== null && r.contact_email !== null);
   const uniqueContacts = new Map<string, string>();
   paidRegs.forEach(r => {
-    if (!uniqueContacts.has(r.contact_email!)) {
-      uniqueContacts.set(r.contact_email!, r.contact_name || 'Parent');
+    const email = r.contact_email!;
+    if (!uniqueContacts.has(email)) {
+      uniqueContacts.set(email, r.contact_name || 'Parent');
     }
   });
   const emailList = Array.from(uniqueContacts.entries())
@@ -153,14 +154,14 @@ function formatDob(date: Date): string {
               </thead>
               <tbody>
                 {regs.map((reg) => (
-                  <tr class={reg.payment_id ? 'paid' : 'pending'}>
+                  <tr class={reg.payment_id !== null ? 'paid' : 'pending'}>
                     <td class="student-name">{reg.firstname} {reg.lastname}</td>
                     <td class="dob">{formatDob(reg.dob)}</td>
                     <td>{reg.contact_name || '—'}</td>
                     <td class="email">{reg.contact_email || '—'}</td>
                     <td class="phone">{reg.contact_phone || '—'}</td>
                     <td class="status">
-                      {reg.payment_id ? (
+                      {reg.payment_id !== null ? (
                         <span class="badge paid">
                           <Icon name="mdi:check-circle" width="16" height="16" />
                           Paid
@@ -183,11 +184,11 @@ function formatDob(date: Date): string {
     )}
 
     <!-- Email List Modal -->
-    <dialog id="email-modal" class="email-modal">
+    <dialog id="email-modal" class="email-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-content">
         <header class="modal-header">
           <h3 id="modal-title">Email List</h3>
-          <button class="close-btn" id="close-modal">
+          <button class="close-btn" id="close-modal" aria-label="Close email list">
             <Icon name="mdi:close" width="24" height="24" />
           </button>
         </header>
