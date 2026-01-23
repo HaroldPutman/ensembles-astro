@@ -38,7 +38,7 @@ try {
       s.firstname,
       s.lastname,
       s.dob,
-      c.firstname as contact_name,
+      CONCAT(c.firstname, ' ', c.lastname) as contact_name,
       c.email as contact_email,
       c.phone as contact_phone,
       r.payment_id,
@@ -63,6 +63,22 @@ const groupedByActivity = registrations.reduce((acc, reg) => {
   acc.get(reg.activity)!.push(reg);
   return acc;
 }, new Map<string, RegistrationRow[]>());
+
+// Pre-compute email lists for each activity (paid registrations only, deduplicated)
+const emailListsByActivity = new Map<string, { list: string; count: number }>();
+for (const [activityId, regs] of groupedByActivity) {
+  const paidRegs = regs.filter(r => r.payment_id && r.contact_email);
+  const uniqueContacts = new Map<string, string>();
+  paidRegs.forEach(r => {
+    if (!uniqueContacts.has(r.contact_email!)) {
+      uniqueContacts.set(r.contact_email!, r.contact_name || 'Parent');
+    }
+  });
+  const emailList = Array.from(uniqueContacts.entries())
+    .map(([email, name]) => `${name} <${email}>`)
+    .join(', ');
+  emailListsByActivity.set(activityId, { list: emailList, count: uniqueContacts.size });
+}
 
 // Format date for display
 function formatDate(date: Date): string {
@@ -101,13 +117,26 @@ function formatDob(date: Date): string {
         <p>No registrations found</p>
       </div>
     ) : (
-      Array.from(groupedByActivity.entries()).map(([activityId, regs]) => (
+      Array.from(groupedByActivity.entries()).map(([activityId, regs]) => {
+        const emailData = emailListsByActivity.get(activityId)!;
+        return (
         <div class="activity-section">
           <h2>
             <a href={`/activities/${activityId}`}>
               {activityMap.get(activityId) || activityId}
             </a>
             <span class="count">{regs.length}</span>
+            {emailData.count > 0 && (
+              <button 
+                class="email-list-btn" 
+                data-activity={activityId}
+                data-emails={emailData.list}
+                title="Show email list for paid registrations"
+              >
+                <Icon name="mdi:email-outline" width="18" height="18" />
+                Email List ({emailData.count})
+              </button>
+            )}
           </h2>
           <div class="table-wrapper">
             <table>
@@ -150,10 +179,74 @@ function formatDob(date: Date): string {
             </table>
           </div>
         </div>
-      ))
+      )})
     )}
+
+    <!-- Email List Modal -->
+    <dialog id="email-modal" class="email-modal">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h3 id="modal-title">Email List</h3>
+          <button class="close-btn" id="close-modal">
+            <Icon name="mdi:close" width="24" height="24" />
+          </button>
+        </header>
+        <div class="modal-body">
+          <p class="modal-instructions">Copy and paste this list into your email client's "BCC" field:</p>
+          <textarea id="email-list-text" readonly rows="6"></textarea>
+          <button class="copy-btn" id="copy-btn">
+            <Icon name="mdi:content-copy" width="18" height="18" />
+            Copy to Clipboard
+          </button>
+          <p id="copy-feedback" class="copy-feedback"></p>
+        </div>
+      </div>
+    </dialog>
   </section>
 </FullWidthLayout>
+
+<script>
+  const modal = document.getElementById('email-modal') as HTMLDialogElement;
+  const modalTitle = document.getElementById('modal-title')!;
+  const emailListText = document.getElementById('email-list-text') as HTMLTextAreaElement;
+  const copyBtn = document.getElementById('copy-btn')!;
+  const closeBtn = document.getElementById('close-modal')!;
+  const copyFeedback = document.getElementById('copy-feedback')!;
+
+  // Open modal when email list button is clicked
+  document.querySelectorAll('.email-list-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const activityId = btn.getAttribute('data-activity');
+      const emails = btn.getAttribute('data-emails') || '';
+      
+      modalTitle.textContent = `Email List - ${activityId}`;
+      emailListText.value = emails;
+      copyFeedback.textContent = '';
+      modal.showModal();
+    });
+  });
+
+  // Close modal
+  closeBtn.addEventListener('click', () => modal.close());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.close();
+  });
+
+  // Copy to clipboard
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(emailListText.value);
+      copyFeedback.textContent = '✓ Copied to clipboard!';
+      copyFeedback.className = 'copy-feedback success';
+    } catch (err) {
+      // Fallback for older browsers
+      emailListText.select();
+      document.execCommand('copy');
+      copyFeedback.textContent = '✓ Copied to clipboard!';
+      copyFeedback.className = 'copy-feedback success';
+    }
+  });
+</script>
 
 <style>
   .registrations-page {
@@ -305,6 +398,131 @@ function formatDob(date: Date): string {
   .badge.pending {
     background: #fef3c7;
     color: #92400e;
+  }
+
+  .email-list-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-left: auto;
+    padding: 0.375rem 0.75rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .email-list-btn:hover {
+    background: #2563eb;
+  }
+
+  /* Modal Styles */
+  .email-modal {
+    border: none;
+    border-radius: 12px;
+    padding: 0;
+    max-width: 600px;
+    width: 90vw;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .email-modal::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    padding: 0;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+  }
+
+  .close-btn:hover {
+    background: #f3f4f6;
+    color: #333;
+  }
+
+  .modal-body {
+    padding: 1.25rem;
+  }
+
+  .modal-instructions {
+    margin: 0 0 0.75rem;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  #email-list-text {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    resize: vertical;
+    background: #f9fafb;
+  }
+
+  #email-list-text:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .copy-btn:hover {
+    background: #059669;
+  }
+
+  .copy-feedback {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    min-height: 1.25rem;
+  }
+
+  .copy-feedback.success {
+    color: #059669;
   }
 
   @media (max-width: 768px) {
