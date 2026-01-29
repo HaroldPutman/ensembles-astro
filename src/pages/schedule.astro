@@ -57,12 +57,14 @@ function formatTime(timeStr: string): string {
 
 // Format age range for display
 function formatAgeRange(ageMin?: number, ageMax?: number | string): string {
-  if (!ageMin && !ageMax) return '';
-  if (!ageMin && ageMax) {
+  const hasMin = ageMin !== undefined && ageMin !== null;
+  const hasMax = ageMax !== undefined && ageMax !== null;
+  if (!hasMin && !hasMax) return '';
+  if (!hasMin && hasMax) {
     if (ageMax === 'adult') return '(all ages)';
     return `(up to ${ageMax})`;
   }
-  if (ageMin && !ageMax) return `(${ageMin}+)`;
+  if (hasMin && !ageMax) return `(${ageMin}+)`;
   if (ageMax === 'adult') return `(${ageMin}+)`;
   return `(${ageMin}-${ageMax})`;
 }
