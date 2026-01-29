@@ -1,0 +1,374 @@
+---
+export const prerender = true;
+
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import { Temporal } from '@js-temporal/polyfill';
+import { getFirstAndLastDates } from '../lib/datelib';
+
+const activities = await getCollection('activities');
+
+// Day codes from RRULE to day names
+const dayCodeToName: Record<string, string> = {
+  MO: 'Mondays',
+  TU: 'Tuesdays',
+  WE: 'Wednesdays',
+  TH: 'Thursdays',
+  FR: 'Fridays',
+  SA: 'Saturdays',
+  SU: 'Sundays',
+};
+
+const dayOrder = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+// Parse time string to minutes for sorting
+function parseTimeToMinutes(timeStr: string): number {
+  const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(am|pm)?$/i);
+  if (!match) return 0;
+  
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const meridiem = match[3]?.toLowerCase();
+  
+  if (meridiem === 'pm' && hours !== 12) hours += 12;
+  if (meridiem === 'am' && hours === 12) hours = 0;
+  
+  return hours * 60 + minutes;
+}
+
+// Format time for display (e.g., "4:00" or "10 am")
+function formatTime(timeStr: string): string {
+  const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(am|pm)?$/i);
+  if (!match) return timeStr;
+  
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const meridiem = match[3]?.toLowerCase() || (hours >= 12 ? 'pm' : 'am');
+  
+  // Convert to 12-hour format if needed
+  if (hours > 12) hours -= 12;
+  if (hours === 0) hours = 12;
+  
+  if (minutes === 0) {
+    return `${hours}:00`;
+  }
+  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+}
+
+// Format age range for display
+function formatAgeRange(ageMin?: number, ageMax?: number | string): string {
+  if (!ageMin && !ageMax) return '';
+  if (!ageMin && ageMax) {
+    if (ageMax === 'adult') return '(all ages)';
+    return `(up to ${ageMax})`;
+  }
+  if (ageMin && !ageMax) return `(${ageMin}+)`;
+  if (ageMax === 'adult') return `(${ageMin}+)`;
+  return `(${ageMin}-${ageMax})`;
+}
+
+// Extract day code from repeat rule
+function getDayCode(repeat?: string): string | null {
+  if (!repeat) return null;
+  const match = repeat.match(/BYDAY=([A-Z]{2})/);
+  return match ? match[1] : null;
+}
+
+// Filter to upcoming activities only and compute dates
+const now = Temporal.Now.zonedDateTimeISO('America/New_York');
+const upcomingActivities = activities
+  .map((activity) => {
+    const [firstDate, lastDate] = getFirstAndLastDates(
+      activity.data.startDate,
+      activity.data.startTime,
+      activity.data.duration,
+      activity.data.repeat
+    );
+    return { activity, firstDate, lastDate };
+  })
+  .filter(({ activity, lastDate, firstDate }) => {
+    // If it's a class, only include if the firstDate is in the future
+    if (activity.data.kind === 'class') {
+      return Temporal.ZonedDateTime.compare(firstDate, now) > 0;
+    }
+    // Otherwise: allow if lastDate is still upcoming
+    return Temporal.ZonedDateTime.compare(lastDate, now) > 0;
+  });
+
+const upcomingClasses = upcomingActivities.filter(({ activity }) => activity.data.kind === 'class');
+
+
+// Group activities by day of week
+const activitiesByDay = new Map<string, typeof upcomingActivities>();
+
+for (const item of upcomingActivities) {
+  const dayCode = getDayCode(item.activity.data.repeat);
+  if (!dayCode) continue;
+  
+  if (!activitiesByDay.has(dayCode)) {
+    activitiesByDay.set(dayCode, []);
+  }
+  activitiesByDay.get(dayCode)!.push(item);
+}
+
+// Sort activities within each day by time
+for (const [dayCode, items] of activitiesByDay) {
+  items.sort((a, b) => {
+    const timeA = parseTimeToMinutes(a.activity.data.startTime);
+    const timeB = parseTimeToMinutes(b.activity.data.startTime);
+    return timeA - timeB;
+  });
+}
+
+// Get sorted days that have activities
+const sortedDays = dayOrder.filter(day => activitiesByDay.has(day));
+
+// Calculate date range from classes only
+let earliestDate: Temporal.ZonedDateTime | null = null;
+let latestDate: Temporal.ZonedDateTime | null = null;
+
+for (const { firstDate, lastDate } of upcomingClasses) {
+  if (!earliestDate || Temporal.ZonedDateTime.compare(firstDate, earliestDate) < 0) {
+    earliestDate = firstDate;
+  }
+  if (!latestDate || Temporal.ZonedDateTime.compare(lastDate, latestDate) > 0) {
+    latestDate = lastDate;
+  }
+}
+
+const dateRangeStr = earliestDate && latestDate
+  ? `${earliestDate.toPlainDate().toLocaleString('en-US', { month: 'long', day: 'numeric' })} - ${latestDate.toPlainDate().toLocaleString('en-US', { month: 'short', day: 'numeric' })}`
+  : '';
+---
+
+<Layout title="Ensembles - Weekly Schedule">
+  <div class="schedule-page">
+    <header class="schedule-header">
+        <h1>Weekly Schedule</h1>
+      <img src="/image/ensembles-black-logo.svg" alt="Ensembles Black Logo" class="print-logo" />
+      <p class="intro">
+        Join us at Ensembles for a six week session of group lessons.
+        {dateRangeStr && <strong>{dateRangeStr}</strong>}
+        Cost is $75 for six classes. Classes meet at
+        <strong>1120 Monroe St.</strong> in Charlestown.
+      </p>
+    </header>
+
+    <div class="schedule-content">
+      {sortedDays.map((dayCode) => {
+        const dayActivities = activitiesByDay.get(dayCode)!;
+        return (
+          <section class="day-section">
+            <h2 class="day-header">{dayCodeToName[dayCode]}</h2>
+            <ul class="activity-list">
+              {dayActivities.map(({ activity }) => (
+                <li class="activity-item">
+                  <span class="time">{formatTime(activity.data.startTime)}</span>
+                  <a href={`/activities/${activity.id}`} class="activity-link">
+                    {activity.data.name}
+                    <span class="age-range">{formatAgeRange(activity.data.ageMin, activity.data.ageMax)}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+
+    <footer class="schedule-footer">
+        <p>Register today at:</p>
+        <img src="/image/schedule-qr-code.png" alt="Schedule QR Code" class="schedule-qr-code" />
+        <div>
+          <a href="/activities" class="register-link">CharlestownEnsembles.com</a>
+        </div>
+    </footer>
+  </div>
+</Layout>
+
+<style>
+  .schedule-page {
+    max-width: 535px;
+    margin: 0 auto;
+    padding: 2rem 0;
+  }
+
+  .schedule-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .print-logo {
+    display: none;
+  }
+
+  .schedule-header h1 {
+    font-size: 2rem;
+    margin: 0 0 1rem;
+  }
+
+  .intro {
+    color: #444;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .intro strong {
+    color: #1a1a1a;
+  }
+
+  .schedule-content {
+    margin-bottom: 2rem;
+  }
+
+  .day-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .day-header {
+    background: #1a1a1a;
+    color: white;
+    padding: 0.5rem 1rem;
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0.5rem;
+  }
+
+  .activity-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.375rem 0;
+    align-items: baseline;
+  }
+
+  .time {
+    min-width: 3.5rem;
+    font-weight: 500;
+    color: #333;
+    text-align: right;
+  }
+
+  .activity-link {
+    color: #1a1a1a;
+    text-decoration: none;
+    flex: 1;
+  }
+
+  .activity-link:hover {
+    text-decoration: underline;
+  }
+
+  .age-range {
+    color: #666;
+    font-style: italic;
+    margin-left: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  .schedule-footer {
+    display:none;
+    text-align: center;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .schedule-footer p {
+    margin: 0;
+  }
+
+  .register-link {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-decoration: none;
+  }
+
+  .register-link:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 480px) {
+    .schedule-page {
+      padding: 1rem 0;
+    }
+
+    .schedule-header h1 {
+      font-size: 1.75rem;
+    }
+
+    .day-header {
+      font-size: 1.1rem;
+    }
+
+    .activity-list {
+      padding: 0;
+    }
+
+    .activity-item {
+      gap: 0.75rem;
+    }
+
+    .time {
+      min-width: 2.3rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  /* Print styles - hide site header and footer */
+  @media print {
+    :global(html) {
+      font-size: 10px !important;
+    }
+
+    :global(body > header),
+    :global(body > footer) {
+      display: none !important;
+    }
+
+    :global(.container) {
+      max-width: 300px !important;
+      margin: auto !important;
+      padding: 0 !important;
+    }
+
+    .schedule-header h1 {
+      display: none;
+    }
+
+    .print-logo {
+      display: block !important;
+      margin: 0 auto 1rem;
+      max-width: 180px;
+      height: auto;
+    }
+
+    .schedule-page {
+      padding: 0;
+      margin: 0;
+    }
+
+    .day-header {
+      padding: 0.1rem 0.75rem;
+      font-size: 1.1rem;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .activity-item {
+      padding: 0.1rem 0;
+    }
+
+    .activity-link {
+      color: #000;
+    }
+
+    .schedule-footer {
+      display: block;
+    }
+  }
+</style>
