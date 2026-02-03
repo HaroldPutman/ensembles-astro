@@ -127,7 +127,7 @@ function rewriteExdate(repeat: string, iCalStartTime: string) {
   const exDates: string[] = []; // dates found in the EXDATE spec
   const rruleString = repeat.replace(
     /;?EXDATE=([\d/,]+)(;|$)/,
-    (_wholeMatch, dates, _terminator) => {
+    (_wholeMatch, dates: string, terminator: string) => {
       const dateMatches = Array.from(dates.matchAll(
         /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})/g
       ));
@@ -137,11 +137,48 @@ function rewriteExdate(repeat: string, iCalStartTime: string) {
           `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}T${iCalStartTime}`
         );
       }
-      return '';
+      // Preserve trailing semicolon if there's more content after
+      return terminator === ';' ? ';' : '';
     }
   );
   if (exDates.length > 0) {
     return `${rruleString}\nEXDATE;TZID=America/Louisville:${exDates.join(',')}`;
+  }
+  return rruleString;
+}
+
+/**
+ * Allow human-friendly RDATE spec.
+ * Rewrite the RDATE=mm/dd/yyyy@hh:mm in the repeat string to
+ * `@hh:mm` is optional and if not present, we will use the start time of the event.
+ * RDATE;TZID=America/Louisville:YYYYMMDDT235959Z in the rrule string
+ * And RDATE is really separate from RRULE so make it on the next line.
+ * @param repeat - The repeat string to rewrite
+ * @param iCalStartTime - The start time of the event in the format of HH:MM:SS
+ * @returns The rewritten repeat string
+ */
+function rewriteRdate(repeat: string, iCalStartTime: string) {
+  const rdates: string[] = []; // dates found in the RDATE spec
+  const rruleString = repeat.replace(
+    /* Match an RDATE spec without validating */
+    /;?RDATE=([\d\/@:,]+)?(;|\n|$)/,
+    (_wholeMatch, dates: string, terminator: string) => {
+      const dateMatches = Array.from(dates.matchAll(
+        /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})(?:@(0?[1-9]|1[0-9]|2[0-3]):([0-5][0-9]))?/g
+      ));
+      for (const dateMatch of dateMatches) {
+        const [_, month, day, year, hour, minute] = dateMatch;
+        const time = hour ? `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00` : iCalStartTime;
+        rdates.push(
+          `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}T${time}`
+        );
+      }
+      // Preserve trailing delimiter if there's more content after
+      return terminator === ';' || terminator === '\n' ? terminator : '';
+    }
+  );
+  if (rdates.length > 0) {
+    return `${rruleString}\nRDATE;TZID=America/Louisville:${rdates.join(',')}`;
   }
   return rruleString;
 }
@@ -174,6 +211,7 @@ export function makeICalRRule(repeat: string, iCalStartTime: string) {
   let standardized = repeat.trim() || 'FREQ=DAILY;COUNT=1';
   standardized = rewriteUntil(standardized);
   standardized = rewriteExdate(standardized, iCalStartTime);
+  standardized = rewriteRdate(standardized, iCalStartTime);
   return standardized;
 }
 
