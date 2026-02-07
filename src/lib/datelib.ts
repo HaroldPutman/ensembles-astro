@@ -161,14 +161,15 @@ function rewriteRdate(repeat: string, iCalStartTime: string) {
   const rdates: string[] = []; // dates found in the RDATE spec
   const rruleString = repeat.replace(
     /* Match an RDATE spec without validating */
-    /;?RDATE=([\d\/@:,]+)?(;|\n|$)/,
+    /;?RDATE=([\d\/@:,]+)(;|\n|$)/,
     (_wholeMatch, dates: string, terminator: string) => {
       const dateMatches = Array.from(dates.matchAll(
         /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})(?:@(0?[1-9]|1[0-9]|2[0-3]):([0-5][0-9]))?/g
       ));
       for (const dateMatch of dateMatches) {
         const [_, month, day, year, hour, minute] = dateMatch;
-        const time = hour ? `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00` : iCalStartTime;
+        // Use compact HHMMSS format (same as makeICalTime) for consistency with EXDATE
+        const time = hour ? `${hour.padStart(2, '0')}${minute.padStart(2, '0')}00` : iCalStartTime;
         rdates.push(
           `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}T${time}`
         );

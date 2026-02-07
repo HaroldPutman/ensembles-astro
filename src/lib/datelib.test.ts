@@ -168,49 +168,49 @@ describe('datelib', () => {
     describe('RDATE handling', () => {
       it('should convert RDATE with single date using event start time', () => {
         expect(
-          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026', '14:00:00')
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026', '140000')
         ).toBe(
-          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T14:00:00'
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T140000'
         );
       });
 
       it('should convert RDATE with single date and custom time', () => {
         expect(
-          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026@10:30', '14:00:00')
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026@10:30', '140000')
         ).toBe(
-          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T10:30:00'
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T103000'
         );
       });
 
       it('should convert RDATE with multiple dates', () => {
         expect(
-          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026,3/22/2026', '14:00:00')
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026,3/22/2026', '140000')
         ).toBe(
-          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T14:00:00,20260322T14:00:00'
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T140000,20260322T140000'
         );
       });
 
       it('should convert RDATE with mixed dates (some with times, some without)', () => {
         expect(
-          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026@10:30,3/22/2026', '14:00:00')
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026@10:30,3/22/2026', '140000')
         ).toBe(
-          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T10:30:00,20260322T14:00:00'
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T103000,20260322T140000'
         );
       });
 
       it('should handle RDATE at end of string without trailing semicolon', () => {
         expect(
-          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;COUNT=6;RDATE=4/1/2026', '09:30:00')
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;COUNT=6;RDATE=4/1/2026', '093000')
         ).toBe(
-          'FREQ=WEEKLY;BYDAY=TH;COUNT=6\nRDATE;TZID=America/Louisville:20260401T09:30:00'
+          'FREQ=WEEKLY;BYDAY=TH;COUNT=6\nRDATE;TZID=America/Louisville:20260401T093000'
         );
       });
 
       it('should handle both EXDATE and RDATE together', () => {
         expect(
-          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;EXDATE=3/19/2026;RDATE=4/1/2026', '14:00:00')
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;EXDATE=3/19/2026;RDATE=4/1/2026', '140000')
         ).toBe(
-          'FREQ=WEEKLY;BYDAY=TH\nEXDATE;TZID=America/Louisville:20260319T14:00:00\nRDATE;TZID=America/Louisville:20260401T14:00:00'
+          'FREQ=WEEKLY;BYDAY=TH\nEXDATE;TZID=America/Louisville:20260319T140000\nRDATE;TZID=America/Louisville:20260401T140000'
         );
       });
     });
