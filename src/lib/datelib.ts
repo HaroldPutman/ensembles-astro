@@ -276,7 +276,7 @@ export function getFirstAndLastDates(
   Temporal.ZonedDateTime,
   Temporal.ZonedDateTime | undefined,
   number | undefined,
-  Temporal.ZonedDateTime | undefined,
+  string | undefined,
 ] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
@@ -284,14 +284,30 @@ export function getFirstAndLastDates(
   });
   const options = rruleTemporal.options();
   const hasEnd = options.until !== undefined || options.count !== undefined;
+  let deviationNote = undefined;
+  if ((options.exDate?.length || 0) + (options.rDate?.length || 0) > 1) {
+    deviationNote = 'With some exceptions.';
+  } else if (options.exDate?.length == 1) {
+    deviationNote = `Not meeting on ${options.exDate[0].toLocaleString(
+      'en-US',
+      {
+        month: 'short',
+        day: 'numeric',
+      }
+    )}`;
+  } else if (options.rDate?.length == 1) {
+    deviationNote = `Also meeting on ${options.rDate[0].toLocaleString(
+      'en-US',
+      {
+        month: 'short',
+        day: 'numeric',
+      }
+    )}`;
+  }
+
   if (hasEnd) {
     const all = rruleTemporal.all((_dt, i) => i < 100);
-    return [
-      all[0],
-      all[all.length - 1],
-      all.length,
-      options.exDate?.length ? options.exDate[0] : undefined,
-    ];
+    return [all[0], all[all.length - 1], all.length, deviationNote];
   } else {
     return [
       rruleTemporal.all((_dt, i) => i < 1)[0],
@@ -397,9 +413,9 @@ export function shortDescription(
   }
   const endDateString = lastDate
     ? lastDate.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      })
+      month: 'short',
+      day: 'numeric',
+    })
     : '';
 
   // Calculate end time by adding duration to first date
