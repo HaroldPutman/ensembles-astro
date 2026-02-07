@@ -23,7 +23,7 @@ const {
   class: className,
 } = Astro.props;
 
-const [firstDate, lastDate, count, exDate] = getFirstAndLastDates(
+const [firstDate, lastDate, count, deviationNote] = getFirstAndLastDates(
   startDate,
   startTime,
   duration,
@@ -34,12 +34,6 @@ const startDateString = firstDate.toLocaleString('en-US', {
   month: 'short',
   day: 'numeric',
 });
-const exDateString = exDate
-  ? exDate.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    })
-  : '';
 const dayOfWeek = getDayOfWeek(firstDate);
 const startTimeString = firstDate.toLocaleString('en-US', {
   timeStyle: 'short',
@@ -80,9 +74,9 @@ const endDateString = lastDate
           <Icon name="mdi:calendar-repeat" /> {startDateString} -{' '}
           {endDateString}
         </p>
-        {exDateString && (
+        {deviationNote && (
           <p class="exception-line">
-            Not meeting on {exDateString}
+            {deviationNote}
           </p>
         )}
       </>

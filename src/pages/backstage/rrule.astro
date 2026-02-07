@@ -88,6 +88,13 @@ import { Icon } from 'astro-icon/components';
           <h2>Results</h2>
           
           <div id="text-description-container">
+            <h3>Description:</h3>
+            <p>
+              <span id="first-date"></span>-<span id="last-date"></span>
+              <span id="deviation-note-line" style="display: none;">
+                <span id="deviation-note"></span>
+              </span>
+            </p>
             <p>&ldquo;<span id="text-description"></span>&rdquo;</p>
           </div>
 
@@ -117,6 +124,7 @@ import { Icon } from 'astro-icon/components';
   import { toText } from 'rrule-temporal/totext';
   import {
     buildRRuleString,
+    getFirstAndLastDates,
   } from '../../lib/datelib';
 
   const form = document.getElementById('rrule-form') as HTMLFormElement;
@@ -129,6 +137,10 @@ import { Icon } from 'astro-icon/components';
   const errorMessage = document.getElementById('error-message') as HTMLPreElement;
   const repeatInput = document.getElementById('repeat') as HTMLInputElement;
   const startDateInput = document.getElementById('startDate') as HTMLInputElement;
+  const firstDateSpan = document.getElementById('first-date') as HTMLSpanElement;
+  const lastDateSpan = document.getElementById('last-date') as HTMLSpanElement;
+  const deviationNoteLine = document.getElementById('deviation-note-line') as HTMLSpanElement;
+  const deviationNoteSpan = document.getElementById('deviation-note') as HTMLSpanElement;
 
   // Handle example button clicks
   const exampleButtons = document.querySelectorAll('.example-btn');
@@ -189,6 +201,37 @@ import { Icon } from 'astro-icon/components';
         li.textContent = `${index + 1}. ${dateStr}`;
         occurrencesList.appendChild(li);
       });
+
+      // Get first/last dates and deviation note
+      const [firstDate, lastDate, count, deviationNote] = getFirstAndLastDates(
+        startDate,
+        startTime,
+        duration,
+        repeat
+      );
+
+      // Display date summary
+      firstDateSpan.textContent = firstDate.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+      
+      if (lastDate) {
+        lastDateSpan.textContent = lastDate.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        });
+      } else {
+        lastDateSpan.textContent = 'No end date (repeats indefinitely)';
+      }
+
+      // Display deviation note if present
+      if (deviationNote) {
+        deviationNoteSpan.textContent = deviationNote;
+        deviationNoteLine.style.display = 'inline';
+      } else {
+        deviationNoteLine.style.display = 'none';
+      }
 
       // Show results
       resultsDiv.style.display = 'block';
@@ -377,11 +420,11 @@ import { Icon } from 'astro-icon/components';
     margin-bottom: 1.5rem;
   }
 
+  #deviation-note-line,
   #text-description {
-    font-size: 1.1rem;
-    color: #333;
-    font-weight: 500;
-    margin: 0;
+    font-style: italic;
+    color: #666;
+    font-size: 0.875rem;
   }
 
   pre {

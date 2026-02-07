@@ -127,7 +127,7 @@ function rewriteExdate(repeat: string, iCalStartTime: string) {
   const exDates: string[] = []; // dates found in the EXDATE spec
   const rruleString = repeat.replace(
     /;?EXDATE=([\d/,]+)(;|$)/,
-    (_wholeMatch, dates, _terminator) => {
+    (_wholeMatch, dates: string, terminator: string) => {
       const dateMatches = Array.from(dates.matchAll(
         /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})/g
       ));
@@ -137,11 +137,49 @@ function rewriteExdate(repeat: string, iCalStartTime: string) {
           `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}T${iCalStartTime}`
         );
       }
-      return '';
+      // Preserve trailing semicolon if there's more content after
+      return terminator === ';' ? ';' : '';
     }
   );
   if (exDates.length > 0) {
     return `${rruleString}\nEXDATE;TZID=America/Louisville:${exDates.join(',')}`;
+  }
+  return rruleString;
+}
+
+/**
+ * Allow human-friendly RDATE spec.
+ * Rewrite the RDATE=mm/dd/yyyy@hh:mm in the repeat string to
+ * `@hh:mm` is optional and if not present, we will use the start time of the event.
+ * RDATE;TZID=America/Louisville:YYYYMMDDT235959Z in the rrule string
+ * And RDATE is really separate from RRULE so make it on the next line.
+ * @param repeat - The repeat string to rewrite
+ * @param iCalStartTime - The start time of the event in the format of HH:MM:SS
+ * @returns The rewritten repeat string
+ */
+function rewriteRdate(repeat: string, iCalStartTime: string) {
+  const rdates: string[] = []; // dates found in the RDATE spec
+  const rruleString = repeat.replace(
+    /* Match an RDATE spec without validating */
+    /;?RDATE=([\d\/@:,]+)(;|\n|$)/,
+    (_wholeMatch, dates: string, terminator: string) => {
+      const dateMatches = Array.from(dates.matchAll(
+        /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})(?:@(0?[1-9]|1[0-9]|2[0-3]):([0-5][0-9]))?/g
+      ));
+      for (const dateMatch of dateMatches) {
+        const [_, month, day, year, hour, minute] = dateMatch;
+        // Use compact HHMMSS format (same as makeICalTime) for consistency with EXDATE
+        const time = hour ? `${hour.padStart(2, '0')}${minute.padStart(2, '0')}00` : iCalStartTime;
+        rdates.push(
+          `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}T${time}`
+        );
+      }
+      // Preserve trailing delimiter if there's more content after
+      return terminator === ';' || terminator === '\n' ? terminator : '';
+    }
+  );
+  if (rdates.length > 0) {
+    return `${rruleString}\nRDATE;TZID=America/Louisville:${rdates.join(',')}`;
   }
   return rruleString;
 }
@@ -174,6 +212,7 @@ export function makeICalRRule(repeat: string, iCalStartTime: string) {
   let standardized = repeat.trim() || 'FREQ=DAILY;COUNT=1';
   standardized = rewriteUntil(standardized);
   standardized = rewriteExdate(standardized, iCalStartTime);
+  standardized = rewriteRdate(standardized, iCalStartTime);
   return standardized;
 }
 
@@ -238,7 +277,7 @@ export function getFirstAndLastDates(
   Temporal.ZonedDateTime,
   Temporal.ZonedDateTime | undefined,
   number | undefined,
-  Temporal.ZonedDateTime | undefined,
+  string | undefined,
 ] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
@@ -246,14 +285,30 @@ export function getFirstAndLastDates(
   });
   const options = rruleTemporal.options();
   const hasEnd = options.until !== undefined || options.count !== undefined;
+  let deviationNote = undefined;
+  if ((options.exDate?.length || 0) + (options.rDate?.length || 0) > 1) {
+    deviationNote = 'With some exceptions.';
+  } else if (options.exDate?.length == 1) {
+    deviationNote = `Not meeting on ${options.exDate[0].toLocaleString(
+      'en-US',
+      {
+        month: 'short',
+        day: 'numeric',
+      }
+    )}`;
+  } else if (options.rDate?.length == 1) {
+    deviationNote = `Also meeting on ${options.rDate[0].toLocaleString(
+      'en-US',
+      {
+        month: 'short',
+        day: 'numeric',
+      }
+    )}`;
+  }
+
   if (hasEnd) {
     const all = rruleTemporal.all((_dt, i) => i < 100);
-    return [
-      all[0],
-      all[all.length - 1],
-      all.length,
-      options.exDate?.length ? options.exDate[0] : undefined,
-    ];
+    return [all[0], all[all.length - 1], all.length, deviationNote];
   } else {
     return [
       rruleTemporal.all((_dt, i) => i < 1)[0],
@@ -359,9 +414,9 @@ export function shortDescription(
   }
   const endDateString = lastDate
     ? lastDate.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      })
+      month: 'short',
+      day: 'numeric',
+    })
     : '';
 
   // Calculate end time by adding duration to first date

@@ -4,6 +4,7 @@ import {
   makeICalDuration,
   shortDescription,
   makeICalRRule,
+  getFirstAndLastDates,
 } from './datelib';
 
 describe('datelib', () => {
@@ -163,6 +164,56 @@ describe('datelib', () => {
         'FREQ=WEEKLY;BYDAY=TH\nEXDATE;TZID=America/Louisville:20250114T093000'
       );
     });
+
+    describe('RDATE handling', () => {
+      it('should convert RDATE with single date using event start time', () => {
+        expect(
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026', '140000')
+        ).toBe(
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T140000'
+        );
+      });
+
+      it('should convert RDATE with single date and custom time', () => {
+        expect(
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026@10:30', '140000')
+        ).toBe(
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T103000'
+        );
+      });
+
+      it('should convert RDATE with multiple dates', () => {
+        expect(
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026,3/22/2026', '140000')
+        ).toBe(
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T140000,20260322T140000'
+        );
+      });
+
+      it('should convert RDATE with mixed dates (some with times, some without)', () => {
+        expect(
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;RDATE=3/15/2026@10:30,3/22/2026', '140000')
+        ).toBe(
+          'FREQ=WEEKLY;BYDAY=TH\nRDATE;TZID=America/Louisville:20260315T103000,20260322T140000'
+        );
+      });
+
+      it('should handle RDATE at end of string without trailing semicolon', () => {
+        expect(
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;COUNT=6;RDATE=4/1/2026', '093000')
+        ).toBe(
+          'FREQ=WEEKLY;BYDAY=TH;COUNT=6\nRDATE;TZID=America/Louisville:20260401T093000'
+        );
+      });
+
+      it('should handle both EXDATE and RDATE together', () => {
+        expect(
+          makeICalRRule('FREQ=WEEKLY;BYDAY=TH;EXDATE=3/19/2026;RDATE=4/1/2026', '140000')
+        ).toBe(
+          'FREQ=WEEKLY;BYDAY=TH\nEXDATE;TZID=America/Louisville:20260319T140000\nRDATE;TZID=America/Louisville:20260401T140000'
+        );
+      });
+    });
   });
 
   describe('shortDescription', () => {
@@ -175,6 +226,70 @@ describe('datelib', () => {
           'FREQ=WEEKLY;BYDAY=MO;COUNT=6;EXDATE=11/24/2025'
         )
       ).toBe('Mondays 12:30 PM - 1:30 PM, Nov 3 - Dec 15');
+    });
+  });
+
+  describe('getFirstAndLastDates', () => {
+    describe('deviationNote values', () => {
+      it('should return undefined when no EXDATE or RDATE', () => {
+        const [, , , deviationNote] = getFirstAndLastDates(
+          '2/24/2026',
+          '10:00 AM',
+          '45m',
+          'FREQ=WEEKLY;BYDAY=TU;COUNT=6'
+        );
+        expect(deviationNote).toBeUndefined();
+      });
+
+      it('should return "Not meeting on {date}" for single EXDATE', () => {
+        const [, , , deviationNote] = getFirstAndLastDates(
+          '2/24/2026',
+          '10:00 AM',
+          '45m',
+          'FREQ=WEEKLY;BYDAY=TU;COUNT=6;EXDATE=3/17/2026'
+        );
+        expect(deviationNote).toBe('Not meeting on Mar 17');
+      });
+
+      it('should return "Also meeting on {date}" for single RDATE', () => {
+        const [, , , deviationNote] = getFirstAndLastDates(
+          '2/24/2026',
+          '10:00 AM',
+          '45m',
+          'FREQ=WEEKLY;BYDAY=TU;COUNT=6;RDATE=4/7/2026'
+        );
+        expect(deviationNote).toBe('Also meeting on Apr 7');
+      });
+
+      it('should return "With some exceptions." for multiple EXDATEs', () => {
+        const [, , , deviationNote] = getFirstAndLastDates(
+          '2/24/2026',
+          '10:00 AM',
+          '45m',
+          'FREQ=WEEKLY;BYDAY=TU;COUNT=6;EXDATE=3/17/2026,3/24/2026'
+        );
+        expect(deviationNote).toBe('With some exceptions.');
+      });
+
+      it('should return "With some exceptions." for multiple RDATEs', () => {
+        const [, , , deviationNote] = getFirstAndLastDates(
+          '2/24/2026',
+          '10:00 AM',
+          '45m',
+          'FREQ=WEEKLY;BYDAY=TU;COUNT=6;RDATE=4/7/2026,4/14/2026'
+        );
+        expect(deviationNote).toBe('With some exceptions.');
+      });
+
+      it('should return "With some exceptions." for combined EXDATE and RDATE', () => {
+        const [, , , deviationNote] = getFirstAndLastDates(
+          '2/24/2026',
+          '10:00 AM',
+          '45m',
+          'FREQ=WEEKLY;BYDAY=TU;COUNT=6;EXDATE=3/17/2026;RDATE=4/7/2026'
+        );
+        expect(deviationNote).toBe('With some exceptions.');
+      });
     });
   });
 });
