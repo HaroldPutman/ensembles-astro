@@ -661,9 +661,267 @@ export async function sendClassReminderEmail(
   }
 }
 
+// =============================================================================
+// CLASS ROSTER EMAIL (for instructors)
+// =============================================================================
+
+interface RosterStudent {
+  name: string;
+  age: number; // age in years
+}
+
+interface ClassRosterData {
+  recipientEmail: string;
+  recipientName: string; // instructor name
+  activityName: string;
+  activityId: string;
+  weekday: string; // formatted day like "Tuesday"
+  startDate: string; // formatted date like "February 26"
+  startTime: string; // formatted time like "4:00 PM"
+  students: RosterStudent[];
+}
+
+interface RosterEmailData {
+  recipientEmail: string;
+  recipientName: string; // instructor name
+  classes: ClassRosterData[];
+}
+
+/**
+ * Generates HTML for the roster email
+ */
+function generateRosterEmailHtml(data: RosterEmailData): string {
+  const fontStack = 'Arial, Helvetica, sans-serif';
+  const safeName = escapeHtml(data.recipientName);
+
+  const classesHtml = data.classes
+    .map(cls => {
+      const studentsHtml = cls.students
+        .map(
+          (s, i) =>
+            `<tr style="background-color: ${i % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
+              <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-family: ${fontStack};">${escapeHtml(s.name)}</td>
+              <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: center; font-family: ${fontStack};">${s.age > 18 ? 'Adult' : s.age}</td>
+            </tr>`
+        )
+        .join('');
+
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
+          <tr>
+            <td style="background-color: #2c5530; padding: 12px 16px; border-radius: 8px 8px 0 0;">
+              <h3 style="margin: 0; color: #ffffff; font-size: 18px; font-family: ${fontStack};">
+                ${escapeHtml(cls.activityName)}
+              </h3>
+              <p style="margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 14px; font-family: ${fontStack};">
+                ${escapeHtml(cls.weekday)}s at ${escapeHtml(cls.startTime)} starting ${escapeHtml(cls.startDate)}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; overflow: hidden;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr style="background-color: #f0f0f0;">
+                  <th style="padding: 10px 12px; text-align: left; font-family: ${fontStack}; font-size: 14px; color: #666;">Student Name</th>
+                  <th style="padding: 10px 12px; text-align: center; font-family: ${fontStack}; font-size: 14px; color: #666; width: 60px;">Age</th>
+                </tr>
+                ${studentsHtml}
+              </table>
+              <p style="margin: 0; padding: 12px; font-size: 14px; color: #666; font-family: ${fontStack}; background-color: #f8f9fa;">
+                <strong>${cls.students.length}</strong> student${cls.students.length === 1 ? '' : 's'} enrolled
+              </p>
+            </td>
+          </tr>
+        </table>`;
+    })
+    .join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Class Roster</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: ${fontStack};">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+    <tr>
+      <td style="padding: 20px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #2c3e50; padding: 24px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold; font-family: ${fontStack};">
+                Class Roster
+              </h1>
+              <p style="margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 14px; font-family: ${fontStack};">
+                ${data.classes.length} class${data.classes.length === 1 ? '' : 'es'}
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 32px 24px;">
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                Hi ${safeName},
+              </p>
+              
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                Here ${data.classes.length === 1 ? 'is the roster for your upcoming class' : 'are the rosters for your upcoming classes'}:
+              </p>
+              
+              ${classesHtml}
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+              <p style="margin: 0; font-size: 14px; color: #666; font-family: ${fontStack};">
+                Ensembles, Inc.<br>
+                <a href="https://charlestownensembles.com" style="color: #2c5530;">CharlestownEnsembles.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+/**
+ * Generates plain text version of the roster email
+ */
+function generateRosterEmailText(data: RosterEmailData): string {
+  const classesText = data.classes
+    .map(cls => {
+      const studentsText = cls.students
+        .map(s => `  - ${s.name} (${s.age > 18 ? 'adult' : `age ${s.age}`})`)
+        .join('\n');
+
+      return `
+${cls.activityName}
+${cls.weekday}s at ${cls.startTime} starting ${cls.startDate}
+----------------------------------------
+${studentsText}
+
+${cls.students.length} student${cls.students.length === 1 ? '' : 's'} enrolled
+`;
+    })
+    .join('\n');
+
+  return `
+CLASS ROSTER
+
+Hi ${data.recipientName},
+
+Here ${data.classes.length === 1 ? 'is the roster for your upcoming class' : 'are the rosters for your upcoming classes'}:
+
+${classesText}
+---
+Ensembles, Inc.
+https://charlestownensembles.com
+`.trim();
+}
+
+/**
+ * Sends a class roster email to an instructor
+ */
+export async function sendRosterEmail(
+  data: RosterEmailData
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    console.error('BREVO_API_KEY is not set');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  if (!senderEmail) {
+    console.error('BREVO_SENDER_EMAIL is not set');
+    return { success: false, error: 'Email sender not configured' };
+  }
+
+  // Validate inputs
+  if (
+    !data.recipientEmail ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.recipientEmail)
+  ) {
+    return { success: false, error: 'Invalid recipient email address' };
+  }
+  if (!data.classes.length) {
+    return { success: false, error: 'No classes provided' };
+  }
+
+  const subject =
+    data.classes.length === 1
+      ? `Class Roster: ${data.classes[0].activityName}`
+      : `Class Rosters (${data.classes.length} classes)`;
+
+  const emailPayload = {
+    sender: {
+      name: 'Ensembles',
+      email: senderEmail,
+    },
+    to: [
+      {
+        email: data.recipientEmail,
+        name: data.recipientName,
+      },
+    ],
+    subject: subject,
+    htmlContent: generateRosterEmailHtml(data),
+    textContent: generateRosterEmailText(data),
+  };
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify(emailPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Brevo API error:', errorData);
+      return {
+        success: false,
+        error: errorData.message || 'Failed to send roster email',
+      };
+    }
+
+    const result = await response.json();
+    // eslint-disable-next-line no-console
+    console.log('Roster email sent successfully:', result);
+
+    return {
+      success: true,
+      messageId: result.messageId,
+    };
+  } catch (error) {
+    console.error('Error sending roster email:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to send roster email',
+    };
+  }
+}
+
 export type {
   PaymentConfirmationData,
   RegistrationItem,
   VoucherInfo,
   ClassReminderData,
+  RosterEmailData,
+  ClassRosterData,
+  RosterStudent,
 };
