@@ -67,7 +67,7 @@ function calculateAge(dob: Date, referenceDate: Date): number {
  *   - (none): Sends rosters to all instructors teaching current classes
  *   - dry-run: If present, don't send emails, just return what would be sent
  */
-export const GET: APIRoute = async ({ url, locals, request }) => {
+export const POST: APIRoute = async ({ url, locals, request }) => {
   // Authentication check
   const authHeader = request.headers.get('Authorization');
   const expectedApiKey = process.env.REMINDER_API_KEY;
@@ -317,7 +317,6 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
       // Send roster emails
       const results: {
         instructorId: string;
-        instructorEmail: string;
         classCount: number;
         totalStudents: number;
         success: boolean;
@@ -332,7 +331,6 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
 
         const emailResult = {
           instructorId,
-          instructorEmail: data.instructor.email,
           classCount: data.classes.length,
           totalStudents,
           success: false,
@@ -342,7 +340,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         if (dryRun) {
           emailResult.success = true;
           console.log(
-            `[DRY RUN] Would send roster to ${data.instructor.email} for ${data.classes.length} classes`
+            `[DRY RUN] Would send roster to ${instructorId} for ${data.classes.length} classes`
           );
         } else {
           const sendResult = await sendRosterEmail({
