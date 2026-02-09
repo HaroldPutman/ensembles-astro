@@ -15,6 +15,8 @@ interface RegistrationRow {
   student_firstname: string;
   student_lastname: string;
   student_dob: Date | null;
+  answer: string | null;
+  note: string | null;
 }
 
 interface ActivityData {
@@ -203,7 +205,9 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
           r.activity,
           s.firstname as student_firstname,
           s.lastname as student_lastname,
-          s.dob as student_dob
+          s.dob as student_dob,
+          r.answer,
+          r.note
         FROM registration r
         JOIN student s ON r.student_id = s.id
         WHERE r.activity = ANY($1)
@@ -258,6 +262,8 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
           age: reg.student_dob
             ? calculateAge(new Date(reg.student_dob), referenceDate)
             : 0,
+          answer: reg.answer || undefined,
+          note: reg.note || undefined,
         }));
 
         const classRoster: ClassRosterData = {

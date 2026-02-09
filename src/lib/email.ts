@@ -668,6 +668,8 @@ export async function sendClassReminderEmail(
 interface RosterStudent {
   name: string;
   age: number; // age in years
+  answer?: string; // answer to class-specific question
+  note?: string; // registration note
 }
 
 interface ClassRosterData {
@@ -697,13 +699,22 @@ function generateRosterEmailHtml(data: RosterEmailData): string {
   const classesHtml = data.classes
     .map(cls => {
       const studentsHtml = cls.students
-        .map(
-          (s, i) =>
-            `<tr style="background-color: ${i % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
-              <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-family: ${fontStack};">${escapeHtml(s.name)}</td>
+        .map((s, i) => {
+          const notesHtml =
+            s.answer || s.note
+              ? `<br><span style="font-size: 12px; color: #666;">${[
+                  s.answer,
+                  s.note,
+                ]
+                  .filter(Boolean)
+                  .map(t => escapeHtml(t as string))
+                  .join(' · ')}</span>`
+              : '';
+          return `<tr style="background-color: ${i % 2 === 0 ? '#ffffff' : '#f8f9fa'};">
+              <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; font-family: ${fontStack};">${escapeHtml(s.name)}${notesHtml}</td>
               <td style="padding: 8px 12px; border-bottom: 1px solid #e0e0e0; text-align: center; font-family: ${fontStack};">${s.age > 18 ? 'Adult' : s.age}</td>
-            </tr>`
-        )
+            </tr>`;
+        })
         .join('');
 
       return `
@@ -800,7 +811,11 @@ function generateRosterEmailText(data: RosterEmailData): string {
   const classesText = data.classes
     .map(cls => {
       const studentsText = cls.students
-        .map(s => `  - ${s.name} (${s.age > 18 ? 'adult' : `age ${s.age}`})`)
+        .map(s => {
+          const notes = [s.answer, s.note].filter(Boolean).join(' · ');
+          const notesStr = notes ? ` - ${notes}` : '';
+          return `  - ${s.name} (${s.age > 18 ? 'adult' : `age ${s.age}`})${notesStr}`;
+        })
         .join('\n');
 
       return `
