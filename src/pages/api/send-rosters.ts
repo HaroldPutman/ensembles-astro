@@ -239,7 +239,6 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
 
       for (const activity of classActivities) {
         const regs = registrationsByActivity.get(activity.id) || [];
-        if (regs.length === 0) continue; // Skip classes with no registrations
 
         const formattedWeekday = activity.firstDate.toLocaleString('en-US', {
           weekday: 'long',

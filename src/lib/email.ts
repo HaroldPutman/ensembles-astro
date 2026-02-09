@@ -717,6 +717,22 @@ function generateRosterEmailHtml(data: RosterEmailData): string {
         })
         .join('');
 
+      const contentHtml =
+        cls.students.length === 0
+          ? `<p style="margin: 0; padding: 16px; font-size: 14px; color: #666; font-family: ${fontStack}; font-style: italic;">
+              This class doesn't have any registrations yet.
+            </p>`
+          : `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr style="background-color: #f0f0f0;">
+                  <th style="padding: 10px 12px; text-align: left; font-family: ${fontStack}; font-size: 14px; color: #666;">Student Name</th>
+                  <th style="padding: 10px 12px; text-align: center; font-family: ${fontStack}; font-size: 14px; color: #666; width: 60px;">Age</th>
+                </tr>
+                ${studentsHtml}
+              </table>
+              <p style="margin: 0; padding: 12px; font-size: 14px; color: #666; font-family: ${fontStack}; background-color: #f8f9fa;">
+                <strong>${cls.students.length}</strong> student${cls.students.length === 1 ? '' : 's'} enrolled
+              </p>`;
+
       return `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
           <tr>
@@ -731,16 +747,7 @@ function generateRosterEmailHtml(data: RosterEmailData): string {
           </tr>
           <tr>
             <td style="border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; overflow: hidden;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr style="background-color: #f0f0f0;">
-                  <th style="padding: 10px 12px; text-align: left; font-family: ${fontStack}; font-size: 14px; color: #666;">Student Name</th>
-                  <th style="padding: 10px 12px; text-align: center; font-family: ${fontStack}; font-size: 14px; color: #666; width: 60px;">Age</th>
-                </tr>
-                ${studentsHtml}
-              </table>
-              <p style="margin: 0; padding: 12px; font-size: 14px; color: #666; font-family: ${fontStack}; background-color: #f8f9fa;">
-                <strong>${cls.students.length}</strong> student${cls.students.length === 1 ? '' : 's'} enrolled
-              </p>
+              ${contentHtml}
             </td>
           </tr>
         </table>`;
@@ -810,6 +817,15 @@ function generateRosterEmailHtml(data: RosterEmailData): string {
 function generateRosterEmailText(data: RosterEmailData): string {
   const classesText = data.classes
     .map(cls => {
+      if (cls.students.length === 0) {
+        return `
+${cls.activityName}
+${cls.weekday}s at ${cls.startTime} starting ${cls.startDate}
+----------------------------------------
+This class doesn't have any registrations yet.
+`;
+      }
+
       const studentsText = cls.students
         .map(s => {
           const notes = [s.answer, s.note].filter(Boolean).join(' · ');
