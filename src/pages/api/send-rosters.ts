@@ -319,7 +319,9 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         `Sending rosters to ${rostersByInstructor.size} instructors`
       );
 
-      // Send roster emails
+      // Send roster emails in batches to improve throughput
+      const BATCH_SIZE = 5;
+      const instructorEntries = Array.from(rostersByInstructor.entries());
       const results: {
         instructorId: string;
         classCount: number;
@@ -328,37 +330,46 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         error?: string;
       }[] = [];
 
-      for (const [instructorId, data] of rostersByInstructor) {
-        const totalStudents = data.classes.reduce(
-          (sum, c) => sum + c.students.length,
-          0
+      for (let i = 0; i < instructorEntries.length; i += BATCH_SIZE) {
+        const batch = instructorEntries.slice(i, i + BATCH_SIZE);
+
+        const batchResults = await Promise.all(
+          batch.map(async ([instructorId, data]) => {
+            const totalStudents = data.classes.reduce(
+              (sum, c) => sum + c.students.length,
+              0
+            );
+
+            if (dryRun) {
+              console.log(
+                `[DRY RUN] Would send roster to ${instructorId} for ${data.classes.length} classes`
+              );
+              return {
+                instructorId,
+                classCount: data.classes.length,
+                totalStudents,
+                success: true,
+                error: undefined as string | undefined,
+              };
+            }
+
+            const sendResult = await sendRosterEmail({
+              recipientEmail: data.instructor.email,
+              recipientName: data.instructor.name,
+              classes: data.classes,
+            });
+
+            return {
+              instructorId,
+              classCount: data.classes.length,
+              totalStudents,
+              success: sendResult.success,
+              error: sendResult.error,
+            };
+          })
         );
 
-        const emailResult = {
-          instructorId,
-          classCount: data.classes.length,
-          totalStudents,
-          success: false,
-          error: undefined as string | undefined,
-        };
-
-        if (dryRun) {
-          emailResult.success = true;
-          console.log(
-            `[DRY RUN] Would send roster to ${instructorId} for ${data.classes.length} classes`
-          );
-        } else {
-          const sendResult = await sendRosterEmail({
-            recipientEmail: data.instructor.email,
-            recipientName: data.instructor.name,
-            classes: data.classes,
-          });
-
-          emailResult.success = sendResult.success;
-          emailResult.error = sendResult.error;
-        }
-
-        results.push(emailResult);
+        results.push(...batchResults);
       }
 
       const successCount = results.filter(r => r.success).length;
