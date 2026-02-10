@@ -53,6 +53,17 @@ function calculateAge(dob: Date, referenceDate: Date): number {
   return Math.floor(ageInYears);
 }
 
+// Day of week codes mapped to Temporal dayOfWeek values (1=Monday, 7=Sunday)
+const DAY_CODE_MAP: Record<string, number> = {
+  MO: 1,
+  TU: 2,
+  WE: 3,
+  TH: 4,
+  FR: 5,
+  SA: 6,
+  SU: 7,
+};
+
 /**
  * GET /api/send-rosters
  *
@@ -66,6 +77,7 @@ function calculateAge(dob: Date, referenceDate: Date): number {
  * Query params:
  *   - instructor: Instructor ID - sends rosters for all classes they teach
  *   - class: Activity ID - sends roster for that class to all its instructors
+ *   - day: Day of week (SU, MO, TU, WE, TH, FR, SA) - only send for classes on that day
  *   - (none): Sends rosters to all instructors teaching current classes
  *   - dry-run: If present, don't send emails, just return what would be sent
  */
@@ -103,9 +115,26 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
   const dryRun = url.searchParams.has('dry-run');
   const instructorParam = url.searchParams.get('instructor');
   const classParam = url.searchParams.get('class');
+  const dayParam = url.searchParams.get('day')?.toUpperCase();
+
+  // Validate day parameter if provided
+  if (dayParam && !DAY_CODE_MAP[dayParam]) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: `Invalid day parameter: ${dayParam}. Use SU, MO, TU, WE, TH, FR, or SA.`,
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
+  const filterDayOfWeek = dayParam ? DAY_CODE_MAP[dayParam] : null;
 
   console.log(
-    `Send rosters API called (dry-run: ${dryRun}, instructor: ${instructorParam || 'all'}, class: ${classParam || 'all'}, auth: ${hasValidSession ? 'session' : 'api-key'})`
+    `Send rosters API called (dry-run: ${dryRun}, instructor: ${instructorParam || 'all'}, class: ${classParam || 'all'}, day: ${dayParam || 'all'}, auth: ${hasValidSession ? 'session' : 'api-key'})`
   );
 
   try {
@@ -157,18 +186,21 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         );
 
         // Only include upcoming classes (first date in future)
-        if (Temporal.ZonedDateTime.compare(firstDate, now) > 0) {
-          classActivities.push({
-            id: activity.id,
-            name: activity.data.name,
-            instructors: activity.data.instructors || [],
-            startDate: activity.data.startDate,
-            startTime: activity.data.startTime,
-            duration: activity.data.duration,
-            repeat: activity.data.repeat || '',
-            firstDate,
-          });
-        }
+        if (Temporal.ZonedDateTime.compare(firstDate, now) <= 0) continue;
+
+        // Filter by day of week if specified
+        if (filterDayOfWeek && firstDate.dayOfWeek !== filterDayOfWeek) continue;
+
+        classActivities.push({
+          id: activity.id,
+          name: activity.data.name,
+          instructors: activity.data.instructors || [],
+          startDate: activity.data.startDate,
+          startTime: activity.data.startTime,
+          duration: activity.data.duration,
+          repeat: activity.data.repeat || '',
+          firstDate,
+        });
       } catch (e) {
         console.warn(
           `Could not calculate first date for activity ${activity.id}:`,
