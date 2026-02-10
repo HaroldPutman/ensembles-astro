@@ -5,12 +5,112 @@ import FullWidthLayout from '../../layouts/FullWidthLayout.astro';
 import { getPool } from '../../lib/db';
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
+import { getFirstAndLastDates } from '../../lib/datelib';
+import { Temporal } from '@js-temporal/polyfill';
 
-// Get all activities to map IDs to names
+// Get all activities with their schedule info
 const activities = await getCollection('activities');
-const activityMap = new Map(activities.map(a => [a.id, a.data.name]));
+const now = Temporal.Now.zonedDateTimeISO('America/Louisville');
 
-// Query registrations grouped by activity
+interface ActivityInfo {
+  id: string;
+  name: string;
+  instructors: string[];
+  startDate: string;
+  startTime: string;
+  duration: string;
+  repeat: string;
+  firstDate: Temporal.ZonedDateTime | null;
+  lastDate: Temporal.ZonedDateTime | null;
+  weekday: string;
+  formattedTime: string;
+  formattedStartDate: string;
+  isCurrent: boolean; // has started but not ended
+  isUpcoming: boolean; // hasn't started yet
+}
+
+const activityMap = new Map<string, ActivityInfo>();
+
+// Day name mapping
+const dayNames: Record<string, string> = {
+  MO: 'Mondays',
+  TU: 'Tuesdays',
+  WE: 'Wednesdays',
+  TH: 'Thursdays',
+  FR: 'Fridays',
+  SA: 'Saturdays',
+  SU: 'Sundays',
+};
+
+for (const activity of activities) {
+  let firstDate: Temporal.ZonedDateTime | null = null;
+  let lastDate: Temporal.ZonedDateTime | null = null;
+  let weekday = '';
+  let formattedTime = '';
+  let formattedStartDate = '';
+
+  try {
+    const [first, last] = getFirstAndLastDates(
+      activity.data.startDate,
+      activity.data.startTime,
+      activity.data.duration,
+      activity.data.repeat || ''
+    );
+    firstDate = first;
+    lastDate = last;
+
+    // Extract weekday from repeat rule or from first date
+    const repeatMatch = activity.data.repeat?.match(/BYDAY=([A-Z]{2})/);
+    if (repeatMatch) {
+      weekday = dayNames[repeatMatch[1]] || repeatMatch[1];
+    } else if (firstDate) {
+      const dayOfWeek = firstDate.toLocaleString('en-US', { weekday: 'long' });
+      weekday = dayOfWeek + 's';
+    }
+
+    // Format time
+    if (firstDate) {
+      formattedTime = firstDate.toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+      formattedStartDate = firstDate.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+  } catch {
+    // If we can't parse dates, leave them null
+  }
+
+  const isCurrent =
+    firstDate &&
+    lastDate &&
+    Temporal.ZonedDateTime.compare(firstDate, now) <= 0 &&
+    Temporal.ZonedDateTime.compare(lastDate, now) >= 0;
+
+  const isUpcoming = firstDate && Temporal.ZonedDateTime.compare(firstDate, now) > 0;
+
+  activityMap.set(activity.id, {
+    id: activity.id,
+    name: activity.data.name,
+    instructors: activity.data.instructors || [],
+    startDate: activity.data.startDate,
+    startTime: activity.data.startTime,
+    duration: activity.data.duration,
+    repeat: activity.data.repeat || '',
+    firstDate,
+    lastDate,
+    weekday,
+    formattedTime,
+    formattedStartDate,
+    isCurrent: !!isCurrent,
+    isUpcoming: !!isUpcoming,
+  });
+}
+
+// Query registrations - only paid ones
 const pool = getPool();
 const client = await pool.connect();
 
@@ -22,9 +122,6 @@ interface RegistrationRow {
   dob: Date;
   contact_name: string | null;
   contact_email: string | null;
-  contact_phone: string | null;
-  payment_id: number | null;
-  cost: number | null;
   created_at: Date;
 }
 
@@ -40,14 +137,12 @@ try {
       s.dob,
       CONCAT(c.firstname, ' ', c.lastname) as contact_name,
       c.email as contact_email,
-      c.phone as contact_phone,
-      r.payment_id,
-      r.cost,
       r.created_at
     FROM registration r
     JOIN student s ON r.student_id = s.id
     LEFT JOIN contact c ON r.contact_id = c.id
     WHERE r.cancelled_at IS NULL
+      AND r.payment_id IS NOT NULL
     ORDER BY r.activity, s.lastname, s.firstname
   `);
   registrations = result.rows;
@@ -56,23 +151,27 @@ try {
 }
 
 // Group registrations by activity
-const groupedByActivity = registrations.reduce((acc, reg) => {
-  if (!acc.has(reg.activity)) {
-    acc.set(reg.activity, []);
-  }
-  acc.get(reg.activity)!.push(reg);
-  return acc;
-}, new Map<string, RegistrationRow[]>());
+const groupedByActivity = registrations.reduce(
+  (acc, reg) => {
+    if (!acc.has(reg.activity)) {
+      acc.set(reg.activity, []);
+    }
+    acc.get(reg.activity)!.push(reg);
+    return acc;
+  },
+  new Map<string, RegistrationRow[]>()
+);
 
-// Pre-compute email lists for each activity (paid registrations only, deduplicated)
+// Pre-compute email lists for each activity (deduplicated by email)
 const emailListsByActivity = new Map<string, { list: string; count: number }>();
 for (const [activityId, regs] of groupedByActivity) {
-  const paidRegs = regs.filter(r => r.payment_id !== null && r.contact_email !== null);
   const uniqueContacts = new Map<string, string>();
-  paidRegs.forEach(r => {
-    const email = r.contact_email!;
-    if (!uniqueContacts.has(email)) {
-      uniqueContacts.set(email, r.contact_name || 'Parent');
+  regs.forEach((r) => {
+    if (r.contact_email) {
+      const email = r.contact_email;
+      if (!uniqueContacts.has(email)) {
+        uniqueContacts.set(email, r.contact_name || 'Parent');
+      }
     }
   });
   const emailList = Array.from(uniqueContacts.entries())
@@ -81,21 +180,51 @@ for (const [activityId, regs] of groupedByActivity) {
   emailListsByActivity.set(activityId, { list: emailList, count: uniqueContacts.size });
 }
 
+// Separate into current and upcoming classes
+const currentClasses: [string, RegistrationRow[]][] = [];
+const upcomingClasses: [string, RegistrationRow[]][] = [];
+
+for (const [activityId, regs] of groupedByActivity) {
+  const activityInfo = activityMap.get(activityId);
+  if (activityInfo?.isCurrent) {
+    currentClasses.push([activityId, regs]);
+  } else if (activityInfo?.isUpcoming) {
+    upcomingClasses.push([activityId, regs]);
+  } else {
+    // Classes that have ended or unknown status - include in current for now
+    currentClasses.push([activityId, regs]);
+  }
+}
+
+// Calculate age from DOB
+function calculateAge(dob: Date): number | string {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age >= 19 ? 'Adult' : age;
+}
+
 // Format date for display
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
   });
 }
 
-function formatDob(date: Date): string {
-  return new Date(date).toLocaleDateString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric'
-  });
+// Get schedule string for activity
+function getScheduleString(activityId: string): string {
+  const info = activityMap.get(activityId);
+  if (!info) return '';
+  const parts = [];
+  if (info.weekday) parts.push(info.weekday);
+  if (info.formattedTime) parts.push(`at ${info.formattedTime}`);
+  if (info.formattedStartDate) parts.push(`beginning ${info.formattedStartDate}`);
+  return parts.join(' ');
 }
 ---
 
@@ -106,81 +235,124 @@ function formatDob(date: Date): string {
         <Icon name="mdi:arrow-left" width="20" height="20" />
         Back to Backstage
       </a>
-      <h1>Registrations</h1>
+      <h1>Class Rosters</h1>
       <p class="subtitle">
-        {registrations.length} student{registrations.length !== 1 ? 's' : ''} registered across {groupedByActivity.size} activit{groupedByActivity.size !== 1 ? 'ies' : 'y'}
+        {registrations.length} paid registration{registrations.length !== 1 ? 's' : ''} across {groupedByActivity.size} class{groupedByActivity.size !== 1 ? 'es' : ''}
       </p>
     </header>
 
     {groupedByActivity.size === 0 ? (
       <div class="empty-state">
         <Icon name="mdi:clipboard-text-outline" width="64" height="64" />
-        <p>No registrations found</p>
+        <p>No paid registrations found</p>
       </div>
     ) : (
-      Array.from(groupedByActivity.entries()).map(([activityId, regs]) => {
-        const emailData = emailListsByActivity.get(activityId)!;
-        return (
-        <div class="activity-section">
-          <h2>
-            <a href={`/activities/${activityId}`}>
-              {activityMap.get(activityId) || activityId}
-            </a>
-            <span class="count">{regs.length}</span>
-            {emailData.count > 0 && (
-              <button 
-                class="email-list-btn" 
-                data-activity={activityId}
-                data-emails={emailData.list}
-                title="Show email list for paid registrations"
-              >
-                <Icon name="mdi:email-outline" width="18" height="18" />
-                Email List ({emailData.count})
-              </button>
-            )}
-          </h2>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>DOB</th>
-                  <th>Contact</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                  <th>Registered</th>
-                </tr>
-              </thead>
-              <tbody>
-                {regs.map((reg) => (
-                  <tr class={reg.payment_id !== null ? 'paid' : 'pending'}>
-                    <td class="student-name">{reg.firstname} {reg.lastname}</td>
-                    <td class="dob">{formatDob(reg.dob)}</td>
-                    <td>{reg.contact_name || '—'}</td>
-                    <td class="email">{reg.contact_email || '—'}</td>
-                    <td class="phone">{reg.contact_phone || '—'}</td>
-                    <td class="status">
-                      {reg.payment_id !== null ? (
-                        <span class="badge paid">
-                          <Icon name="mdi:check-circle" width="16" height="16" />
-                          Paid
-                        </span>
-                      ) : (
-                        <span class="badge pending">
-                          <Icon name="mdi:clock-outline" width="16" height="16" />
-                          Pending
-                        </span>
+      <>
+        {/* Upcoming Classes Section */}
+        {upcomingClasses.length > 0 && (
+          <details class="class-section" open>
+            <summary class="section-header">
+              <Icon name="mdi:calendar-clock" width="24" height="24" />
+              <span>Upcoming Classes</span>
+              <span class="section-count">{upcomingClasses.length}</span>
+            </summary>
+            <div class="section-content">
+              {upcomingClasses.map(([activityId, regs]) => {
+                const emailData = emailListsByActivity.get(activityId)!;
+                const activityInfo = activityMap.get(activityId);
+                const schedule = getScheduleString(activityId);
+                return (
+                  <div class="class-card">
+                    <div class="class-header">
+                      <div class="class-title">
+                        <a href={`/activities/${activityId}`}>
+                          {activityInfo?.name || activityId}
+                        </a>
+                        <span class="student-count">{regs.length} student{regs.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      {schedule && <p class="schedule">{schedule}</p>}
+                      {emailData.count > 0 && (
+                        <button
+                          class="email-list-btn"
+                          data-activity={activityId}
+                          data-activity-name={activityInfo?.name || activityId}
+                          data-emails={emailData.list}
+                          title="Show email list"
+                        >
+                          <Icon name="mdi:email-outline" width="16" height="16" />
+                          Email ({emailData.count})
+                        </button>
                       )}
-                    </td>
-                    <td class="date">{formatDate(reg.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )})
+                    </div>
+                    <ul class="student-list">
+                      {regs.map((reg) => (
+                        <li class="student-item">
+                          <span class="student-name">{reg.firstname} {reg.lastname}</span>
+                          <span class="student-age">{calculateAge(reg.dob)}</span>
+                          <span class="reg-date">{formatDate(reg.created_at)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        )}
+                {/* Current Classes Section */}
+                {currentClasses.length > 0 && (
+          <details class="class-section" open>
+            <summary class="section-header">
+              <Icon name="mdi:play-circle" width="24" height="24" />
+              <span>Current Classes</span>
+              <span class="section-count">{currentClasses.length}</span>
+            </summary>
+            <div class="section-content">
+              {currentClasses.map(([activityId, regs]) => {
+                const emailData = emailListsByActivity.get(activityId)!;
+                const activityInfo = activityMap.get(activityId);
+                const schedule = getScheduleString(activityId);
+                return (
+                  <div class="class-card">
+                    <div class="class-header">
+                      <div class="class-title">
+                        <a href={`/activities/${activityId}`}>
+                          {activityInfo?.name || activityId}
+                        </a>
+                        <span class="student-count">{regs.length} student{regs.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      {schedule && <p class="schedule">{schedule}</p>}
+                      {emailData.count > 0 && (
+                        <button
+                          class="email-list-btn"
+                          data-activity={activityId}
+                          data-activity-name={activityInfo?.name || activityId}
+                          data-emails={emailData.list}
+                          title="Show email list"
+                        >
+                          <Icon name="mdi:email-outline" width="16" height="16" />
+                          Email ({emailData.count})
+                        </button>
+                      )}
+                    </div>
+                    <ul class="student-list">
+                      {regs.map((reg) => (
+                        <li class="student-item">
+                          <span class="student-name">{reg.firstname} {reg.lastname}</span>
+                          <span class="student-age">{calculateAge(reg.dob)}</span>
+                          <span class="reg-date">{formatDate(reg.created_at)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        )}
+
+
+      </>
     )}
 
     <!-- Email List Modal -->
@@ -215,12 +387,12 @@ function formatDob(date: Date): string {
   const copyFeedback = document.getElementById('copy-feedback')!;
 
   // Open modal when email list button is clicked
-  document.querySelectorAll('.email-list-btn').forEach(btn => {
+  document.querySelectorAll('.email-list-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const activityId = btn.getAttribute('data-activity');
+      const activityName = btn.getAttribute('data-activity-name') || 'Class';
       const emails = btn.getAttribute('data-emails') || '';
-      
-      modalTitle.textContent = `Email List - ${activityId}`;
+
+      modalTitle.textContent = `Email List - ${activityName}`;
       emailListText.value = emails;
       copyFeedback.textContent = '';
       modal.showModal();
@@ -239,7 +411,7 @@ function formatDob(date: Date): string {
       await navigator.clipboard.writeText(emailListText.value);
       copyFeedback.textContent = '✓ Copied to clipboard!';
       copyFeedback.className = 'copy-feedback success';
-    } catch (err) {
+    } catch {
       // Fallback for older browsers
       emailListText.select();
       document.execCommand('copy');
@@ -251,13 +423,13 @@ function formatDob(date: Date): string {
 
 <style>
   .registrations-page {
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
 
   .page-header {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .back-link {
@@ -267,7 +439,7 @@ function formatDob(date: Date): string {
     color: #666;
     text-decoration: none;
     font-size: 0.9rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .back-link:hover {
@@ -275,143 +447,138 @@ function formatDob(date: Date): string {
   }
 
   .page-header h1 {
-    margin-bottom: 0.5rem;
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
   }
 
   .subtitle {
     color: #666;
     margin: 0;
+    font-size: 0.9rem;
   }
 
   .empty-state {
     text-align: center;
-    padding: 4rem 2rem;
+    padding: 3rem 1rem;
     color: #999;
   }
 
   .empty-state p {
     margin-top: 1rem;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
-  .activity-section {
-    margin-bottom: 2.5rem;
+  /* Section Styles */
+  .class-section {
+    margin-bottom: 1.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
   }
 
-  .activity-section h2 {
+  .section-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    font-size: 1.25rem;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    list-style: none;
+    border-bottom: 1px solid #e5e7eb;
   }
 
-  .activity-section h2 a {
-    color: inherit;
-    text-decoration: none;
+  .section-header::-webkit-details-marker {
+    display: none;
   }
 
-  .activity-section h2 a:hover {
-    text-decoration: underline;
+  .section-header::before {
+    content: '▶';
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    color: #666;
   }
 
-  .count {
+  details[open] .section-header::before {
+    transform: rotate(90deg);
+  }
+
+  .section-count {
+    margin-left: auto;
     background: #e5e5e5;
     color: #666;
     padding: 0.125rem 0.5rem;
     border-radius: 12px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 500;
   }
 
-  .table-wrapper {
-    overflow-x: auto;
-    background: white;
+  .section-content {
+    padding: 0.5rem;
+  }
+
+  /* Class Card Styles */
+  .class-card {
+    background: #fafafa;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
+  .class-card:last-child {
+    margin-bottom: 0;
   }
 
-  th, td {
+  .class-header {
     padding: 0.75rem 1rem;
-    text-align: left;
+    background: white;
     border-bottom: 1px solid #eee;
   }
 
-  th {
-    background: #f8f9fa;
-    font-weight: 600;
-    color: #555;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  tbody tr:hover {
-    background: #fafafa;
-  }
-
-  tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  .student-name {
-    font-weight: 500;
-  }
-
-  .dob, .date {
-    white-space: nowrap;
-    color: #666;
-  }
-
-  .email {
-    font-size: 0.85rem;
-  }
-
-  .phone {
-    white-space: nowrap;
-  }
-
-  .status {
-    white-space: nowrap;
-  }
-
-  .badge {
-    display: inline-flex;
+  .class-title {
+    display: flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .class-title a {
+    color: #1a56db;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .class-title a:hover {
+    text-decoration: underline;
+  }
+
+  .student-count {
     font-size: 0.8rem;
-    font-weight: 500;
+    color: #666;
+    font-weight: normal;
   }
 
-  .badge.paid {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .badge.pending {
-    background: #fef3c7;
-    color: #92400e;
+  .schedule {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #555;
   }
 
   .email-list-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    margin-left: auto;
-    padding: 0.375rem 0.75rem;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding: 0.375rem 0.625rem;
     background: #3b82f6;
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s;
@@ -421,12 +588,60 @@ function formatDob(date: Date): string {
     background: #2563eb;
   }
 
+  /* Student List Styles */
+  .student-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .student-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+  }
+
+  .student-item:last-child {
+    border-bottom: none;
+  }
+
+  .student-name {
+    flex: 1;
+    font-weight: 500;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .student-age {
+    flex-shrink: 0;
+    background: #e5e7eb;
+    color: #555;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .reg-date {
+    flex-shrink: 0;
+    color: #888;
+    font-size: 0.75rem;
+    min-width: 50px;
+    text-align: right;
+  }
+
   /* Modal Styles */
   .email-modal {
     border: none;
     border-radius: 12px;
     padding: 0;
-    max-width: 600px;
+    max-width: 500px;
     width: 90vw;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
@@ -443,13 +658,13 @@ function formatDob(date: Date): string {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.25rem;
+    padding: 1rem;
     border-bottom: 1px solid #e5e7eb;
   }
 
   .modal-header h3 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .close-btn {
@@ -470,13 +685,13 @@ function formatDob(date: Date): string {
   }
 
   .modal-body {
-    padding: 1.25rem;
+    padding: 1rem;
   }
 
   .modal-instructions {
     margin: 0 0 0.75rem;
     color: #666;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   #email-list-text {
@@ -485,7 +700,7 @@ function formatDob(date: Date): string {
     border: 1px solid #d1d5db;
     border-radius: 6px;
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     resize: vertical;
     background: #f9fafb;
   }
@@ -500,13 +715,13 @@ function formatDob(date: Date): string {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 0.75rem;
     padding: 0.5rem 1rem;
     background: #10b981;
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s;
@@ -518,7 +733,7 @@ function formatDob(date: Date): string {
 
   .copy-feedback {
     margin: 0.5rem 0 0;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     min-height: 1.25rem;
   }
 
@@ -526,21 +741,46 @@ function formatDob(date: Date): string {
     color: #059669;
   }
 
-  @media (max-width: 768px) {
+  /* Mobile optimization */
+  @media (max-width: 480px) {
     .registrations-page {
-      padding: 1rem;
+      padding: 1rem 0.75rem;
     }
 
-    th, td {
-      padding: 0.5rem;
+    .page-header h1 {
+      font-size: 1.25rem;
+    }
+
+    .section-header {
+      padding: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .class-header {
+      padding: 0.625rem 0.75rem;
+    }
+
+    .class-title a {
+      font-size: 0.9rem;
+    }
+
+    .schedule {
       font-size: 0.8rem;
     }
 
-    .email {
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .student-item {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .student-age {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.375rem;
+      min-width: 36px;
+    }
+
+    .reg-date {
+      font-size: 0.7rem;
     }
   }
 </style>
-
