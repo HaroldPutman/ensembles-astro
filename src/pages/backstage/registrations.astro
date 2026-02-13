@@ -566,7 +566,13 @@ function getScheduleString(activityId: string): string {
         body: JSON.stringify({ registrationId: currentRegistrationId }),
       });
 
-      const result = await response.json();
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        result = { message: 'Server error occurred' };
+      }
 
       if (response.ok) {
         cancelFeedback.textContent = '✓ Registration cancelled';

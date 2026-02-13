@@ -98,10 +98,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return new Response(
       JSON.stringify({
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to cancel registration',
+        message: 'Failed to cancel registration',
       }),
       {
         status: 500,
