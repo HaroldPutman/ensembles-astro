@@ -115,6 +115,7 @@ const pool = getPool();
 const client = await pool.connect();
 
 interface RegistrationRow {
+  registration_id: number;
   activity: string;
   student_id: number;
   firstname: string;
@@ -132,6 +133,7 @@ let registrations: RegistrationRow[] = [];
 try {
   const result = await client.query<RegistrationRow>(`
     SELECT 
+      r.id as registration_id,
       r.activity,
       r.student_id,
       s.firstname,
@@ -290,11 +292,20 @@ function getScheduleString(activityId: string): string {
                     </div>
                     <ul class="student-list">
                       {regs.map((reg) => (
-                        <li class="student-item">
+                        <li class="student-item" data-registration-id={reg.registration_id}>
                           <div class="student-main">
                             <span class="student-name">{reg.firstname} {reg.lastname}</span>
                             <span class="student-age">{calculateAge(reg.dob)}</span>
                             <span class="reg-date">{formatDate(reg.created_at)}</span>
+                            <button
+                              class="cancel-btn"
+                              data-registration-id={reg.registration_id}
+                              data-student-name={`${reg.firstname} ${reg.lastname}`}
+                              data-activity-name={activityInfo?.name || activityId}
+                              title="Cancel registration"
+                            >
+                              <Icon name="mdi:close-circle-outline" width="16" height="16" />
+                            </button>
                           </div>
                           {(reg.answer || reg.note) && (
                             <div class="student-notes">
@@ -350,11 +361,20 @@ function getScheduleString(activityId: string): string {
                     </div>
                     <ul class="student-list">
                       {regs.map((reg) => (
-                        <li class="student-item">
+                        <li class="student-item" data-registration-id={reg.registration_id}>
                           <div class="student-main">
                             <span class="student-name">{reg.firstname} {reg.lastname}</span>
                             <span class="student-age">{calculateAge(reg.dob)}</span>
                             <span class="reg-date">{formatDate(reg.created_at)}</span>
+                            <button
+                              class="cancel-btn"
+                              data-registration-id={reg.registration_id}
+                              data-student-name={`${reg.firstname} ${reg.lastname}`}
+                              data-activity-name={activityInfo?.name || activityId}
+                              title="Cancel registration"
+                            >
+                              <Icon name="mdi:close-circle-outline" width="16" height="16" />
+                            </button>
                           </div>
                           {(reg.answer || reg.note) && (
                             <div class="student-notes">
@@ -374,6 +394,27 @@ function getScheduleString(activityId: string): string {
         )}
       </>
     )}
+
+    <!-- Cancel Confirmation Modal -->
+    <dialog id="cancel-modal" class="cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h3 id="cancel-modal-title">Cancel Registration</h3>
+          <button class="close-btn" id="close-cancel-modal" aria-label="Close">
+            <Icon name="mdi:close" width="24" height="24" />
+          </button>
+        </header>
+        <div class="modal-body">
+          <p id="cancel-message">Are you sure you want to cancel <strong id="cancel-student-name"></strong>'s registration for <strong id="cancel-activity-name"></strong>?</p>
+          <p class="cancel-warning">This action cannot be undone.</p>
+          <div class="cancel-actions">
+            <button class="cancel-action-btn cancel-no" id="cancel-no">No, Keep Registration</button>
+            <button class="cancel-action-btn cancel-yes" id="cancel-yes">Yes, Cancel Registration</button>
+          </div>
+          <p id="cancel-feedback" class="cancel-feedback"></p>
+        </div>
+      </div>
+    </dialog>
 
     <!-- Email List Modal -->
     <dialog id="email-modal" class="email-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -399,12 +440,23 @@ function getScheduleString(activityId: string): string {
 </FullWidthLayout>
 
 <script>
+  // Email modal elements
   const modal = document.getElementById('email-modal') as HTMLDialogElement;
   const modalTitle = document.getElementById('modal-title')!;
   const emailListText = document.getElementById('email-list-text') as HTMLTextAreaElement;
   const copyBtn = document.getElementById('copy-btn')!;
   const closeBtn = document.getElementById('close-modal')!;
   const copyFeedback = document.getElementById('copy-feedback')!;
+
+  // Cancel modal elements
+  const cancelModal = document.getElementById('cancel-modal') as HTMLDialogElement;
+  const cancelStudentName = document.getElementById('cancel-student-name')!;
+  const cancelActivityName = document.getElementById('cancel-activity-name')!;
+  const closeCancelBtn = document.getElementById('close-cancel-modal')!;
+  const cancelNoBtn = document.getElementById('cancel-no') as HTMLButtonElement;
+  const cancelYesBtn = document.getElementById('cancel-yes') as HTMLButtonElement;
+  const cancelFeedback = document.getElementById('cancel-feedback')!;
+  let currentRegistrationId: string | null = null;
 
   // Open modal when email list button is clicked
   document.querySelectorAll('.email-list-btn').forEach((btn) => {
@@ -419,7 +471,7 @@ function getScheduleString(activityId: string): string {
     });
   });
 
-  // Close modal
+  // Close email modal
   closeBtn.addEventListener('click', () => modal.close());
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
@@ -437,6 +489,112 @@ function getScheduleString(activityId: string): string {
       document.execCommand('copy');
       copyFeedback.textContent = '✓ Copied to clipboard!';
       copyFeedback.className = 'copy-feedback success';
+    }
+  });
+
+  // Handle tap-to-reveal cancel button on touch devices
+  let activeStudentItem: Element | null = null;
+
+  document.querySelectorAll('.student-item').forEach((item) => {
+    item.addEventListener('click', (e) => {
+      const target = e.target as Element;
+      // If clicking the cancel button itself, let that handler run
+      if (target.closest('.cancel-btn')) return;
+
+      // If this item is already active, do nothing (let user tap cancel)
+      if (item.classList.contains('show-cancel')) return;
+
+      // Remove active state from previous item
+      if (activeStudentItem && activeStudentItem !== item) {
+        activeStudentItem.classList.remove('show-cancel');
+      }
+
+      // Activate this item
+      item.classList.add('show-cancel');
+      activeStudentItem = item;
+    });
+  });
+
+  // Hide cancel button when clicking outside student items
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    if (!target.closest('.student-item') && activeStudentItem) {
+      activeStudentItem.classList.remove('show-cancel');
+      activeStudentItem = null;
+    }
+  });
+
+  // Open cancel modal when cancel button is clicked
+  document.querySelectorAll('.cancel-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering the student-item click
+      currentRegistrationId = btn.getAttribute('data-registration-id');
+      const studentName = btn.getAttribute('data-student-name') || 'this student';
+      const activityName = btn.getAttribute('data-activity-name') || 'this class';
+      cancelStudentName.textContent = studentName;
+      cancelActivityName.textContent = activityName;
+      cancelFeedback.textContent = '';
+      cancelFeedback.className = 'cancel-feedback';
+      cancelYesBtn.disabled = false;
+      cancelNoBtn.disabled = false;
+      cancelModal.showModal();
+    });
+  });
+
+  // Close cancel modal
+  closeCancelBtn.addEventListener('click', () => cancelModal.close());
+  cancelNoBtn.addEventListener('click', () => cancelModal.close());
+  cancelModal.addEventListener('click', (e) => {
+    if (e.target === cancelModal) cancelModal.close();
+  });
+
+  // Handle cancel confirmation
+  cancelYesBtn.addEventListener('click', async () => {
+    if (!currentRegistrationId) return;
+
+    cancelYesBtn.disabled = true;
+    cancelNoBtn.disabled = true;
+    cancelFeedback.textContent = 'Cancelling...';
+    cancelFeedback.className = 'cancel-feedback';
+
+    try {
+      const response = await fetch('/api/cancel-registration', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ registrationId: currentRegistrationId }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        cancelFeedback.textContent = '✓ Registration cancelled';
+        cancelFeedback.className = 'cancel-feedback success';
+        
+        // Remove the student item from the page
+        const studentItem = document.querySelector(
+          `li[data-registration-id="${currentRegistrationId}"]`
+        );
+        if (studentItem) {
+          studentItem.remove();
+        }
+        
+        // Close modal after a brief delay
+        setTimeout(() => {
+          cancelModal.close();
+          // Optionally reload to update counts
+          window.location.reload();
+        }, 1000);
+      } else {
+        throw new Error(result.message || 'Failed to cancel registration');
+      }
+    } catch (error) {
+      cancelFeedback.textContent =
+        error instanceof Error ? error.message : 'Failed to cancel registration';
+      cancelFeedback.className = 'cancel-feedback error';
+      cancelYesBtn.disabled = false;
+      cancelNoBtn.disabled = false;
     }
   });
 </script>
@@ -677,8 +835,43 @@ function getScheduleString(activityId: string): string {
     color: #999;
   }
 
+  .cancel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s, opacity 0.15s;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Show cancel button on hover (desktop) */
+  .student-item:hover .cancel-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Show cancel button when item is "active" (mobile tap) */
+  .student-item.show-cancel .cancel-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .cancel-btn:hover {
+    color: #dc2626;
+    background: #fef2f2;
+  }
+
   /* Modal Styles */
-  .email-modal {
+  .email-modal,
+  .cancel-modal {
     border: none;
     border-radius: 12px;
     padding: 0;
@@ -687,7 +880,8 @@ function getScheduleString(activityId: string): string {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
 
-  .email-modal::backdrop {
+  .email-modal::backdrop,
+  .cancel-modal::backdrop {
     background: rgba(0, 0, 0, 0.5);
   }
 
@@ -780,6 +974,68 @@ function getScheduleString(activityId: string): string {
 
   .copy-feedback.success {
     color: #059669;
+  }
+
+  /* Cancel Modal Styles */
+  .cancel-warning {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin: 0.5rem 0 1rem;
+  }
+
+  .cancel-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .cancel-action-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 0.625rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+  }
+
+  .cancel-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .cancel-no {
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  .cancel-no:hover:not(:disabled) {
+    background: #d1d5db;
+  }
+
+  .cancel-yes {
+    background: #dc2626;
+    color: white;
+  }
+
+  .cancel-yes:hover:not(:disabled) {
+    background: #b91c1c;
+  }
+
+  .cancel-feedback {
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+    min-height: 1.25rem;
+  }
+
+  .cancel-feedback.success {
+    color: #059669;
+  }
+
+  .cancel-feedback.error {
+    color: #dc2626;
   }
 
   /* Mobile optimization */
