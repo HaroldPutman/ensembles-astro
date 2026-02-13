@@ -57,7 +57,7 @@ for (const activity of activities) {
       activity.data.repeat || ''
     );
     firstDate = first;
-    lastDate = last;
+    lastDate = last ?? null;
 
     // Extract weekday from repeat rule or from first date
     const repeatMatch = activity.data.repeat?.match(/BYDAY=([A-Z]{2})/);
@@ -123,6 +123,8 @@ interface RegistrationRow {
   contact_name: string | null;
   contact_email: string | null;
   created_at: Date;
+  answer: string | null;
+  note: string | null;
 }
 
 let registrations: RegistrationRow[] = [];
@@ -137,7 +139,9 @@ try {
       s.dob,
       CONCAT(c.firstname, ' ', c.lastname) as contact_name,
       c.email as contact_email,
-      r.created_at
+      r.created_at,
+      r.answer,
+      r.note
     FROM registration r
     JOIN student s ON r.student_id = s.id
     LEFT JOIN contact c ON r.contact_id = c.id
@@ -287,9 +291,18 @@ function getScheduleString(activityId: string): string {
                     <ul class="student-list">
                       {regs.map((reg) => (
                         <li class="student-item">
-                          <span class="student-name">{reg.firstname} {reg.lastname}</span>
-                          <span class="student-age">{calculateAge(reg.dob)}</span>
-                          <span class="reg-date">{formatDate(reg.created_at)}</span>
+                          <div class="student-main">
+                            <span class="student-name">{reg.firstname} {reg.lastname}</span>
+                            <span class="student-age">{calculateAge(reg.dob)}</span>
+                            <span class="reg-date">{formatDate(reg.created_at)}</span>
+                          </div>
+                          {(reg.answer || reg.note) && (
+                            <div class="student-notes">
+                              {reg.answer && <span class="note-text">{reg.answer}</span>}
+                              {reg.answer && reg.note && <span class="note-separator">·</span>}
+                              {reg.note && <span class="note-text">{reg.note}</span>}
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -338,9 +351,18 @@ function getScheduleString(activityId: string): string {
                     <ul class="student-list">
                       {regs.map((reg) => (
                         <li class="student-item">
-                          <span class="student-name">{reg.firstname} {reg.lastname}</span>
-                          <span class="student-age">{calculateAge(reg.dob)}</span>
-                          <span class="reg-date">{formatDate(reg.created_at)}</span>
+                          <div class="student-main">
+                            <span class="student-name">{reg.firstname} {reg.lastname}</span>
+                            <span class="student-age">{calculateAge(reg.dob)}</span>
+                            <span class="reg-date">{formatDate(reg.created_at)}</span>
+                          </div>
+                          {(reg.answer || reg.note) && (
+                            <div class="student-notes">
+                              {reg.answer && <span class="note-text">{reg.answer}</span>}
+                              {reg.answer && reg.note && <span class="note-separator">·</span>}
+                              {reg.note && <span class="note-text">{reg.note}</span>}
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -350,8 +372,6 @@ function getScheduleString(activityId: string): string {
             </div>
           </details>
         )}
-
-
       </>
     )}
 
@@ -597,8 +617,8 @@ function getScheduleString(activityId: string): string {
 
   .student-item {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.25rem;
     padding: 0.625rem 1rem;
     border-bottom: 1px solid #eee;
     font-size: 0.9rem;
@@ -606,6 +626,12 @@ function getScheduleString(activityId: string): string {
 
   .student-item:last-child {
     border-bottom: none;
+  }
+
+  .student-main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .student-name {
@@ -634,6 +660,21 @@ function getScheduleString(activityId: string): string {
     font-size: 0.75rem;
     min-width: 50px;
     text-align: right;
+  }
+
+  .student-notes {
+    font-size: 0.8rem;
+    color: #666;
+    padding-left: 0.25rem;
+  }
+
+  .note-text {
+    font-style: italic;
+  }
+
+  .note-separator {
+    margin: 0 0.375rem;
+    color: #999;
   }
 
   /* Modal Styles */
