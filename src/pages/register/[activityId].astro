@@ -168,8 +168,8 @@ const dtstart = firstDate.toPlainDate().toString();
     
     const formData = new FormData(form);
     const data = {
-      firstName: formData.get('firstName'),
-      lastName: formData.get('lastName'),
+      firstName: (formData.get('firstName') as string)?.trim(),
+      lastName: (formData.get('lastName') as string)?.trim(),
       birthdate: formData.get('birthdate'),
       activityId: formData.get('activityId'),
     };

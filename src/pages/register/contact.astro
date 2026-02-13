@@ -151,15 +151,26 @@ import Layout from '../../layouts/Layout.astro';
     messageDiv.textContent = '';
     
     const formData = new FormData(form);
+    
+    // Format phone number as nnn-nnn-nnnn
+    function formatPhone(phone: string | null): string | null {
+      if (!phone) return null;
+      const digits = phone.replace(/\D/g, '');
+      if (digits.length === 10) {
+        return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+      }
+      return phone.trim() || null;
+    }
+    
     const data = {
-      firstName: formData.get('firstName'),
-      lastName: formData.get('lastName'),
-      email: formData.get('email'),
-      phone: formData.get('phone') || null,
-      address: formData.get('address') || null,
-      city: formData.get('city') || null,
-      state: formData.get('state') || null,
-      zip: formData.get('zip') || null,
+      firstName: (formData.get('firstName') as string)?.trim(),
+      lastName: (formData.get('lastName') as string)?.trim(),
+      email: (formData.get('email') as string)?.trim(),
+      phone: formatPhone(formData.get('phone') as string),
+      address: (formData.get('address') as string)?.trim() || null,
+      city: (formData.get('city') as string)?.trim() || null,
+      state: (formData.get('state') as string)?.trim().toUpperCase() || null,
+      zip: (formData.get('zip') as string)?.trim() || null,
       registrationId,
       studentId
     };
