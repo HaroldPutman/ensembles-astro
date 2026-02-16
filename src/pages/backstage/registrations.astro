@@ -202,6 +202,29 @@ for (const [activityId, regs] of groupedByActivity) {
   }
 }
 
+// Sort classes by day of week (Sun=0, Mon=1, etc.) and then by start time
+function sortByDayAndTime(a: [string, RegistrationRow[]], b: [string, RegistrationRow[]]): number {
+  const infoA = activityMap.get(a[0]);
+  const infoB = activityMap.get(b[0]);
+  
+  // Get day of week (Temporal uses 1=Mon to 7=Sun, convert to 0=Sun to 6=Sat for traditional ordering)
+  const dayA = infoA?.firstDate ? (infoA.firstDate.dayOfWeek % 7) : 7;
+  const dayB = infoB?.firstDate ? (infoB.firstDate.dayOfWeek % 7) : 7;
+  
+  if (dayA !== dayB) {
+    return dayA - dayB;
+  }
+  
+  // Same day, sort by start time
+  const timeA = infoA?.firstDate?.toPlainTime().toString() || '23:59:59';
+  const timeB = infoB?.firstDate?.toPlainTime().toString() || '23:59:59';
+  
+  return timeA.localeCompare(timeB);
+}
+
+currentClasses.sort(sortByDayAndTime);
+upcomingClasses.sort(sortByDayAndTime);
+
 // Calculate age from DOB
 function calculateAge(dob: Date): number | string {
   const birthDate = new Date(dob);
