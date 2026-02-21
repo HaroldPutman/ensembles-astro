@@ -35,6 +35,30 @@ import { Icon } from 'astro-icon/components';
       </div>
     </section>
 
+    <!-- Current Show -->
+    <section class="current-show-section">
+      <h2>Upcoming Show</h2>
+      <div class="show-card">
+        <div class="show-badge">Call for Art</div>
+        <h3>Once Upon a Time</h3>
+        <p>
+          A benefit art show for the Charlestown Public Library children's
+          section. Artists are invited to create a piece that pays tribute to a
+          favorite childhood book.
+        </p>
+        <div class="show-dates">
+          <span
+            ><Icon name="mdi:calendar" width="16" height="16" /> June 29 – September
+            12</span
+          >
+        </div>
+        <a href="/art-gallery/once-upon-a-time" class="show-link">
+          Learn More & Apply
+          <Icon name="mdi:arrow-right" width="18" height="18" />
+        </a>
+      </div>
+    </section>
+
     <!-- Features Section -->
     <section class="features-section">
       <h2>What We Offer</h2>
@@ -109,30 +133,6 @@ import { Icon } from 'astro-icon/components';
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Current Show -->
-    <section class="current-show-section">
-      <h2>Upcoming Show</h2>
-      <div class="show-card">
-        <div class="show-badge">Call for Art</div>
-        <h3>Once Upon a Time</h3>
-        <p>
-          A benefit art show for the Charlestown Public Library children's
-          section. Artists are invited to create a piece that pays tribute to a
-          favorite childhood book.
-        </p>
-        <div class="show-dates">
-          <span
-            ><Icon name="mdi:calendar" width="16" height="16" /> June 29 – September
-            12</span
-          >
-        </div>
-        <a href="/art-gallery/once-upon-a-time" class="show-link">
-          Learn More & Apply
-          <Icon name="mdi:arrow-right" width="18" height="18" />
-        </a>
       </div>
     </section>
 
@@ -385,7 +385,7 @@ import { Icon } from 'astro-icon/components';
     text-decoration: none;
     font-weight: 600;
     transition:
-      background 0.2s,
+      background-color 0.2s,
       transform 0.2s;
   }
 
