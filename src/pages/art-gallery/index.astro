@@ -1,7 +1,7 @@
 ---
 export const prerender = true;
 
-import Layout from '../layouts/Layout.astro';
+import Layout from '../../layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 ---
 
@@ -21,16 +21,41 @@ import { Icon } from 'astro-icon/components';
         </div>
         <h2>About the Gallery</h2>
         <p>
-          The Deanne Moore Art Gallery is a community art space dedicated to showcasing 
-          the work of local artists and providing a venue for creative expression. Located 
-          within the Ensembles facility, the gallery serves as both an exhibition space 
-          and a gathering place for art enthusiasts of all ages.
+          The Deanne Moore Art Gallery is a community art space dedicated to
+          showcasing the work of local artists and providing a venue for
+          creative expression. Located within the Ensembles facility, the
+          gallery serves as both an exhibition space and a gathering place for
+          art enthusiasts of all ages.
         </p>
         <p>
-          Named in honor of Deanne Moore, a beloved member of our community and passionate 
-          advocate for the arts, the gallery continues her legacy of making art accessible 
-          to everyone.
+          Named in honor of Deanne Moore, a beloved member of our community and
+          passionate advocate for the arts, the gallery continues her legacy of
+          making art accessible to everyone.
         </p>
+      </div>
+    </section>
+
+    <!-- Current Show -->
+    <section class="current-show-section">
+      <h2>Upcoming Show</h2>
+      <div class="show-card">
+        <div class="show-badge">Call for Art</div>
+        <h3>Once Upon a Time</h3>
+        <p>
+          A benefit art show for the Charlestown Public Library children's
+          section. Artists are invited to create a piece that pays tribute to a
+          favorite childhood book.
+        </p>
+        <div class="show-dates">
+          <span
+            ><Icon name="mdi:calendar" width="16" height="16" /> June 29 – September
+            12</span
+          >
+        </div>
+        <a href="/art-gallery/once-upon-a-time" class="show-link">
+          Learn More & Apply
+          <Icon name="mdi:arrow-right" width="18" height="18" />
+        </a>
       </div>
     </section>
 
@@ -43,28 +68,40 @@ import { Icon } from 'astro-icon/components';
             <Icon name="mdi:image-multiple" width="32" height="32" />
           </div>
           <h3>Rotating Exhibitions</h3>
-          <p>We host regular exhibitions featuring works from local and regional artists across various mediums.</p>
+          <p>
+            We host regular exhibitions featuring works from local and regional
+            artists across various mediums.
+          </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">
             <Icon name="mdi:account-group" width="32" height="32" />
           </div>
           <h3>Artist Receptions</h3>
-          <p>Join us for opening receptions where you can meet the artists and learn about their creative process.</p>
+          <p>
+            Join us for opening receptions where you can meet the artists and
+            learn about their creative process.
+          </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">
             <Icon name="mdi:brush" width="32" height="32" />
           </div>
           <h3>Art Events</h3>
-          <p>From paint-pouring parties to art workshops, we host events that bring creativity to life.</p>
+          <p>
+            From paint-pouring parties to art workshops, we host events that
+            bring creativity to life.
+          </p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">
             <Icon name="mdi:shopping" width="32" height="32" />
           </div>
           <h3>Art Sales</h3>
-          <p>Many works on display are available for purchase, with all proceeds supporting our artists.</p>
+          <p>
+            Many works on display are available for purchase, with all proceeds
+            supporting our artists.
+          </p>
         </div>
       </div>
     </section>
@@ -102,13 +139,17 @@ import { Icon } from 'astro-icon/components';
     <!-- CTA Section -->
     <section class="cta-section">
       <h2>Get Involved</h2>
-      <p>Interested in exhibiting your work or hosting an event at the gallery?</p>
+      <p>
+        Interested in exhibiting your work or hosting an event at the gallery?
+      </p>
       <div class="cta-buttons">
         <a href="/contact" class="btn btn-primary">
           Contact Us
           <Icon name="mdi:arrow-right" width="20" height="20" />
         </a>
-        <a href="/activities?kind=event" class="btn btn-secondary">View Upcoming Events</a>
+        <a href="/activities?kind=event" class="btn btn-secondary"
+          >View Upcoming Events</a
+        >
       </div>
     </section>
   </div>
@@ -192,7 +233,9 @@ import { Icon } from 'astro-icon/components';
     background: #fafafa;
     border-radius: 12px;
     padding: 1.5rem;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   .feature-card:hover {
@@ -268,6 +311,87 @@ import { Icon } from 'astro-icon/components';
     margin: 0;
     color: #666;
     line-height: 1.5;
+  }
+
+  /* Current Show Section */
+  .current-show-section {
+    margin-bottom: 3rem;
+  }
+
+  .current-show-section h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .show-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
+    border: 1px solid #fcd34d;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .show-badge {
+    display: inline-block;
+    background: #92400e;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  .show-card h3 {
+    font-size: 1.5rem;
+    margin: 0 0 0.75rem;
+    color: #78350f;
+  }
+
+  .show-card > p {
+    color: #92400e;
+    margin: 0 0 1rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .show-dates {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    color: #92400e;
+  }
+
+  .show-dates span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .show-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #92400e;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition:
+      background-color 0.2s,
+      transform 0.2s;
+  }
+
+  .show-link:hover {
+    background: #78350f;
+    transform: translateY(-2px);
   }
 
   /* CTA Section */
