@@ -1,0 +1,452 @@
+---
+export const prerender = true;
+
+import Layout from '../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+---
+
+<Layout title="Once Upon a Time - Art Show Call for Participation">
+  <div class="show-page">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-badge">Call for Art</div>
+      <h1 class="visually-hidden">Once Upon a Time</h1>
+      <img src="/image/once-upon-a-time-title.png" alt="" class="hero-image" />
+      <p class="subtitle">
+        A benefit art show for the Charlestown Public Library
+      </p>
+    </section>
+
+    <!-- Introduction -->
+    <section class="intro-section">
+      <p class="intro-text">
+        Ensembles is sending out a public call for entries for a special show to
+        benefit the Charlestown Public Library children's section. Artists of
+        all ages are invited to create a piece of art that paying tribute to one
+        of their favorite books from childhood.
+      </p>
+    </section>
+
+    <!-- Important Dates -->
+    <section class="dates-section">
+      <h2>
+        <Icon name="mdi:calendar-star" width="28" height="28" />
+        Important Dates
+      </h2>
+      <div class="dates-grid">
+        <div class="date-card">
+          <div class="date-icon">
+            <Icon name="mdi:file-document-edit" width="24" height="24" />
+          </div>
+          <div class="date-content">
+            <h3>Application Due</h3>
+            <p class="date">April 10th</p>
+            <p class="date-detail">Initial application and artist statements</p>
+          </div>
+        </div>
+        <div class="date-card">
+          <div class="date-icon">
+            <Icon name="mdi:truck-delivery" width="24" height="24" />
+          </div>
+          <div class="date-content">
+            <h3>Art Drop-off</h3>
+            <p class="date">June 27th</p>
+            <p class="date-detail">
+              9 AM – 3 PM or by appointment @ 1120 Monroe Street, Charlestown
+            </p>
+          </div>
+        </div>
+        <div class="date-card">
+          <div class="date-icon">
+            <Icon name="mdi:image-frame" width="24" height="24" />
+          </div>
+          <div class="date-content">
+            <h3>Show Runs</h3>
+            <p class="date">June 29th – September 12th</p>
+            <p class="date-detail">
+              On display at the Deanne Moore Art Gallery
+            </p>
+          </div>
+        </div>
+        <div class="date-card">
+          <div class="date-icon">
+            <Icon name="mdi:glass-wine" width="24" height="24" />
+          </div>
+          <div class="date-content">
+            <h3>Opening Reception</h3>
+            <p class="date">July 10th</p>
+            <p class="date-detail">Public opening event</p>
+          </div>
+        </div>
+        <div class="date-card featured">
+          <div class="date-icon">
+            <Icon name="mdi:door-open" width="24" height="24" />
+          </div>
+          <div class="date-content">
+            <h3>Public Open House Week</h3>
+            <p class="date">July 20th – 24th</p>
+            <p class="date-detail">12:00 PM – 8:00 PM daily</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Guidelines -->
+    <section class="guidelines-section">
+      <h2>
+        <Icon name="mdi:clipboard-check" width="28" height="28" />
+        Guidelines
+      </h2>
+      <ul class="guidelines-list">
+        <li>
+          <Icon name="mdi:check-circle" width="20" height="20" />
+          <span
+            >All pieces must be <strong>ready to hang on the wall</strong> when brought
+            to Ensembles</span
+          >
+        </li>
+        <li>
+          <Icon name="mdi:check-circle" width="20" height="20" />
+          <span
+            >While this is a juried show, we encourage <strong
+              >artists of all ages and experience levels</strong
+            > to participate</span
+          >
+        </li>
+        <li>
+          <Icon name="mdi:check-circle" width="20" height="20" />
+          <span
+            >We ask artists to consider <strong>donating their piece</strong> and
+            listing a price for sale. All proceeds for this show will go toward the
+            Charlestown Public Library children's department. <em
+              >(This is not a requirement and artists may label art NFS)</em
+            ></span
+          >
+        </li>
+        <li>
+          <Icon name="mdi:check-circle" width="20" height="20" />
+          <span><strong>Size requirements:</strong> 8×10" to 24×48"</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact-section">
+      <h2>Questions?</h2>
+      <p>
+        For more information about this show, please contact: <span
+          >Kim Bowen <a class="nowrap" href="tel:812-679-2622">(812) 679-2622</a
+          >
+          <span class="contact-note">call or text</span></span>
+      </p>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <p>Ready to participate?</p>
+      <a
+        href="https://docs.google.com/forms/d/e/1FAIpQLSc2tpKZZnYd48MjNOlULiUSHEwPYHRPdAlqvBybo21EvV2_gA/viewform?usp=publish-editor"
+        class="btn btn-primary"
+      >
+        Submit Your Application
+        <Icon name="mdi:arrow-right" width="20" height="20" />
+      </a>
+      <a href="/art-gallery" class="btn btn-secondary">
+        Learn About the Gallery
+      </a>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .show-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+  }
+
+  /* Hero Section */
+  .hero {
+    text-align: center;
+    padding: 3rem 1rem 0 1rem;
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+  }
+
+  .hero-badge {
+    display: block;
+    width: fit-content;
+    margin: 0 auto 1rem;
+    background: #2c2e2f;
+    color: white;
+    padding: 0.375rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .hero-image {
+    max-width: 100%;
+    height: auto;
+    max-height: 200px;
+    margin-bottom: 0.75rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    color: #3c3c3c;
+    font-style: italic;
+    margin: 0;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* Introduction */
+  .intro-section {
+    text-align: center;
+    padding: 2rem 0;
+    margin: 0 auto;
+  }
+
+  .intro-text {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: #444;
+    margin: 0 0 1rem;
+    text-align: left;
+  }
+
+  /* Dates Section */
+  .dates-section {
+    margin-bottom: 3rem;
+  }
+
+  .dates-section h2,
+  .guidelines-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem;
+    color: #1a1a1a;
+  }
+
+  .dates-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .date-card {
+    display: flex;
+    gap: 1rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .date-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .date-card.featured {
+    background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
+    border: 1px solid #fcd34d;
+  }
+
+  .date-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    background: #2c2e2f;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .date-card.featured .date-icon {
+    background: #92400e;
+  }
+
+  .date-content h3 {
+    margin: 0 0 0.25rem;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .date-content .date {
+    margin: 0 0 0.25rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  .date-content .date-detail {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.4;
+  }
+
+  /* Guidelines Section */
+  .guidelines-section {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .guidelines-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .guidelines-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  .guidelines-list li svg {
+    flex-shrink: 0;
+    color: #059669;
+    margin-top: 0.2rem;
+  }
+
+  .guidelines-list li em {
+    color: #666;
+  }
+
+  /* Contact Section */
+  .contact-section {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .contact-section h2 {
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .contact-section > p {
+    color: #666;
+    margin: 0 0 1.5rem;
+  }
+
+  .contact-note {
+    font-size: 0.9rem;
+    color: #888;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
+
+  /* CTA Section */
+  .cta-section {
+    text-align: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #2c2e2f 0%, #1a1a1a 100%);
+    border-radius: 12px;
+    color: white;
+  }
+
+  .cta-section p {
+    margin: 0 0 1.25rem;
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    margin: 0.25rem;
+  }
+
+  .btn-primary {
+    background: #f59e0b;
+    color: #1a1a1a;
+  }
+
+  .btn-primary:hover {
+    background: #fbbf24;
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 640px) {
+    .hero-badge {
+      font-size: 0.75rem;
+    }
+
+    .hero {
+      padding: 2rem 0 0 0;
+    }
+
+    .date-card {
+      padding: 1rem 0.8rem;
+    }
+
+    .guidelines-section {
+      padding: 1.5rem 0.8rem;
+    }
+
+    .cta-section {
+      padding: 1.5rem 0.8rem;
+    }
+
+    .cta-section .btn {
+      width: 100%;
+      display: flex;
+      margin: 0.5rem 0;
+    }
+  }
+</style>
