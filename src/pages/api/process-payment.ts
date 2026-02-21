@@ -41,7 +41,6 @@ export const POST: APIRoute = async ({ request }) => {
       voucherId,
     } = body;
 
-
     // Validate required fields
     if (
       !registrationIds ||
@@ -132,7 +131,6 @@ export const POST: APIRoute = async ({ request }) => {
           [registrationIds]
         );
 
-
         if (registrationsResult.rows.length !== registrationIds.length) {
           await client.query('ROLLBACK');
           return new Response(
@@ -160,15 +158,12 @@ export const POST: APIRoute = async ({ request }) => {
         let expectedTotal = subtotal;
         let voucherInfo: VoucherInfo | undefined;
 
-
         // If a voucher is applied, subtract the discount from expected total
         if (voucherId) {
-
           const voucherResult = await client.query(
             `SELECT code, percentage, amount, applies_to, description FROM voucher WHERE id = $1`,
             [voucherId]
           );
-
 
           if (voucherResult.rows.length > 0) {
             const voucher = voucherResult.rows[0];
@@ -176,7 +171,6 @@ export const POST: APIRoute = async ({ request }) => {
 
             // If applies_to is set, only apply discount to matching activity kinds
             if (voucher.applies_to) {
-
               // Get activities collection to check activity kinds
               const activities = await getCollection('activities');
               const activitiesMap = new Map();
@@ -268,8 +262,6 @@ export const POST: APIRoute = async ({ request }) => {
             expectedTotal
           );
         }
-
-
 
         if (Math.abs(expectedTotal - totalAmount) > 0.01) {
           await client.query('ROLLBACK');
@@ -384,7 +376,8 @@ export const POST: APIRoute = async ({ request }) => {
             const registrationItems: RegistrationItem[] =
               registrationsResult.rows.map(row => {
                 const activityName =
-                  activitiesMap.get(row.activity?.toLowerCase()) || row.activity;
+                  activitiesMap.get(row.activity?.toLowerCase()) ||
+                  row.activity;
                 return {
                   studentName: '', // Will be populated below
                   activityName,

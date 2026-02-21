@@ -8,7 +8,7 @@ export const shorthands = undefined;
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const up = (pgm) => {
+export const up = pgm => {
   pgm.createTable('voucher', {
     id: 'id',
     code: {
@@ -73,10 +73,11 @@ export const up = (pgm) => {
 
   // Add index on code for faster lookups
   pgm.createIndex('voucher', 'code');
-  
+
   // Add check constraint to ensure either percentage or amount is set, but not both
   pgm.addConstraint('voucher', 'voucher_discount_check', {
-    check: '(percentage IS NOT NULL AND amount IS NULL) OR (percentage IS NULL AND amount IS NOT NULL)',
+    check:
+      '(percentage IS NOT NULL AND amount IS NULL) OR (percentage IS NULL AND amount IS NOT NULL)',
   });
 };
 
@@ -85,6 +86,6 @@ export const up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const down = (pgm) => {
+export const down = pgm => {
   pgm.dropTable('voucher');
 };

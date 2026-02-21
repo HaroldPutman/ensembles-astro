@@ -189,7 +189,8 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         if (Temporal.ZonedDateTime.compare(firstDate, now) <= 0) continue;
 
         // Filter by day of week if specified
-        if (filterDayOfWeek && firstDate.dayOfWeek !== filterDayOfWeek) continue;
+        if (filterDayOfWeek && firstDate.dayOfWeek !== filterDayOfWeek)
+          continue;
 
         classActivities.push({
           id: activity.id,
@@ -224,7 +225,10 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     }
 
     const activityIds = classActivities.map(a => a.id);
-    console.log(`Found ${classActivities.length} upcoming classes:`, activityIds);
+    console.log(
+      `Found ${classActivities.length} upcoming classes:`,
+      activityIds
+    );
 
     // Query registrations for these classes
     const pool = getPool();
@@ -285,9 +289,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
           hour12: true,
         });
 
-        const referenceDate = new Date(
-          activity.firstDate.epochMilliseconds
-        );
+        const referenceDate = new Date(activity.firstDate.epochMilliseconds);
         const students = regs.map(reg => ({
           name: `${reg.student_firstname} ${reg.student_lastname}`,
           age: reg.student_dob
@@ -315,7 +317,9 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
 
           const instructor = instructorMap.get(instructorId);
           if (!instructor) {
-            console.warn(`Instructor ${instructorId} not found or has no email`);
+            console.warn(
+              `Instructor ${instructorId} not found or has no email`
+            );
             continue;
           }
 
@@ -347,9 +351,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
         );
       }
 
-      console.log(
-        `Sending rosters to ${rostersByInstructor.size} instructors`
-      );
+      console.log(`Sending rosters to ${rostersByInstructor.size} instructors`);
 
       // Send roster emails in batches to improve throughput
       const BATCH_SIZE = 5;

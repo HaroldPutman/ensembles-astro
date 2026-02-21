@@ -8,10 +8,10 @@ dotenv.config();
 
 const files = [
   {
-    'plaintext': 'collections/instructors-private.json', 
-    'encrypted': 'mango-pasta.crypt'
+    plaintext: 'collections/instructors-private.json',
+    encrypted: 'mango-pasta.crypt',
   },
-]
+];
 
 // Encryption settings
 const algorithm = 'aes-256-gcm'; // Algorithm to use (authenticated encryption)
@@ -23,7 +23,13 @@ const authTagLength = 16; // Auth tag length for GCM
 // Function to derive a key from a passphrase and salt
 function deriveKey(password, salt) {
   // Derive the key using PBKDF2
-  const key = crypto.pbkdf2Sync(password, salt, iterations, keyLength, 'sha256');
+  const key = crypto.pbkdf2Sync(
+    password,
+    salt,
+    iterations,
+    keyLength,
+    'sha256'
+  );
   return key;
 }
 
@@ -36,10 +42,18 @@ function encryptFile(plainTextFilePath, cryptFilePath, password) {
     const key = deriveKey(password, salt);
     const fileData = fs.readFileSync(plainTextFilePath);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
-    const encryptedData = Buffer.concat([cipher.update(fileData), cipher.final()]);
+    const encryptedData = Buffer.concat([
+      cipher.update(fileData),
+      cipher.final(),
+    ]);
     const authTag = cipher.getAuthTag();
-    fs.writeFileSync(cryptFilePath, Buffer.concat([salt, iv, encryptedData, authTag]));
-    console.log(`File ${plainTextFilePath} encrypted successfully to ${cryptFilePath}`);
+    fs.writeFileSync(
+      cryptFilePath,
+      Buffer.concat([salt, iv, encryptedData, authTag])
+    );
+    console.log(
+      `File ${plainTextFilePath} encrypted successfully to ${cryptFilePath}`
+    );
   } catch (error) {
     console.error('Error during encryption:', error.message);
     throw error;
@@ -54,11 +68,17 @@ function decryptFile(cryptFilePath, plainTextFilePath, password) {
     const salt = fileData.subarray(0, 16);
     const iv = fileData.subarray(16, 16 + ivLength);
     const authTag = fileData.subarray(fileData.length - authTagLength);
-    const encryptedData = fileData.subarray(16 + ivLength, fileData.length - authTagLength);
+    const encryptedData = fileData.subarray(
+      16 + ivLength,
+      fileData.length - authTagLength
+    );
     const key = deriveKey(password, salt);
     const decipher = crypto.createDecipheriv(algorithm, key, iv);
     decipher.setAuthTag(authTag);
-    const decryptedData = Buffer.concat([decipher.update(encryptedData), decipher.final()]);
+    const decryptedData = Buffer.concat([
+      decipher.update(encryptedData),
+      decipher.final(),
+    ]);
     fs.writeFileSync(plainTextFilePath, decryptedData);
     // Set the mtime of the plainTextFile to match the cryptFile's mtime
     try {
@@ -67,25 +87,32 @@ function decryptFile(cryptFilePath, plainTextFilePath, password) {
     } catch (err) {
       console.warn(`Warning: Failed to set mtime: ${err.message}`);
     }
-    console.log(`File ${cryptFilePath} decrypted successfully to ${plainTextFilePath}`);
+    console.log(
+      `File ${cryptFilePath} decrypted successfully to ${plainTextFilePath}`
+    );
   } catch (error) {
     console.error('Error during decryption:', error.message);
     throw error;
   }
 }
 
-
 const password = process.env.GIT_CRYPT_KEY;
 if (!password) {
-  console.error('Error: GIT_CRYPT_KEY is not set. Aborting encryption/decryption.');
+  console.error(
+    'Error: GIT_CRYPT_KEY is not set. Aborting encryption/decryption.'
+  );
   process.exit(1);
 }
 
 if (process.argv[2] === 'unlock') {
   files.forEach(file => {
     // Check if plaintext file exists and is newer than the encrypted file
-    const fsStat = (path) => {
-      try { return fs.statSync(path); } catch { return null; }
+    const fsStat = path => {
+      try {
+        return fs.statSync(path);
+      } catch {
+        return null;
+      }
     };
 
     const plainStats = fsStat(file.plaintext);
@@ -96,27 +123,30 @@ if (process.argv[2] === 'unlock') {
     }
 
     if (
-      plainStats && encryptedStats &&
+      plainStats &&
+      encryptedStats &&
       plainStats.mtime > encryptedStats.mtime
     ) {
-      console.error(`Error: It looks like '${file.plaintext}' has been modified. Run 'npm run lock' to encrypt it first.`);
+      console.error(
+        `Error: It looks like '${file.plaintext}' has been modified. Run 'npm run lock' to encrypt it first.`
+      );
       process.exit(1);
     }
 
     decryptFile(file.encrypted, file.plaintext, password);
   });
 } else if (process.argv[2] === 'clean') {
-    // Remove the plaintext files
-    files.forEach(file => {
-     try {
-       fs.unlinkSync(file.plaintext);
-     } catch (err) {
-       if (err.code !== 'ENOENT') {
-         throw err;
-       }
+  // Remove the plaintext files
+  files.forEach(file => {
+    try {
+      fs.unlinkSync(file.plaintext);
+    } catch (err) {
+      if (err.code !== 'ENOENT') {
+        throw err;
       }
-       // File doesn't exist, nothing to clean
-    });
+    }
+    // File doesn't exist, nothing to clean
+  });
 } else {
   files.forEach(file => {
     encryptFile(file.plaintext, file.encrypted, password);

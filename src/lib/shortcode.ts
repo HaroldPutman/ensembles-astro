@@ -2,10 +2,34 @@
  * List of inappropriate substrings to avoid in generated codes
  */
 const FORBIDDEN_SUBSTRINGS = [
-  'ASS', 'FAG', 'GAY', 'FUX', 'FUK', 'FCK', 'KKK', 'CUM', 
-  'JEW', 'SEX', 'JAP', 'WOP', 'DIK', 'DIE', 'COK', 'KOK',
-  'TIT', 'VAG', 'PUS', 'SHT', 'DMN', 'HEL', 'NIG', 'RAP',
-  'FKN', 'WTF', 'OMG', 'GOD'
+  'ASS',
+  'FAG',
+  'GAY',
+  'FUX',
+  'FUK',
+  'FCK',
+  'KKK',
+  'CUM',
+  'JEW',
+  'SEX',
+  'JAP',
+  'WOP',
+  'DIK',
+  'DIE',
+  'COK',
+  'KOK',
+  'TIT',
+  'VAG',
+  'PUS',
+  'SHT',
+  'DMN',
+  'HEL',
+  'NIG',
+  'RAP',
+  'FKN',
+  'WTF',
+  'OMG',
+  'GOD',
 ];
 
 /**
@@ -33,22 +57,23 @@ export function generateShortCode(): string {
     // Take last 3 chars from timestamp + 3 random chars
     const timestampPart = timestamp.slice(startPosition, startPosition + 3);
     let randomPart = '';
-    
+
     for (let i = 0; i < 3; i++) {
       randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    
+
     const code = timestampPart + randomPart;
-    
+
     // Check if code is acceptable
     if (!containsForbiddenString(code)) {
       return code;
     }
-    
+
     // If forbidden, move start position backwards
-    startPosition = startPosition === 0 ? timestamp.length - 3 : startPosition - 1;
+    startPosition =
+      startPosition === 0 ? timestamp.length - 3 : startPosition - 1;
   }
-  
+
   // Fallback: if we somehow can't generate a clean code after many attempts,
   // just return a code with numbers only (very unlikely to be offensive)
   let fallback = '';
@@ -72,4 +97,3 @@ export function formatShortCode(code: string): string {
 export function cleanShortCode(code: string): string {
   return code.replace(/[^A-Z0-9]/gi, '').toUpperCase();
 }
-

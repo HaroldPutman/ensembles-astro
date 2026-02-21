@@ -169,7 +169,9 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
                   ${generateRegistrationsHtml(data.registrations)}
                 </tbody>
                 <tfoot>
-                  ${data.voucher ? `
+                  ${
+                    data.voucher
+                      ? `
                   <tr>
                     <td style="padding: 12px; font-family: ${fontStack};">Subtotal</td>
                     <td style="padding: 12px; text-align: right; font-family: ${fontStack};">${formatCurrency(data.subtotal)}</td>
@@ -181,7 +183,9 @@ function generateEmailHtml(data: PaymentConfirmationData): string {
                     </td>
                     <td style="padding: 12px; text-align: right; font-family: ${fontStack};">-${formatCurrency(data.voucher.discountAmount)}</td>
                   </tr>
-                  ` : ''}
+                  `
+                      : ''
+                  }
                   <tr style="background: #f8f9fa;">
                     <td style="padding: 12px; font-weight: bold; font-family: ${fontStack};">Total</td>
                     <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 1.2em; color: #2c3e50; font-family: ${fontStack};">${formatCurrency(data.totalAmount)}</td>
@@ -306,10 +310,14 @@ Your registration has been confirmed. Here's a summary of your enrollment:
 REGISTRATION DETAILS
 --------------------
 ${registrationsList}
-${data.voucher ? `
+${
+  data.voucher
+    ? `
 Subtotal: ${formatCurrency(data.subtotal)}
 Voucher: -${formatCurrency(data.voucher.discountAmount)}${data.voucher.description ? ` - ${data.voucher.description}` : ''}
-` : ''}
+`
+    : ''
+}
 Total: ${formatCurrency(data.totalAmount)}
 
 Status: ${paymentStatus}

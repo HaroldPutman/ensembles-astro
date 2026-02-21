@@ -178,7 +178,8 @@ export const POST: APIRoute = async ({ request }) => {
       );
     } catch (error: unknown) {
       console.error('Error validating voucher:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       const errorCode = (error as any)?.code || 'UNKNOWN';
 
       // Try to clean up the connection if it exists
@@ -207,7 +208,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
   } catch (error) {
     console.error('Error in validate-voucher API:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
 
     return new Response(
       JSON.stringify({
@@ -224,4 +226,3 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 };
-

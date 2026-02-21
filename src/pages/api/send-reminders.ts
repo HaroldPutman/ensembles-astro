@@ -130,7 +130,10 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
           });
         }
       } catch (e) {
-        console.warn(`Could not calculate first date for activity ${activity.id}:`, e);
+        console.warn(
+          `Could not calculate first date for activity ${activity.id}:`,
+          e
+        );
       }
     }
 
@@ -149,7 +152,10 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     }
 
     const activityIds = upcomingActivities.map(a => a.id);
-    console.log(`Found ${upcomingActivities.length} upcoming activities:`, activityIds);
+    console.log(
+      `Found ${upcomingActivities.length} upcoming activities:`,
+      activityIds
+    );
 
     // Query registrations that haven't been reminded yet
     const pool = getPool();
@@ -216,7 +222,8 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
           reminderGroups.set(key, {
             activity,
             contactId: row.contact_id,
-            contactName: `${row.contact_firstname} ${row.contact_lastname || ''}`.trim(),
+            contactName:
+              `${row.contact_firstname} ${row.contact_lastname || ''}`.trim(),
             contactEmail: row.contact_email,
             participants: [],
           });
@@ -264,7 +271,9 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
 
         if (dryRun) {
           emailResult.success = true;
-          console.log(`[DRY RUN] Would send reminder to ${group.contactEmail} for ${group.activity.name}`);
+          console.log(
+            `[DRY RUN] Would send reminder to ${group.contactEmail} for ${group.activity.name}`
+          );
         } else {
           // Send the email
           const sendResult = await sendClassReminderEmail({
@@ -284,12 +293,16 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
 
           if (sendResult.success) {
             // Update reminded_at for all registrations in this group
-            const registrationIds = group.participants.map(p => p.registrationId);
+            const registrationIds = group.participants.map(
+              p => p.registrationId
+            );
             await client.query(
               `UPDATE registration SET reminded_at = NOW() WHERE id = ANY($1)`,
               [registrationIds]
             );
-            console.log(`Updated reminded_at for registrations: ${registrationIds.join(', ')}`);
+            console.log(
+              `Updated reminded_at for registrations: ${registrationIds.join(', ')}`
+            );
           }
         }
 
@@ -322,7 +335,8 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to send reminders',
+        error:
+          error instanceof Error ? error.message : 'Failed to send reminders',
       }),
       {
         status: 500,
@@ -331,4 +345,3 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     );
   }
 };
-

@@ -7,20 +7,33 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function testConnection() {
-  const connectionString = process.env.DATABASE_URL || process.env.DATABASE_URL_PROD;
-  
+  const connectionString =
+    process.env.DATABASE_URL || process.env.DATABASE_URL_PROD;
+
   if (!connectionString) {
-    console.error('❌ No DATABASE_URL or DATABASE_URL_PROD environment variable found');
-    console.log('\nTo test your connection, set one of these environment variables:');
-    console.log('  export DATABASE_URL="postgresql://username:password@host:port/database"');
-    console.log('  export DATABASE_URL_PROD="postgresql://username:password@host:port/database"');
+    console.error(
+      '❌ No DATABASE_URL or DATABASE_URL_PROD environment variable found'
+    );
+    console.log(
+      '\nTo test your connection, set one of these environment variables:'
+    );
+    console.log(
+      '  export DATABASE_URL="postgresql://username:password@host:port/database"'
+    );
+    console.log(
+      '  export DATABASE_URL_PROD="postgresql://username:password@host:port/database"'
+    );
     console.log('\nOr create a .env file with:');
-    console.log('  DATABASE_URL=postgresql://username:password@host:port/database');
+    console.log(
+      '  DATABASE_URL=postgresql://username:password@host:port/database'
+    );
     process.exit(1);
   }
 
   console.log('🔍 Testing database connection...');
-  console.log(`📍 Connection string: ${connectionString.replace(/:[^:@]+@/, ':***@')}`); // Hide password
+  console.log(
+    `📍 Connection string: ${connectionString.replace(/:[^:@]+@/, ':***@')}`
+  ); // Hide password
 
   const pool = new Pool({
     connectionString: connectionString,
@@ -32,10 +45,14 @@ async function testConnection() {
     console.log('✅ Successfully connected to database!');
 
     // Test a simple query
-    const result = await client.query('SELECT NOW() as current_time, version() as db_version');
+    const result = await client.query(
+      'SELECT NOW() as current_time, version() as db_version'
+    );
     console.log('📊 Database info:');
     console.log(`   Current time: ${result.rows[0].current_time}`);
-    console.log(`   Version: ${result.rows[0].db_version.split(' ')[0]} ${result.rows[0].db_version.split(' ')[1]}`);
+    console.log(
+      `   Version: ${result.rows[0].db_version.split(' ')[0]} ${result.rows[0].db_version.split(' ')[1]}`
+    );
 
     // Test if our tables exist
     const tablesResult = await client.query(`
@@ -44,7 +61,7 @@ async function testConnection() {
       WHERE table_schema = 'public' 
       ORDER BY table_name
     `);
-    
+
     if (tablesResult.rows.length > 0) {
       console.log('📋 Existing tables:');
       tablesResult.rows.forEach(row => {
@@ -56,15 +73,14 @@ async function testConnection() {
 
     client.release();
     console.log('🎉 Database connection test completed successfully!');
-    
   } catch (error) {
     console.error('❌ Database connection failed:');
     console.error(`   Error: ${error.message}`);
-    
+
     if (error.code) {
       console.error(`   Code: ${error.code}`);
     }
-    
+
     // Provide helpful error messages
     if (error.code === 'ECONNREFUSED') {
       console.log('\n💡 This usually means:');
@@ -80,7 +96,7 @@ async function testConnection() {
       console.log('   - Database does not exist');
       console.log('   - Wrong database name in connection string');
     }
-    
+
     process.exit(1);
   } finally {
     await pool.end();

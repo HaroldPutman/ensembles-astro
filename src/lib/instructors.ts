@@ -1,6 +1,6 @@
 /**
  * Utilities for working with instructor data.
- * 
+ *
  * PII (email, phone) is stored separately in collections/instructors-private.json
  * and merged at runtime. This keeps sensitive data encrypted via git-crypt
  * while keeping the MDX files clean and readable.
@@ -27,8 +27,8 @@ export type InstructorWithPII = CollectionEntry<'instructors'> & {
  */
 export async function getInstructorsWithPII(): Promise<InstructorWithPII[]> {
   const instructors = await getCollection('instructors');
-  
-  return instructors.map((instructor) => ({
+
+  return instructors.map(instructor => ({
     ...instructor,
     pii: typedPrivateData[instructor.id] || {},
   }));
@@ -37,9 +37,11 @@ export async function getInstructorsWithPII(): Promise<InstructorWithPII[]> {
 /**
  * Get active instructors only, with PII merged in.
  */
-export async function getActiveInstructorsWithPII(): Promise<InstructorWithPII[]> {
+export async function getActiveInstructorsWithPII(): Promise<
+  InstructorWithPII[]
+> {
   const instructors = await getInstructorsWithPII();
-  return instructors.filter((i) => i.data.active);
+  return instructors.filter(i => i.data.active);
 }
 
 /**
@@ -49,21 +51,24 @@ export async function getInstructorWithPII(
   id: string
 ): Promise<InstructorWithPII | undefined> {
   const instructors = await getInstructorsWithPII();
-  return instructors.find((i) => i.id === id);
+  return instructors.find(i => i.id === id);
 }
 
 /**
  * Get instructors without PII (for public-facing pages).
  */
-export async function getInstructors(): Promise<CollectionEntry<'instructors'>[]> {
+export async function getInstructors(): Promise<
+  CollectionEntry<'instructors'>[]
+> {
   return getCollection('instructors');
 }
 
 /**
  * Get active instructors without PII.
  */
-export async function getActiveInstructors(): Promise<CollectionEntry<'instructors'>[]> {
+export async function getActiveInstructors(): Promise<
+  CollectionEntry<'instructors'>[]
+> {
   const instructors = await getCollection('instructors');
-  return instructors.filter((i) => i.data.active);
+  return instructors.filter(i => i.data.active);
 }
-

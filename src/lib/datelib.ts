@@ -128,9 +128,9 @@ function rewriteExdate(repeat: string, iCalStartTime: string) {
   const rruleString = repeat.replace(
     /;?EXDATE=([\d/,]+)(;|$)/,
     (_wholeMatch, dates: string, terminator: string) => {
-      const dateMatches = Array.from(dates.matchAll(
-        /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})/g
-      ));
+      const dateMatches = Array.from(
+        dates.matchAll(/(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})/g)
+      );
       for (const dateMatch of dateMatches) {
         const [_, month, day, year] = dateMatch;
         exDates.push(
@@ -163,13 +163,17 @@ function rewriteRdate(repeat: string, iCalStartTime: string) {
     /* Match an RDATE spec without validating */
     /;?RDATE=([\d\/@:,]+)(;|\n|$)/,
     (_wholeMatch, dates: string, terminator: string) => {
-      const dateMatches = Array.from(dates.matchAll(
-        /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})(?:@(0?[1-9]|1[0-9]|2[0-3]):([0-5][0-9]))?/g
-      ));
+      const dateMatches = Array.from(
+        dates.matchAll(
+          /(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})(?:@(0?[1-9]|1[0-9]|2[0-3]):([0-5][0-9]))?/g
+        )
+      );
       for (const dateMatch of dateMatches) {
         const [_, month, day, year, hour, minute] = dateMatch;
         // Use compact HHMMSS format (same as makeICalTime) for consistency with EXDATE
-        const time = hour ? `${hour.padStart(2, '0')}${minute.padStart(2, '0')}00` : iCalStartTime;
+        const time = hour
+          ? `${hour.padStart(2, '0')}${minute.padStart(2, '0')}00`
+          : iCalStartTime;
         rdates.push(
           `${year}${month.padStart(2, '0')}${day.padStart(2, '0')}T${time}`
         );
@@ -414,9 +418,9 @@ export function shortDescription(
   }
   const endDateString = lastDate
     ? lastDate.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    })
+        month: 'short',
+        day: 'numeric',
+      })
     : '';
 
   // Calculate end time by adding duration to first date

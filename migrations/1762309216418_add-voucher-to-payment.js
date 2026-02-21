@@ -8,10 +8,10 @@ export const shorthands = undefined;
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const up = (pgm) => {
-    pgm.addColumn('payment', {
-        voucher_id: { type: 'integer', references: 'voucher' },
-    });
+export const up = pgm => {
+  pgm.addColumn('payment', {
+    voucher_id: { type: 'integer', references: 'voucher' },
+  });
 };
 
 /**
@@ -19,6 +19,6 @@ export const up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-export const down = (pgm) => {
-    pgm.dropColumn('payment', 'voucher_id');
+export const down = pgm => {
+  pgm.dropColumn('payment', 'voucher_id');
 };

@@ -4,7 +4,7 @@ position: Director
 image: /profile/shavonne.jpg
 ---
 
-Shavonne was raised on music in Charlestown. Throughout middle and high school, music was 
+Shavonne was raised on music in Charlestown. Throughout middle and high school, music was
 her place to escape and grow. She now hopes she can share that community and expression with
 others.
 

@@ -81,7 +81,10 @@ async function getActivityStatus(
   try {
     // Get activities collection to find sizeMax for each activity
     const activities = await getCollection('activities');
-    const activitiesMap = new Map<string, { sizeMax: number | undefined; kind: string }>();
+    const activitiesMap = new Map<
+      string,
+      { sizeMax: number | undefined; kind: string }
+    >();
 
     activities.forEach(activity => {
       activitiesMap.set(activity.id.toLowerCase(), {
@@ -108,9 +111,8 @@ async function getActivityStatus(
         const sizeMax = activity?.sizeMax ?? null;
         const kind = activity?.kind ?? 'class';
         const isFull = sizeMax !== null && registeredCount >= sizeMax;
-        const spotsRemaining = sizeMax !== null
-          ? Math.max(0, sizeMax - registeredCount)
-          : null;
+        const spotsRemaining =
+          sizeMax !== null ? Math.max(0, sizeMax - registeredCount) : null;
 
         return {
           activityId,
