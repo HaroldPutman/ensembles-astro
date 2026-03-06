@@ -90,8 +90,8 @@ const upcomingActivities = activities
     return { activity, firstDate, lastDate };
   })
   .filter(({ activity, lastDate, firstDate }) => {
-    // If it's a class or camp, only include if the firstDate is in the future
-    if (activity.data.kind === 'class' || activity.data.kind === 'camp') {
+    // If it's a class, only include if the firstDate is in the future
+    if (activity.data.kind === 'class') {
       return Temporal.ZonedDateTime.compare(firstDate, now) > 0;
     }
     // Otherwise: allow if lastDate is still upcoming
@@ -99,8 +99,7 @@ const upcomingActivities = activities
   });
 
 const upcomingClasses = upcomingActivities.filter(
-  ({ activity }) =>
-    activity.data.kind === 'class' || activity.data.kind === 'camp'
+  ({ activity }) => activity.data.kind === 'class'
 );
 
 // Group activities by day of week

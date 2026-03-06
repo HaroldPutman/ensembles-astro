@@ -30,6 +30,9 @@ const [firstDate, lastDate, count, deviationNote] = getFirstAndLastDates(
   repeat
 );
 
+// Check if this is a daily frequency (for camps)
+const isDaily = repeat.includes('FREQ=DAILY');
+
 const startDateString = firstDate.toLocaleString('en-US', {
   month: 'short',
   day: 'numeric',
@@ -44,9 +47,7 @@ const firstDateEndTimeString = firstDateEndTime.toLocaleString('en-US', {
   timeStyle: 'short',
 });
 let adjStartTimeString = startTimeString;
-if (
-  startTimeString.slice(-3) === firstDateEndTimeString.slice(-3)
-) {
+if (startTimeString.slice(-3) === firstDateEndTimeString.slice(-3)) {
   adjStartTimeString = startTimeString.slice(0, -3);
 }
 const endDateString = lastDate
@@ -55,6 +56,25 @@ const endDateString = lastDate
       day: 'numeric',
     })
   : '';
+
+// For daily camps, determine if it spans weekdays only or includes weekend
+const getScheduleDescription = () => {
+  if (!isDaily || !lastDate || !count) return `${dayOfWeek}s`;
+
+  const startDay = firstDate.dayOfWeek; // 1=Mon, 7=Sun
+  const endDay = lastDate.dayOfWeek;
+
+  // Simple 5-day Mon-Fri camp
+  if (count === 5 && startDay === 1 && endDay === 5) {
+    return 'Mon - Fri';
+  }
+  // Simple weekday camp starting on Monday
+  if (startDay === 1 && endDay <= 5 && count <= 5) {
+    return 'Mon - Fri';
+  }
+
+  return 'Daily';
+};
 ---
 
 <div class:list={['activity-datetime', className]}>
@@ -67,18 +87,14 @@ const endDateString = lastDate
     ) : (
       <>
         <p class="time-line">
-          <Icon name="mdi:access-time" /> {dayOfWeek}s {adjStartTimeString} -{' '}
-          {firstDateEndTimeString}
+          <Icon name="mdi:access-time" /> {getScheduleDescription()}{' '}
+          {adjStartTimeString} - {firstDateEndTimeString}
         </p>
         <p class="date-line">
           <Icon name="mdi:calendar-repeat" /> {startDateString} -{' '}
           {endDateString}
         </p>
-        {deviationNote && (
-          <p class="exception-line">
-            {deviationNote}
-          </p>
-        )}
+        {deviationNote && <p class="exception-line">{deviationNote}</p>}
       </>
     )
   }
