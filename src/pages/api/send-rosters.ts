@@ -67,8 +67,8 @@ const DAY_CODE_MAP: Record<string, number> = {
 /**
  * GET /api/send-rosters
  *
- * Sends roster emails to instructors for their classes.
- * Only includes classes with kind === 'class'.
+ * Sends roster emails to instructors for their classes and camps.
+ * Only includes activities with kind === 'class' or 'camp'.
  *
  * Authentication: Requires either:
  *   - A valid Clerk session (for browser-based calls)
@@ -138,7 +138,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
   );
 
   try {
-    // Get all activities with kind === 'class'
+    // Get all activities with kind === 'class' or 'camp'
     const allActivities = await getCollection('activities');
     const now = Temporal.Now.zonedDateTimeISO('America/Louisville');
 
@@ -159,12 +159,13 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
       }
     }
 
-    // Filter activities: kind === 'class' and upcoming (first date in future)
+    // Filter activities: kind === 'class' or 'camp' and upcoming (first date in future)
     const classActivities: ActivityData[] = [];
 
     for (const activity of allActivities) {
-      // Only include classes
-      if (activity.data.kind !== 'class') continue;
+      // Only include classes and camps
+      if (activity.data.kind !== 'class' && activity.data.kind !== 'camp')
+        continue;
 
       // If class param specified, only include that class
       if (classParam && activity.id !== classParam) continue;

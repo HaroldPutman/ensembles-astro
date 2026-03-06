@@ -14,6 +14,7 @@ export default defineConfig({
 
   redirects: {
     '/classes': '/activities?kind=class',
+    '/camps': '/activities?kind=camp',
     '/contact-us': '/contact',
     '/mission': '/about',
     '/events': '/activities?kind=event',

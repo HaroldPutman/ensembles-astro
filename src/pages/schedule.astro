@@ -25,14 +25,14 @@ const dayOrder = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 function parseTimeToMinutes(timeStr: string): number {
   const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(am|pm)?$/i);
   if (!match) return 0;
-  
+
   let hours = parseInt(match[1], 10);
   const minutes = match[2] ? parseInt(match[2], 10) : 0;
   const meridiem = match[3]?.toLowerCase();
-  
+
   if (meridiem === 'pm' && hours !== 12) hours += 12;
   if (meridiem === 'am' && hours === 12) hours = 0;
-  
+
   return hours * 60 + minutes;
 }
 
@@ -40,15 +40,16 @@ function parseTimeToMinutes(timeStr: string): number {
 function formatTime(timeStr: string): string {
   const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(am|pm)?$/i);
   if (!match) return timeStr;
-  
+
   let hours = parseInt(match[1], 10);
   const minutes = match[2] ? parseInt(match[2], 10) : 0;
-  const meridiem = match[3]?.toLowerCase() || (hours >= 12 ? 'pm' : 'am');
-  
+  //TODO: why is this not used?
+  //  const meridiem = match[3]?.toLowerCase() || (hours >= 12 ? 'pm' : 'am');
+
   // Convert to 12-hour format if needed
   if (hours > 12) hours -= 12;
   if (hours === 0) hours = 12;
-  
+
   if (minutes === 0) {
     return `${hours}:00`;
   }
@@ -79,7 +80,7 @@ function getDayCode(repeat?: string): string | null {
 // Filter to upcoming activities only and compute dates
 const now = Temporal.Now.zonedDateTimeISO('America/New_York');
 const upcomingActivities = activities
-  .map((activity) => {
+  .map(activity => {
     const [firstDate, lastDate] = getFirstAndLastDates(
       activity.data.startDate,
       activity.data.startTime,
@@ -97,8 +98,9 @@ const upcomingActivities = activities
     return Temporal.ZonedDateTime.compare(lastDate, now) > 0;
   });
 
-const upcomingClasses = upcomingActivities.filter(({ activity }) => activity.data.kind === 'class');
-
+const upcomingClasses = upcomingActivities.filter(
+  ({ activity }) => activity.data.kind === 'class'
+);
 
 // Group activities by day of week
 const activitiesByDay = new Map<string, typeof upcomingActivities>();
@@ -106,7 +108,7 @@ const activitiesByDay = new Map<string, typeof upcomingActivities>();
 for (const item of upcomingActivities) {
   const dayCode = getDayCode(item.activity.data.repeat);
   if (!dayCode) continue;
-  
+
   if (!activitiesByDay.has(dayCode)) {
     activitiesByDay.set(dayCode, []);
   }
@@ -114,7 +116,7 @@ for (const item of upcomingActivities) {
 }
 
 // Sort activities within each day by time
-for (const [dayCode, items] of activitiesByDay) {
+for (const [, items] of activitiesByDay) {
   items.sort((a, b) => {
     const timeA = parseTimeToMinutes(a.activity.data.startTime);
     const timeB = parseTimeToMinutes(b.activity.data.startTime);
@@ -130,7 +132,10 @@ let earliestDate: Temporal.ZonedDateTime | null = null;
 let latestDate: Temporal.ZonedDateTime | null = null;
 
 for (const { firstDate, lastDate } of upcomingClasses) {
-  if (!earliestDate || Temporal.ZonedDateTime.compare(firstDate, earliestDate) < 0) {
+  if (
+    !earliestDate ||
+    Temporal.ZonedDateTime.compare(firstDate, earliestDate) < 0
+  ) {
     earliestDate = firstDate;
   }
   if (!latestDate || Temporal.ZonedDateTime.compare(lastDate, latestDate) > 0) {
@@ -138,16 +143,21 @@ for (const { firstDate, lastDate } of upcomingClasses) {
   }
 }
 
-const dateRangeStr = earliestDate && latestDate
-  ? `${earliestDate.toPlainDate().toLocaleString('en-US', { month: 'long', day: 'numeric' })} - ${latestDate.toPlainDate().toLocaleString('en-US', { month: 'short', day: 'numeric' })}`
-  : '';
+const dateRangeStr =
+  earliestDate && latestDate
+    ? `${earliestDate.toPlainDate().toLocaleString('en-US', { month: 'long', day: 'numeric' })} - ${latestDate.toPlainDate().toLocaleString('en-US', { month: 'short', day: 'numeric' })}`
+    : '';
 ---
 
 <Layout title="Ensembles - Weekly Schedule">
   <div class="schedule-page">
     <header class="schedule-header">
-        <h1>Weekly Schedule</h1>
-      <img src="/image/ensembles-black-logo.svg" alt="Ensembles Black Logo" class="print-logo" />
+      <h1>Weekly Schedule</h1>
+      <img
+        src="/image/ensembles-black-logo.svg"
+        alt="Ensembles Black Logo"
+        class="print-logo"
+      />
       <p class="intro">
         Join us at Ensembles for a six week session of group lessons.
         {dateRangeStr && <strong>{dateRangeStr}</strong>}
@@ -157,33 +167,49 @@ const dateRangeStr = earliestDate && latestDate
     </header>
 
     <div class="schedule-content">
-      {sortedDays.map((dayCode) => {
-        const dayActivities = activitiesByDay.get(dayCode)!;
-        return (
-          <section class="day-section">
-            <h2 class="day-header">{dayCodeToName[dayCode]}</h2>
-            <ul class="activity-list">
-              {dayActivities.map(({ activity }) => (
-                <li class="activity-item">
-                  <span class="time">{formatTime(activity.data.startTime)}</span>
-                  <a href={`/activities/${activity.id}`} class="activity-link">
-                    {activity.data.name}
-                    <span class="age-range">{formatAgeRange(activity.data.ageMin, activity.data.ageMax)}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+      {
+        sortedDays.map(dayCode => {
+          const dayActivities = activitiesByDay.get(dayCode)!;
+          return (
+            <section class="day-section">
+              <h2 class="day-header">{dayCodeToName[dayCode]}</h2>
+              <ul class="activity-list">
+                {dayActivities.map(({ activity }) => (
+                  <li class="activity-item">
+                    <span class="time">
+                      {formatTime(activity.data.startTime)}
+                    </span>
+                    <a
+                      href={`/activities/${activity.id}`}
+                      class="activity-link"
+                    >
+                      {activity.data.name}
+                      <span class="age-range">
+                        {formatAgeRange(
+                          activity.data.ageMin,
+                          activity.data.ageMax
+                        )}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })
+      }
     </div>
 
     <footer class="schedule-footer">
-        <p>Register today at:</p>
-        <img src="/image/schedule-qr-code.png" alt="Schedule QR Code" class="schedule-qr-code" />
-        <div>
-          <a href="/activities" class="register-link">CharlestownEnsembles.com</a>
-        </div>
+      <p>Register today at:</p>
+      <img
+        src="/image/schedule-qr-code.png"
+        alt="Schedule QR Code"
+        class="schedule-qr-code"
+      />
+      <div>
+        <a href="/activities" class="register-link">CharlestownEnsembles.com</a>
+      </div>
     </footer>
   </div>
 </Layout>
@@ -273,7 +299,7 @@ const dateRangeStr = earliestDate && latestDate
   }
 
   .schedule-footer {
-    display:none;
+    display: none;
     text-align: center;
     padding-top: 1rem;
     border-top: 1px solid #eee;
