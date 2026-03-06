@@ -68,10 +68,12 @@ const getScheduleDescription = () => {
   if (count === 5 && startDay === 1 && endDay === 5) {
     return 'Mon - Fri';
   }
-  // Simple weekday camp starting on Monday
-  if (startDay === 1 && endDay <= 5 && count <= 5) {
+  // Simple 5-day Mon-Fri camp
+  if (count === 5 && startDay === 1 && endDay === 5) {
     return 'Mon - Fri';
   }
+
+  return 'Daily';
 
   return 'Daily';
 };
