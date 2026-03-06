@@ -12,10 +12,16 @@ interface Props {
 const { activityId, kind, sizeMax, startTimestamp } = Astro.props;
 
 // Cache this server island response for up to 15 minutes
-Astro.response.headers.set('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=60');
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=900, s-maxage=900, stale-while-revalidate=60'
+);
 
-// Check if class has already started
-const hasStarted = kind === 'class' && startTimestamp && startTimestamp < Date.now();
+// Check if class/camp has already started
+const hasStarted =
+  (kind === 'class' || kind === 'camp') &&
+  startTimestamp &&
+  startTimestamp < Date.now();
 
 // Fetch registration count from database
 let registeredCount = 0;
@@ -40,41 +46,44 @@ if (!hasStarted) {
 // If no sizeMax, there's no capacity limit
 const hasCapacity = sizeMax !== undefined && sizeMax > 0;
 const isFull = hasCapacity && registeredCount >= sizeMax;
-const spotsRemaining = hasCapacity ? Math.max(0, sizeMax - registeredCount) : null;
-const isLow = spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <= 3;
+const spotsRemaining = hasCapacity
+  ? Math.max(0, sizeMax - registeredCount)
+  : null;
+const isLow =
+  spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <= 3;
 ---
 
 <>
-  {hasStarted ? (
-    <div class="activity-started-message">
-      This class has already started and is no longer open for registration.
-    </div>
-  ) : error ? (
-    <>
-      <div class="error-message">
-        Sorry, we couldn't check the status of this {kind}
+  {
+    hasStarted ? (
+      <div class="activity-started-message">
+        This class has already started and is no longer open for registration.
       </div>
-      <slot />
-    </>
-  ) : (
-    <>
-      {isLow && (
-        <p class="spots-low-message">
-          <Icon name="mdi:alert" width="20" height="20" /> Only {spotsRemaining} spot{spotsRemaining === 1 ? '' : 's'} left!
-        </p>
-      )}
-      
-      {isFull ? (
-        <div class="activity-full-message">
-          Sorry, this {kind} is full
+    ) : error ? (
+      <>
+        <div class="error-message">
+          Sorry, we couldn't check the status of this {kind}
         </div>
-      ) : (
         <slot />
-      )}
-    </>
-  )}
-</>
+      </>
+    ) : (
+      <>
+        {isLow && (
+          <p class="spots-low-message">
+            <Icon name="mdi:alert" width="20" height="20" /> Only{' '}
+            {spotsRemaining} spot{spotsRemaining === 1 ? '' : 's'} left!
+          </p>
+        )}
 
+        {isFull ? (
+          <div class="activity-full-message">Sorry, this {kind} is full</div>
+        ) : (
+          <slot />
+        )}
+      </>
+    )
+  }
+</>
 
 <style>
   .error-message {
@@ -137,4 +146,3 @@ const isLow = spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining <=
     border-radius: var(--radius-button);
   }
 </style>
-

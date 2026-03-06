@@ -12,7 +12,7 @@ const activities = await getCollection('activities');
 
 // Compute firstDate for each activity and sort by it
 const sortedActivities = activities
-  .map((activity) => {
+  .map(activity => {
     const [firstDate] = getFirstAndLastDates(
       activity.data.startDate,
       activity.data.startTime,
@@ -25,9 +25,10 @@ const sortedActivities = activities
   .map(({ activity }) => activity);
 ---
 
-
 <FullWidthLayout title="Ensembles - Activities">
-  {/* Hidden icon sprite definitions - prevents symbols from being removed with cards */}
+  {
+    /* Hidden icon sprite definitions - prevents symbols from being removed with cards */
+  }
   <div class="icon-sprites" aria-hidden="true">
     <Icon name="mdi:calendar" width="16" height="16" />
     <Icon name="mdi:access-time" width="16" height="16" />
@@ -36,13 +37,14 @@ const sortedActivities = activities
 
   <section class="activities-section">
     <h1 id="page-title">Activities</h1>
-      <details class="activity-group">
-        <summary>
-          <span class="summary-text">Current</span>
-          <span class="summary-count current">--</span>
-        </summary>
-        <div class="activities-grid current">
-          {sortedActivities.map((activity) => (
+    <details class="activity-group">
+      <summary>
+        <span class="summary-text">Current</span>
+        <span class="summary-count current">--</span>
+      </summary>
+      <div class="activities-grid current">
+        {
+          sortedActivities.map(activity => (
             <ActivityCard
               activityId={activity.id}
               name={activity.data.name}
@@ -59,20 +61,28 @@ const sortedActivities = activities
               kind={activity.data.kind}
               hasRegistration={activity.data.hasRegistration}
             />
-          ))}
-        </div>
-      </details>
+          ))
+        }
+      </div>
+    </details>
 
-      <details class="activity-group" open>
-        <summary>
-          <span class="summary-text">Upcoming</span>
-          <span class="summary-count upcoming">--</span>
-        </summary>
-        <div class="activities-grid upcoming">
-          <p class="placeholder">Check back soon for upcoming <span class="kind-word">activities</span>, or <a href="/activities" class="show-all-link">Show all activities</a>.</p>
-        </div>
-      </details>
-      <a href="/activities" id="show-all-link" class="show-all-link" hidden>Show all activities &rarr;</a>
+    <details class="activity-group" open>
+      <summary>
+        <span class="summary-text">Upcoming</span>
+        <span class="summary-count upcoming">--</span>
+      </summary>
+      <div class="activities-grid upcoming">
+        <p class="placeholder">
+          Check back soon for upcoming <span class="kind-word">activities</span
+          >, or <a href="/activities" class="show-all-link"
+            >Show all activities</a
+          >.
+        </p>
+      </div>
+    </details>
+    <a href="/activities" id="show-all-link" class="show-all-link" hidden
+      >Show all activities &rarr;</a
+    >
   </section>
 </FullWidthLayout>
 
@@ -241,6 +251,7 @@ const sortedActivities = activities
         class: 'Classes',
         group: 'Groups',
         event: 'Events',
+        camp: 'Camps',
       };
       if (pageTitle && kindTitles[kindFilter]) {
         pageTitle.textContent = kindTitles[kindFilter];
@@ -325,10 +336,12 @@ const sortedActivities = activities
     if (activityIds.length === 0) return;
 
     try {
-      const url = '/api/activity-status?' + activityIds.map(id => 'id=' + encodeURIComponent(id)).join('&');
+      const url =
+        '/api/activity-status?' +
+        activityIds.map(id => 'id=' + encodeURIComponent(id)).join('&');
       const response = await fetch(url, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' },
+        headers: { Accept: 'application/json' },
       });
 
       if (!response.ok) return;
@@ -341,7 +354,9 @@ const sortedActivities = activities
         if (!card) return;
 
         const registerBtn = card.querySelector('.register-btn') as HTMLElement;
-        const statusEl = card.querySelector('.registration-status') as HTMLElement;
+        const statusEl = card.querySelector(
+          '.registration-status'
+        ) as HTMLElement;
 
         if (status.isFull) {
           // Activity is full - hide register button and show message
@@ -352,7 +367,10 @@ const sortedActivities = activities
             statusEl.textContent = `Sorry, this ${status.kind} is full`;
             statusEl.style.color = '#991b1b';
           }
-        } else if (status.spotsRemaining !== null && status.spotsRemaining <= 3) {
+        } else if (
+          status.spotsRemaining !== null &&
+          status.spotsRemaining <= 3
+        ) {
           // Low spots - show warning
           if (statusEl) {
             statusEl.textContent = `Only ${status.spotsRemaining} spot${status.spotsRemaining === 1 ? '' : 's'} left!`;
@@ -370,4 +388,5 @@ const sortedActivities = activities
     const upcomingIds = categorizeActivities();
     await updateRegistrationStatus(upcomingIds);
   });
-</script> 
+</script>
+

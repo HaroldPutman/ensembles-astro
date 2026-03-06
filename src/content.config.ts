@@ -48,7 +48,7 @@ const activities = defineCollection({
       ),
     repeat: z.string().optional().default(''),
     cost: z.number().optional(),
-    kind: z.enum(['class', 'group', 'event']),
+    kind: z.enum(['class', 'group', 'event', 'camp']),
     ageMin: z.number().optional(),
     ageMax: z.union([z.number().int().min(0), z.literal('adult')]).optional(),
     sizeMax: z.number().optional(),

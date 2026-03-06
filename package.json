@@ -34,7 +34,7 @@
     "astro-icon": "^1.1.5",
     "dayjs": "^1.11.13",
     "dotenv": "^17.2.3",
-    "rrule-temporal": "^1.2.0",
+    "rrule-temporal": "^1.4.7",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
