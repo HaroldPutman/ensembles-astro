@@ -39,7 +39,7 @@
         "npm:pg@^8.16.0",
         "npm:prettier-plugin-astro@~0.14.1",
         "npm:prettier@^3.6.2",
-        "npm:rrule-temporal@^1.2.0",
+        "npm:rrule-temporal@^1.4.7",
         "npm:ts-jest@^29.4.0",
         "npm:tslib@^2.8.1"
       ]
