@@ -22,11 +22,12 @@ We should also flag the registrations as payment_pending_at.
 
 These are specs on images used on the site
 
-| Context    | Dimensions        | Naming convention                         |
-| ---------- | ----------------- | ----------------------------------------- |
-| Hero       | 900x1200          | \*                                        |
-| Secondary  | 900x1200, 960x720 | \*                                        |
-| Activities | 960x420           | 4-5 character matching activity id prefix |
+| Context    | Dimensions        | Naming convention        |
+| ---------- | ----------------- | ------------------------ |
+| Hero       | 900x1200          | \*                       |
+| Secondary  | 900x1200, 960x720 | \*                       |
+| Activities | 960x420           | match activity id prefix |
+| Instructor | 320x320           | lastname-first.jpg       |
 
 ## Instructor PII
 
