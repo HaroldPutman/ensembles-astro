@@ -12,6 +12,8 @@ import {
   buildRRuleString,
   makeICalDuration,
   getDayOfWeek,
+  mergeActivityScheduleDates,
+  normalizeAdditionalDates,
 } from '../../lib/datelib';
 import { getInstructors } from '../../lib/instructors';
 
@@ -53,18 +55,25 @@ function getAllDates(
   return rruleTemporal.all((_dt, i) => i < 100); // Limit to 100 occurrences
 }
 
-const allDates = getAllDates(
+const rruleDates = getAllDates(
   activity.data.startDate,
   activity.data.startTime,
   activity.data.duration,
   activity.data.repeat
 );
 
-// Get the first date as a timestamp for status checking
-const startTimestamp =
-  allDates.length > 0 ? allDates[0].epochMilliseconds : undefined;
-
 const durationISO = makeICalDuration(activity.data.duration);
+const allOccurrences = mergeActivityScheduleDates(
+  rruleDates,
+  durationISO,
+  normalizeAdditionalDates(activity.data.additionalDates)
+);
+
+// Earliest session (RRULE or additional) for status checking
+const startTimestamp =
+  allOccurrences.length > 0
+    ? allOccurrences[0]!.start.epochMilliseconds
+    : undefined;
 
 const ageRange = formatAgeRange(activity.data.ageMin, activity.data.ageMax);
 
@@ -114,10 +123,10 @@ function getKindLabel(kind: string) {
             {formatCost(activity.data.cost)}
           </span>
           {
-            allDates.length > 1 && (
+            allOccurrences.length > 1 && (
               <span class="meta-item">
                 <Icon name="mdi:clock-outline" width="18" height="18" />
-                {allDates.length} sessions
+                {allOccurrences.length} sessions
               </span>
             )
           }
@@ -197,8 +206,9 @@ function getKindLabel(kind: string) {
         </h2>
         <div class="schedule-list">
           {
-            allDates.map(date => {
-              const endTime = date.add(Temporal.Duration.from(durationISO));
+            allOccurrences.map(occ => {
+              const { start: date, durationISO: occDurationISO } = occ;
+              const endTime = date.add(Temporal.Duration.from(occDurationISO));
               const isPast =
                 Temporal.ZonedDateTime.compare(
                   date,

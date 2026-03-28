@@ -12,6 +12,7 @@ interface Props {
   startTime: string;
   duration: string;
   repeat: string;
+  additionalDates?: string[];
   ageMin?: number;
   ageMax?: number | 'adult';
   cost?: number;
@@ -21,9 +22,29 @@ interface Props {
   hasRegistration?: boolean;
 }
 
-const { activityId, name, startDate, startTime, duration, repeat, ageMin, ageMax, cost, instructors, image, kind, hasRegistration } = Astro.props;
+const {
+  activityId,
+  name,
+  startDate,
+  startTime,
+  duration,
+  repeat,
+  additionalDates,
+  ageMin,
+  ageMax,
+  cost,
+  instructors,
+  image,
+  kind,
+  hasRegistration,
+} = Astro.props;
 
-const [firstDate, lastDate] = getFirstAndLastDates(startDate, startTime, duration, repeat);
+const [firstDate, lastDate] = getFirstAndLastDates(
+  startDate,
+  startTime,
+  duration,
+  repeat
+);
 if (!firstDate) {
   console.error('Missing firstDate for activity:', activityId);
   return null; // render nothing.
@@ -31,56 +52,81 @@ if (!firstDate) {
 
 // Look up instructor names from the collection
 const allInstructors = await getInstructors();
-const instructorMap = new Map(allInstructors.map(i => [i.id, { name: i.data.name, id: i.id }]));
-const instructorData = instructors?.map(id => instructorMap.get(id) ?? { name: id, id }) ?? [];
+const instructorMap = new Map(
+  allInstructors.map(i => [i.id, { name: i.data.name, id: i.id }])
+);
+const instructorData =
+  instructors?.map(id => instructorMap.get(id) ?? { name: id, id }) ?? [];
 ---
 
 <article
   id={activityId}
-  class:list={["activity-card", `kind-${kind}`]}
+  class:list={['activity-card', `kind-${kind}`]}
   data-start={Math.floor(firstDate.epochMilliseconds / 1000)}
-  data-end={lastDate ? Math.floor(lastDate.epochMilliseconds / 1000) : Math.floor(firstDate.epochMilliseconds / 1000)}
+  data-end={lastDate
+    ? Math.floor(lastDate.epochMilliseconds / 1000)
+    : Math.floor(firstDate.epochMilliseconds / 1000)}
   data-kind={kind}
 >
   <a href={`/activities/${activityId}`} class="card-link">
     <div class="activity-image">
-      <img src={image ?? "/activity/placeholder.jpg"} alt={name} />
+      <img src={image ?? '/activity/placeholder.jpg'} alt={name} />
     </div>
     <div class="activity-header">
       <h2>{name}</h2>
     </div>
-  </a> 
+  </a>
   <div class="activity-content">
     <div class="activity-details">
-      <ActivityDateTime startDate={startDate} startTime={startTime} duration={duration} repeat={repeat} />
-      {instructorData.length > 0 && (
-        <p class="instructors">
-          <strong>Instructor:</strong>{' '}
-          {instructorData.map((inst, i) => (
-            <>
-              <a href={`/instructors/${inst.id}`} class="instructor-link">{inst.name}</a>{i < instructorData.length - 1 ? ', ' : ''}
-            </>
-          ))}
-        </p>
-      )}
+      <ActivityDateTime
+        startDate={startDate}
+        startTime={startTime}
+        duration={duration}
+        repeat={repeat}
+        additionalDates={additionalDates}
+      />
+      {
+        instructorData.length > 0 && (
+          <p class="instructors">
+            <strong>Instructor:</strong>{' '}
+            {instructorData.map((inst, i) => (
+              <>
+                <a href={`/instructors/${inst.id}`} class="instructor-link">
+                  {inst.name}
+                </a>
+                {i < instructorData.length - 1 ? ', ' : ''}
+              </>
+            ))}
+          </p>
+        )
+      }
       <p class="age-range">
-        <strong>Ages:</strong> {formatAgeRange(ageMin, ageMax)}
+        <strong>Ages:</strong>
+        {formatAgeRange(ageMin, ageMax)}
       </p>
-      {cost !== undefined && (
-        <p class="cost">
-          <strong>Cost:</strong> {cost === 0 ? 'Free' : `$${cost}`}
-        </p>
-      )}
+      {
+        cost !== undefined && (
+          <p class="cost">
+            <strong>Cost:</strong> {cost === 0 ? 'Free' : `$${cost}`}
+          </p>
+        )
+      }
     </div>
 
     <div class="card-actions">
-      <a href={`/activities/${activityId}`} class="details-btn oswald-cta">View Details</a>
-      {hasRegistration && (
-        <>
-          <a href={`/register/${activityId}`} class="register-btn oswald-cta">Register Now</a>
-          <p class="registration-status"></p>
-        </>
-      )}
+      <a href={`/activities/${activityId}`} class="details-btn oswald-cta"
+        >View Details</a
+      >
+      {
+        hasRegistration && (
+          <>
+            <a href={`/register/${activityId}`} class="register-btn oswald-cta">
+              Register Now
+            </a>
+            <p class="registration-status" />
+          </>
+        )
+      }
     </div>
   </div>
 </article>
@@ -108,7 +154,9 @@ const instructorData = instructors?.map(id => instructorMap.get(id) ?? { name: i
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
     height: 100%;
   }
 
@@ -233,5 +281,4 @@ const instructorData = instructors?.map(id => instructorMap.get(id) ?? { name: i
     margin: 0;
     font-style: italic;
   }
-
 </style>

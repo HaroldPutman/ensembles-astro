@@ -53,6 +53,7 @@ const sortedActivities = activities
               startTime={activity.data.startTime}
               duration={activity.data.duration}
               repeat={activity.data.repeat}
+              additionalDates={activity.data.additionalDates}
               ageMin={activity.data.ageMin}
               ageMax={activity.data.ageMax}
               cost={activity.data.cost}
@@ -389,4 +390,3 @@ const sortedActivities = activities
     await updateRegistrationStatus(upcomingIds);
   });
 </script>
-

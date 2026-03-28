@@ -3,6 +3,7 @@ import { defineCollection, z } from 'astro:content';
 
 // 2. Import loader(s)
 import { glob } from 'astro/loaders';
+import { parseAdditionalDateSpec } from './lib/datelib';
 
 // 3. Define your collection(s)
 const board = defineCollection({
@@ -47,6 +48,29 @@ const activities = defineCollection({
         })
       ),
     repeat: z.string().optional().default(''),
+    additionalDates: z
+      .union([z.string(), z.array(z.string())])
+      .optional()
+      .transform(v => {
+        if (v === undefined) return [];
+        return Array.isArray(v) ? v : [v];
+      })
+      .pipe(
+        z.array(z.string()).superRefine((arr, ctx) => {
+          for (let i = 0; i < arr.length; i++) {
+            try {
+              parseAdditionalDateSpec(arr[i]);
+            } catch {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message:
+                  'additionalDates must be M/D/YYYY@h:mm am/pm+duration, e.g. 4/29/2026@10:00AM+4h',
+                path: [i],
+              });
+            }
+          }
+        })
+      ),
     cost: z.number().optional(),
     kind: z.enum(['class', 'group', 'event', 'camp']),
     ageMin: z.number().optional(),

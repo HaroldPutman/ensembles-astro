@@ -161,7 +161,7 @@ function rewriteRdate(repeat: string, iCalStartTime: string) {
   const rdates: string[] = []; // dates found in the RDATE spec
   const rruleString = repeat.replace(
     /* Match an RDATE spec without validating */
-    /;?RDATE=([\d\/@:,]+)(;|\n|$)/,
+    /;?RDATE=([\d/@:,]+)(;|\n|$)/,
     (_wholeMatch, dates: string, terminator: string) => {
       const dateMatches = Array.from(
         dates.matchAll(
@@ -323,6 +323,80 @@ export function getFirstAndLastDates(
   }
 }
 
+/** One row on the activity detail schedule (RRULE or additional date). */
+export type ScheduleOccurrence = {
+  start: Temporal.ZonedDateTime;
+  durationISO: string;
+};
+
+const ADDITIONAL_DATE_SPEC_RE =
+  /^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})@(0?[1-9]|1[0-2]):([0-5][0-9])\s*(am|pm)\+(.+)$/i;
+
+/**
+ * Parse `M/D/YYYY@h:mm am/pm+duration` (Louisville). Duration uses the same rules as {@link makeICalDuration}.
+ */
+export function parseAdditionalDateSpec(spec: string): {
+  start: Temporal.ZonedDateTime;
+  durationISO: string;
+} {
+  const m = spec.trim().match(ADDITIONAL_DATE_SPEC_RE);
+  if (!m) {
+    throw new Error(`Invalid additionalDates spec: ${spec}`);
+  }
+  const [, month, day, year, hour, minute, ampm, durPart] = m;
+  const timeForICal = `${hour}:${minute} ${ampm.toUpperCase()}`;
+  const durationISO = makeICalDuration(durPart.trim());
+  const { hour: h, minute: min } = getHourAndMinute(timeForICal);
+  const plainDate = Temporal.PlainDate.from({
+    year: Number(year),
+    month: Number(month),
+    day: Number(day),
+  });
+  const plainTime = Temporal.PlainTime.from({ hour: h, minute: min });
+  const start = plainDate.toZonedDateTime({
+    plainTime,
+    timeZone: 'America/Louisville',
+  });
+  return { start, durationISO };
+}
+
+export function normalizeAdditionalDates(
+  value: string | string[] | undefined
+): string[] {
+  if (value === undefined) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+/**
+ * RRULE occurrences (shared duration) plus discrete additional dates, sorted by start; drops duplicate start instants.
+ */
+export function mergeActivityScheduleDates(
+  rruleDates: Temporal.ZonedDateTime[],
+  rruleDurationISO: string,
+  additionalSpecs: string[]
+): ScheduleOccurrence[] {
+  const fromRrule: ScheduleOccurrence[] = rruleDates.map(start => ({
+    start,
+    durationISO: rruleDurationISO,
+  }));
+  const fromAdditional: ScheduleOccurrence[] = additionalSpecs.map(spec => {
+    const parsed = parseAdditionalDateSpec(spec);
+    return { start: parsed.start, durationISO: parsed.durationISO };
+  });
+  const merged = [...fromRrule, ...fromAdditional].sort((a, b) =>
+    Temporal.ZonedDateTime.compare(a.start, b.start)
+  );
+  const deduped: ScheduleOccurrence[] = [];
+  let prevMs: number | undefined;
+  for (const occ of merged) {
+    const ms = occ.start.epochMilliseconds;
+    if (prevMs === ms) continue;
+    prevMs = ms;
+    deduped.push(occ);
+  }
+  return deduped;
+}
+
 /**
  * Get the day of the week from a date string
  * @param dtstring - The date string to get the day of the week from (RFC 9557 format)
@@ -340,43 +414,6 @@ export function getDayOfWeek(date: Temporal.ZonedDateTime) {
     'Sunday',
   ];
   return dayNames[date.dayOfWeek];
-}
-
-function getDayOfWeekFullName(byDay: string) {
-  const dayMap: Record<string, string> = {
-    MO: 'Monday',
-    TU: 'Tuesday',
-    WE: 'Wednesday',
-    TH: 'Thursday',
-    FR: 'Friday',
-    SA: 'Saturday',
-    SU: 'Sunday',
-  };
-  return dayMap[byDay] || byDay;
-}
-
-/**
- * Get the human-readable description of the byDay string, or the day of the week
- * the event starts on.
- * @param byDay - The byDay string (Array or comma-separated string)
- * @param dtstart - The start date of the event
- * @returns A day of the week string "Thursday or "Thursday and Friday"
- */
-function getBydayDescription(
-  byDay: string | string[] | undefined,
-  dtstart: Temporal.ZonedDateTime
-) {
-  if (byDay) {
-    const byDayArray = Array.isArray(byDay) ? byDay : byDay.split(',');
-    const names = byDayArray.map(getDayOfWeekFullName);
-    const tail = names.pop();
-    if (names.length > 0) {
-      return names.join(', ') + ` and ${tail}`;
-    } else {
-      return tail;
-    }
-  }
-  return getDayOfWeek(dtstart);
 }
 
 /**

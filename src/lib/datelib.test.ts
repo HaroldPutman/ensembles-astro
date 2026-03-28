@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill';
 import {
   makeICalDate,
   makeICalTime,
@@ -5,6 +6,9 @@ import {
   shortDescription,
   makeICalRRule,
   getFirstAndLastDates,
+  parseAdditionalDateSpec,
+  normalizeAdditionalDates,
+  mergeActivityScheduleDates,
 } from './datelib';
 
 describe('datelib', () => {
@@ -299,6 +303,84 @@ describe('datelib', () => {
         );
         expect(deviationNote).toBe('With some exceptions.');
       });
+    });
+  });
+
+  describe('parseAdditionalDateSpec', () => {
+    it('parses compact AM and 4h duration', () => {
+      const { start, durationISO } = parseAdditionalDateSpec(
+        '4/29/2026@7:00AM+4h'
+      );
+      expect(start.timeZoneId).toBe('America/Louisville');
+      expect(start.toPlainDate().toString()).toBe('2026-04-29');
+      expect(durationISO).toBe('PT4H');
+    });
+
+    it('allows space before am/pm', () => {
+      const { start } = parseAdditionalDateSpec('4/29/2026@7:00 AM+4h');
+      expect(start.hour).toBe(7);
+      expect(start.minute).toBe(0);
+    });
+
+    it('accepts lowercase pm', () => {
+      const { start, durationISO } = parseAdditionalDateSpec(
+        '1/15/2027@2:30pm+90'
+      );
+      expect(start.hour).toBe(14);
+      expect(start.minute).toBe(30);
+      expect(durationISO).toBe('PT90M');
+    });
+
+    it('throws when + is missing', () => {
+      expect(() => parseAdditionalDateSpec('4/29/2026@7:00AM')).toThrow();
+    });
+
+    it('throws on invalid date shape', () => {
+      expect(() => parseAdditionalDateSpec('2026-04-29@7:00AM+1h')).toThrow();
+    });
+
+    it('throws on invalid time', () => {
+      expect(() => parseAdditionalDateSpec('4/29/2026@25:00AM+1h')).toThrow();
+    });
+  });
+
+  describe('normalizeAdditionalDates', () => {
+    it('returns empty array for undefined', () => {
+      expect(normalizeAdditionalDates(undefined)).toEqual([]);
+    });
+
+    it('wraps a single string', () => {
+      expect(normalizeAdditionalDates('4/1/2026@9:00AM+1h')).toEqual([
+        '4/1/2026@9:00AM+1h',
+      ]);
+    });
+  });
+
+  describe('mergeActivityScheduleDates', () => {
+    it('merges, sorts, and applies per-occurrence duration', () => {
+      const z = (iso: string) =>
+        Temporal.ZonedDateTime.from(`${iso}[America/Louisville]`);
+      const rruleDates = [z('2026-05-01T10:00:00'), z('2026-05-08T10:00:00')];
+      const merged = mergeActivityScheduleDates(rruleDates, 'PT1H', [
+        '5/3/2026@2:00PM+30m',
+      ]);
+      expect(merged).toHaveLength(3);
+      expect(merged[0]!.start.toPlainDate().toString()).toBe('2026-05-01');
+      expect(merged[0]!.durationISO).toBe('PT1H');
+      expect(merged[1]!.start.toPlainDate().toString()).toBe('2026-05-03');
+      expect(merged[1]!.durationISO).toBe('PT30M');
+      expect(merged[2]!.start.toPlainDate().toString()).toBe('2026-05-08');
+    });
+
+    it('dedupes identical start instants', () => {
+      const z = (iso: string) =>
+        Temporal.ZonedDateTime.from(`${iso}[America/Louisville]`);
+      const same = z('2026-06-01T09:00:00');
+      const merged = mergeActivityScheduleDates([same], 'PT1H', [
+        '6/1/2026@9:00AM+2h',
+      ]);
+      expect(merged).toHaveLength(1);
+      expect(merged[0]!.durationISO).toBe('PT1H');
     });
   });
 });
