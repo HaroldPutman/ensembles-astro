@@ -11,7 +11,7 @@ export async function getStaticPaths() {
   return activities.map(activity => ({
     // collection filenames get converted to lowercase ids
     params: { activityId: activity.id.toLowerCase() },
-    props: { activity }
+    props: { activity },
   }));
 }
 
@@ -19,9 +19,16 @@ export async function getStaticPaths() {
 const { activityId } = Astro.params;
 const { activity } = Astro.props;
 
-const isFree = typeof activity.data.cost === 'number' && activity.data.cost === 0;
-const possessiveParticipant = activity.data.kind === 'class' ? 'Student' : 'Participant';
-const firstDate = getFirstDate(activity.data.startDate, activity.data.startTime, activity.data.duration, activity.data.repeat);
+const isFree =
+  typeof activity.data.cost === 'number' && activity.data.cost === 0;
+const possessiveParticipant =
+  activity.data.kind === 'class' ? 'Student' : 'Participant';
+const firstDate = getFirstDate(
+  activity.data.startDate,
+  activity.data.startTime,
+  activity.data.duration,
+  activity.data.repeat
+);
 const dtstart = firstDate.toPlainDate().toString();
 ---
 
@@ -29,50 +36,76 @@ const dtstart = firstDate.toPlainDate().toString();
   <section class="registration-section">
     <h1><span id="activityName">{activity.data.name}</span></h1>
     <div class="activity-datetime">
-      <ActivityDateTime startDate={activity.data.startDate} startTime={activity.data.startTime} duration={activity.data.duration} repeat={activity.data.repeat} />
+      <ActivityDateTime
+        startDate={activity.data.startDate}
+        startTime={activity.data.startTime}
+        duration={activity.data.duration}
+        repeat={activity.data.repeat}
+        additionalDates={activity.data.additionalDates}
+      />
     </div>
-    {!isFree && activity.data.cost && (
-      <p>The cost of the class is {activity.data.cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
-    )}
-    <form id="registration-form" class="registration-form" data-activity-start={dtstart} 
-        data-activity-age-min={activity.data.ageMin} data-activity-age-max={activity.data.ageMax}>
-      <input type="hidden" id="activityId" name="activityId" value={activityId} />
-      
+    {
+      !isFree && activity.data.cost && (
+        <p>
+          The cost of the class is{' '}
+          {activity.data.cost.toLocaleString('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          })}
+        </p>
+      )
+    }
+    <form
+      id="registration-form"
+      class="registration-form"
+      data-activity-start={dtstart}
+      data-activity-age-min={activity.data.ageMin}
+      data-activity-age-max={activity.data.ageMax}
+    >
+      <input
+        type="hidden"
+        id="activityId"
+        name="activityId"
+        value={activityId}
+      />
+
       <div class="form-group">
         <label for="birthdate">{possessiveParticipant} Birth Date</label>
-        <input 
-          type="text" 
-          id="birthdate" 
-          name="birthdate" 
-          required 
+        <input
+          type="text"
+          id="birthdate"
+          name="birthdate"
+          required
           class="form-input"
         />
       </div>
 
       <div class="form-group">
         <label for="firstName">{possessiveParticipant} First Name</label>
-        <input 
-          type="text" 
-          id="firstName" 
-          name="firstName" 
-          required 
+        <input
+          type="text"
+          id="firstName"
+          name="firstName"
+          required
           class="form-input"
         />
       </div>
 
       <div class="form-group">
         <label for="lastName">{possessiveParticipant} Last Name</label>
-        <input 
-          type="text" 
-          id="lastName" 
-          name="lastName" 
-          required 
+        <input
+          type="text"
+          id="lastName"
+          name="lastName"
+          required
           class="form-input"
         />
       </div>
 
-      <button type="submit" class="submit-button oswald-cta">Next: Contact Information</button>
-      
+      <button type="submit" class="submit-button oswald-cta"
+        >Next: Contact Information</button
+      >
+
       <div id="form-message" class="form-message"></div>
     </form>
   </section>
@@ -81,50 +114,56 @@ const dtstart = firstDate.toPlainDate().toString();
 <script>
   const form = document.getElementById('registration-form') as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
-  const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
+  const submitButton = form?.querySelector(
+    'button[type="submit"]'
+  ) as HTMLButtonElement;
   const birthdateInput = document.getElementById('birthdate');
 
   /**
-   * Calculate the age of student at the activity start date. 
+   * Calculate the age of student at the activity start date.
    * @param birthdate - the birthdate to calculate the age of
-   * @returns the age of the student as a floating point number. 
+   * @returns the age of the student as a floating point number.
    */
   function calculateAge(birthdate: Date) {
-      const activityStart = form?.getAttribute('data-activity-start');
-      const dateParts = activityStart?.split('-');
-      let refDay = new Date();
-      if (dateParts) {
-        const year = parseInt(dateParts[0]);
-        const month = parseInt(dateParts[1]) - 1;
-        const day = parseInt(dateParts[2]);
-        refDay = new Date(year, month, day);
-      } else {
-        console.error('Something went wrong with the activity start date:', activityStart);
-      }
-      const msPerDay = 1000 * 60 * 60 * 24;
-      const daysOld = (refDay.getTime() - birthdate.getTime()) / msPerDay;
-      const age = daysOld / 365;
-      return age;
+    const activityStart = form?.getAttribute('data-activity-start');
+    const dateParts = activityStart?.split('-');
+    let refDay = new Date();
+    if (dateParts) {
+      const year = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1;
+      const day = parseInt(dateParts[2]);
+      refDay = new Date(year, month, day);
+    } else {
+      console.error(
+        'Something went wrong with the activity start date:',
+        activityStart
+      );
+    }
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const daysOld = (refDay.getTime() - birthdate.getTime()) / msPerDay;
+    const age = daysOld / 365;
+    return age;
   }
 
   function validBirthdate(birthdateStr: string) {
-      const parseDate = /^(0?[1-9]|1[012])([ .\/-]?)(0?[1-9]|[12][0-9]|3[01])\2((?:19|20)?\d\d)$/;
-      const parsed = parseDate.exec(birthdateStr);
-      if (!parsed) {
-          return null;
+    const parseDate =
+      /^(0?[1-9]|1[012])([ .\/-]?)(0?[1-9]|[12][0-9]|3[01])\2((?:19|20)?\d\d)$/;
+    const parsed = parseDate.exec(birthdateStr);
+    if (!parsed) {
+      return null;
+    }
+    const mm = ('0' + parsed[1]).slice(-2);
+    const dd = ('0' + parsed[3]).slice(-2);
+    let year = parseInt(parsed[4]);
+    if (year < 100) {
+      year += 1900;
+      const thisYear = new Date().getFullYear();
+      // assume two digit year is within past 100 years.
+      if (thisYear - year >= 100) {
+        year += 100;
       }
-      const mm = ("0"+parsed[1]).slice(-2);
-      const dd = ("0" + parsed[3]).slice(-2);
-      let year = parseInt(parsed[4]);
-      if (year < 100) {
-          year += 1900;
-          const thisYear = (new Date()).getFullYear();
-          // assume two digit year is within past 100 years.
-          if (thisYear - year >= 100) {
-              year += 100
-          }
-      }
-      return new Date(`${year}-${mm}-${dd}T00:00:00`);
+    }
+    return new Date(`${year}-${mm}-${dd}T00:00:00`);
   }
 
   birthdateInput?.addEventListener('blur', (evt: FocusEvent) => {
@@ -135,19 +174,29 @@ const dtstart = firstDate.toPlainDate().toString();
     if (birthdate) {
       const ageFudgeFactor = 0.99; // 12 months
       const age = calculateAge(birthdate);
-      const minAge = parseInt(form?.getAttribute('data-activity-age-min') || '0');
-      const maxAge = parseInt(form?.getAttribute('data-activity-age-max') || '199');
+      const minAge = parseInt(
+        form?.getAttribute('data-activity-age-min') || '0'
+      );
+      const maxAge = parseInt(
+        form?.getAttribute('data-activity-age-max') || '199'
+      );
       if (age + ageFudgeFactor < minAge) {
-        target.setCustomValidity(`Student must be at least ${minAge} years old`);
+        target.setCustomValidity(
+          `Student must be at least ${minAge} years old`
+        );
       } else if (age - ageFudgeFactor > maxAge) {
-        target.setCustomValidity(`Student must be no more than ${maxAge} years old`);
+        target.setCustomValidity(
+          `Student must be no more than ${maxAge} years old`
+        );
       } else {
         target.setCustomValidity('');
       }
       target.value = birthdate.toLocaleDateString('en-US');
     } else if (target.value.trim()) {
       // Invalid date format entered
-      target.setCustomValidity('Please enter a valid birth date (e.g., 01/15/2010)');
+      target.setCustomValidity(
+        'Please enter a valid birth date (e.g., 01/15/2010)'
+      );
     } else {
       // Empty field - let required validation handle it
       target.setCustomValidity('');
@@ -155,9 +204,9 @@ const dtstart = firstDate.toPlainDate().toString();
     target.reportValidity();
   });
 
-  form?.addEventListener('submit', async (e) => {
+  form?.addEventListener('submit', async e => {
     e.preventDefault();
-    
+
     if (!form || !messageDiv || !submitButton) return;
 
     // Disable the submit button and show loading state
@@ -165,7 +214,7 @@ const dtstart = firstDate.toPlainDate().toString();
     submitButton.textContent = 'Saving...';
     messageDiv.className = 'form-message';
     messageDiv.textContent = '';
-    
+
     const formData = new FormData(form);
     const data = {
       firstName: (formData.get('firstName') as string)?.trim(),
@@ -190,21 +239,27 @@ const dtstart = firstDate.toPlainDate().toString();
       } else {
         result = { message: 'Server error occurred' };
       }
-    
+
       if (response.ok) {
         // store the registrationId and studentId in session storage
 
         let registrations: string[] = [];
         try {
-            registrations = JSON.parse(sessionStorage.getItem('registrations') || '[]') as string[];
+          registrations = JSON.parse(
+            sessionStorage.getItem('registrations') || '[]'
+          ) as string[];
         } catch (e) {
-            console.error('Error parsing stored registrations:', e);
+          console.error('Error parsing stored registrations:', e);
         }
         if (!registrations.includes(result.registrationId)) {
           registrations.push(result.registrationId);
-          sessionStorage.setItem('registrations', JSON.stringify(registrations));
+          sessionStorage.setItem(
+            'registrations',
+            JSON.stringify(registrations)
+          );
         }
-        const activityName = document.getElementById('activityName')?.textContent;
+        const activityName =
+          document.getElementById('activityName')?.textContent;
         activityName && sessionStorage.setItem('activityName', activityName);
         sessionStorage.setItem('activityId', result.activityId);
         sessionStorage.setItem('participant', JSON.stringify(data));
@@ -212,18 +267,25 @@ const dtstart = firstDate.toPlainDate().toString();
         window.location.href = `/register/contact?rid=${result.registrationId}&sid=${result.studentId}`;
       } else if (response.status === 409 && result.alreadyRegistered) {
         // Student is already registered for this activity
-        const activityName = document.getElementById('activityName')?.textContent || 'this class';
-        sessionStorage.setItem('alreadyRegistered', JSON.stringify({
-          firstName: data.firstName,
-          activityName: activityName
-        }));
+        const activityName =
+          document.getElementById('activityName')?.textContent || 'this class';
+        sessionStorage.setItem(
+          'alreadyRegistered',
+          JSON.stringify({
+            firstName: data.firstName,
+            activityName: activityName,
+          })
+        );
         window.location.href = '/register/already-registered';
       } else {
         throw new Error(result.message || 'Something went wrong');
       }
     } catch (error) {
       console.error('Error:', error);
-      messageDiv.textContent = error instanceof Error ? error.message : 'Failed to save information. Please try again.';
+      messageDiv.textContent =
+        error instanceof Error
+          ? error.message
+          : 'Failed to save information. Please try again.';
       messageDiv.className = 'form-message error';
     } finally {
       // Re-enable the submit button and restore its text
@@ -247,7 +309,7 @@ const dtstart = firstDate.toPlainDate().toString();
   }
 
   .activity-datetime {
-   font-size: 1.2rem;
+    font-size: 1.2rem;
   }
 
   .intro {
@@ -364,4 +426,5 @@ const dtstart = firstDate.toPlainDate().toString();
       box-shadow: none;
     }
   }
-</style> 
+</style>
+

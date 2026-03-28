@@ -3,6 +3,7 @@ import {
   getFirstAndLastDates,
   getDayOfWeek,
   makeICalDuration,
+  normalizeAdditionalDates,
 } from '../lib/datelib';
 import { Temporal } from '@js-temporal/polyfill';
 import { Icon } from 'astro-icon/components';
@@ -12,6 +13,7 @@ interface Props {
   startTime: string;
   duration: string;
   repeat: string;
+  additionalDates?: string | string[];
   class?: string;
 }
 
@@ -20,8 +22,12 @@ const {
   startTime,
   duration,
   repeat,
+  additionalDates,
   class: className,
 } = Astro.props;
+
+const additionalDatesList = normalizeAdditionalDates(additionalDates);
+const hasAdditionalMeetings = additionalDatesList.length > 0;
 
 const [firstDate, lastDate, count, deviationNote] = getFirstAndLastDates(
   startDate,
@@ -68,12 +74,6 @@ const getScheduleDescription = () => {
   if (count === 5 && startDay === 1 && endDay === 5) {
     return 'Mon - Fri';
   }
-  // Simple 5-day Mon-Fri camp
-  if (count === 5 && startDay === 1 && endDay === 5) {
-    return 'Mon - Fri';
-  }
-
-  return 'Daily';
 
   return 'Daily';
 };
@@ -96,8 +96,15 @@ const getScheduleDescription = () => {
           <Icon name="mdi:calendar-repeat" /> {startDateString} -{' '}
           {endDateString}
         </p>
-        {deviationNote && <p class="exception-line">{deviationNote}</p>}
+        {!hasAdditionalMeetings && deviationNote && (
+          <p class="exception-line">{deviationNote}</p>
+        )}
       </>
+    )
+  }
+  {
+    hasAdditionalMeetings && (
+      <p class="exception-line">With additional meetings</p>
     )
   }
 </div>
