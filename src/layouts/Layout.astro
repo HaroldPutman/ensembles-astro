@@ -32,4 +32,22 @@ const { title } = Astro.props;
       padding: 1rem;
     }
   }
+
+  /* for emoji lists in markdown content */
+  :global(.emoji-list ul) {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  :global(.emoji-list li) {
+    display: flex;
+    align-items: flex-start;
+    line-height: 1.1;
+    margin-bottom: 0.7em;
+  }
+  :global(.emoji-list li i) {
+    flex-shrink: 0; /* Prevents the emoji from squishing */
+    width: 1.5em;
+    text-align: left;
+    font-style: normal;
+  }
 </style>
