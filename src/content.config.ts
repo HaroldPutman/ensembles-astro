@@ -3,6 +3,7 @@ import { defineCollection, z } from 'astro:content';
 
 // 2. Import loader(s)
 import { glob } from 'astro/loaders';
+import { ACTIVITY_STATUSES } from './lib/activityStatus';
 import { parseAdditionalDateSpec } from './lib/datelib';
 
 // 3. Define your collection(s)
@@ -80,7 +81,7 @@ const activities = defineCollection({
     suggestedDonation: z.number().optional(),
     image: z.string().optional(),
     hasRegistration: z.boolean().optional().default(true),
-    status: z.enum(['cancelled']).optional(),
+    status: z.enum(ACTIVITY_STATUSES).optional(),
   }),
 });
 

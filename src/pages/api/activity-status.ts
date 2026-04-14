@@ -117,15 +117,16 @@ async function getActivityStatus(
         const isFull =
           isCancelled || (sizeMax !== null && registeredCount >= sizeMax);
         const spotsRemaining =
-          sizeMax !== null ? Math.max(0, sizeMax - registeredCount) : null;
+          !isCancelled && sizeMax !== null
+            ? Math.max(0, sizeMax - registeredCount)
+            : null;
 
         return {
           activityId,
           registeredCount,
           sizeMax,
           isFull,
-          spotsRemaining:
-            spotsRemaining !== null ? Math.max(0, spotsRemaining) : null,
+          spotsRemaining,
           kind,
           isCancelled,
         };
