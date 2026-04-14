@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { getCollection } from 'astro:content';
 import { getPool } from '../../lib/db';
 import { sendClassReminderEmail } from '../../lib/email';
+import { isActivityCancelled } from '../../lib/activityStatus';
 import { getFirstDate } from '../../lib/datelib';
 import { Temporal } from '@js-temporal/polyfill';
 
@@ -106,6 +107,9 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     const upcomingActivities: ActivityData[] = [];
 
     for (const activity of activities) {
+      if (isActivityCancelled(activity.data)) {
+        continue;
+      }
       try {
         const firstDate = getFirstDate(
           activity.data.startDate,

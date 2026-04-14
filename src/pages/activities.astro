@@ -7,8 +7,11 @@ import ActivityCard from '../components/ActivityCard.astro';
 import { Temporal } from '@js-temporal/polyfill';
 import { getFirstAndLastDates } from '../lib/datelib';
 import { Icon } from 'astro-icon/components';
+import { isActivityCancelled } from '../lib/activityStatus';
 
-const activities = await getCollection('activities');
+const activities = (await getCollection('activities')).filter(
+  a => !isActivityCancelled(a.data)
+);
 
 // Compute firstDate for each activity and sort by it
 const sortedActivities = activities
@@ -226,6 +229,7 @@ const sortedActivities = activities
     sizeMax: number | null;
     isFull: boolean;
     spotsRemaining: number | null;
+    isCancelled?: boolean;
   }
 
   function categorizeActivities(): string[] {
@@ -359,7 +363,15 @@ const sortedActivities = activities
           '.registration-status'
         ) as HTMLElement;
 
-        if (status.isFull) {
+        if (status.isCancelled) {
+          if (registerBtn) {
+            registerBtn.style.display = 'none';
+          }
+          if (statusEl) {
+            statusEl.textContent = 'This class has been cancelled';
+            statusEl.style.color = '#991b1b';
+          }
+        } else if (status.isFull) {
           // Activity is full - hide register button and show message
           if (registerBtn) {
             registerBtn.style.display = 'none';

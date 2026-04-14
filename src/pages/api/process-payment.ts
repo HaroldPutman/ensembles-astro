@@ -8,6 +8,7 @@ import {
   type VoucherInfo,
 } from '../../lib/email';
 import { getPool } from '../../lib/db';
+import { isActivityCancelled } from '../../lib/activityStatus';
 
 export const prerender = false;
 
@@ -139,6 +140,29 @@ export const POST: APIRoute = async ({ request }) => {
             }),
             {
               status: 404,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+        }
+
+        const activitiesForPayment = await getCollection('activities');
+        const hasCancelledActivity = registrationsResult.rows.some(row => {
+          const act = activitiesForPayment.find(
+            a => a.id.toLowerCase() === String(row.activity).toLowerCase()
+          );
+          return act && isActivityCancelled(act.data);
+        });
+        if (hasCancelledActivity) {
+          await client.query('ROLLBACK');
+          return new Response(
+            JSON.stringify({
+              message:
+                'One or more classes are no longer open for registration.',
+            }),
+            {
+              status: 403,
               headers: {
                 'Content-Type': 'application/json',
               },

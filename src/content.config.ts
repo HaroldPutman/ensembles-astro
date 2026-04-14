@@ -80,6 +80,7 @@ const activities = defineCollection({
     suggestedDonation: z.number().optional(),
     image: z.string().optional(),
     hasRegistration: z.boolean().optional().default(true),
+    status: z.enum(['cancelled']).optional(),
   }),
 });
 

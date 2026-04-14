@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { getPool, getActiveRegistrationCounts } from '../../lib/db';
+import { isActivityCancelled } from '../../lib/activityStatus';
 
 export const prerender = false;
 
@@ -11,6 +12,7 @@ interface ActivityStatus {
   isFull: boolean;
   spotsRemaining: number | null;
   kind: string;
+  isCancelled: boolean;
 }
 
 export const GET: APIRoute = async ({ url }) => {
@@ -83,13 +85,14 @@ async function getActivityStatus(
     const activities = await getCollection('activities');
     const activitiesMap = new Map<
       string,
-      { sizeMax: number | undefined; kind: string }
+      { sizeMax: number | undefined; kind: string; cancelled: boolean }
     >();
 
     activities.forEach(activity => {
       activitiesMap.set(activity.id.toLowerCase(), {
         sizeMax: activity.data.sizeMax,
         kind: activity.data.kind,
+        cancelled: isActivityCancelled(activity.data),
       });
     });
 
@@ -110,7 +113,9 @@ async function getActivityStatus(
         const activity = activitiesMap.get(id);
         const sizeMax = activity?.sizeMax ?? null;
         const kind = activity?.kind ?? 'class';
-        const isFull = sizeMax !== null && registeredCount >= sizeMax;
+        const isCancelled = activity?.cancelled ?? false;
+        const isFull =
+          isCancelled || (sizeMax !== null && registeredCount >= sizeMax);
         const spotsRemaining =
           sizeMax !== null ? Math.max(0, sizeMax - registeredCount) : null;
 
@@ -122,6 +127,7 @@ async function getActivityStatus(
           spotsRemaining:
             spotsRemaining !== null ? Math.max(0, spotsRemaining) : null,
           kind,
+          isCancelled,
         };
       });
 

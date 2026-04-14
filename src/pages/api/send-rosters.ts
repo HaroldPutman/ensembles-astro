@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { getCollection } from 'astro:content';
 import { getPool } from '../../lib/db';
 import { sendRosterEmail, type ClassRosterData } from '../../lib/email';
+import { isActivityCancelled } from '../../lib/activityStatus';
 import { getFirstDate } from '../../lib/datelib';
 import { Temporal } from '@js-temporal/polyfill';
 import privateInstructorData from '../../../collections/instructors-private.json';
@@ -163,6 +164,9 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
     const classActivities: ActivityData[] = [];
 
     for (const activity of allActivities) {
+      if (isActivityCancelled(activity.data)) {
+        continue;
+      }
       // Only include classes and camps
       if (activity.data.kind !== 'class' && activity.data.kind !== 'camp')
         continue;

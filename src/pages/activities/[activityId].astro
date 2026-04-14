@@ -16,6 +16,7 @@ import {
   normalizeAdditionalDates,
 } from '../../lib/datelib';
 import { getInstructors } from '../../lib/instructors';
+import { isActivityCancelled } from '../../lib/activityStatus';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
@@ -26,6 +27,7 @@ export async function getStaticPaths() {
 }
 
 const { activity } = Astro.props;
+const activityIsCancelled = isActivityCancelled(activity.data);
 
 // Get instructor data
 const allInstructors = await getInstructors();
@@ -97,6 +99,14 @@ function getKindLabel(kind: string) {
 
 <Layout title={`Ensembles - ${activity.data.name}`}>
   <article class="activity-detail">
+    {
+      activityIsCancelled && (
+        <div class="cancelled-banner" role="status">
+          This {getKindLabel(activity.data.kind).toLowerCase()} has been
+          cancelled.
+        </div>
+      )
+    }
     <!-- Header -->
     <header class="activity-header">
       {
@@ -172,7 +182,7 @@ function getKindLabel(kind: string) {
         }
 
         {
-          activity.data.hasRegistration && (
+          activity.data.hasRegistration && !activityIsCancelled && (
             <div class="cta-section">
               <ActivityStatus
                 server:defer
@@ -250,6 +260,17 @@ function getKindLabel(kind: string) {
 </Layout>
 
 <style>
+  .cancelled-banner {
+    margin-bottom: 1rem;
+    padding: 1rem 1.25rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-weight: 600;
+    text-align: center;
+  }
+
   .activity-detail {
     max-width: 1000px;
     margin: 0 auto;

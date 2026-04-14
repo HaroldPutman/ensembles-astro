@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import type { PoolClient } from 'pg';
+import { getCollection } from 'astro:content';
 import { getPool } from '../../lib/db';
+import { isActivityCancelled } from '../../lib/activityStatus';
 
 export const prerender = false;
 
@@ -35,6 +37,24 @@ export const POST: APIRoute = async ({ request }) => {
         }),
         {
           status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    const activities = await getCollection('activities');
+    const activityEntry = activities.find(
+      a => a.id.toLowerCase() === String(activityId).toLowerCase()
+    );
+    if (activityEntry && isActivityCancelled(activityEntry.data)) {
+      return new Response(
+        JSON.stringify({
+          message: 'This class is no longer open for registration.',
+        }),
+        {
+          status: 403,
           headers: {
             'Content-Type': 'application/json',
           },

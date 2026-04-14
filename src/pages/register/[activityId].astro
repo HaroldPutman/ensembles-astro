@@ -5,6 +5,7 @@ import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { getFirstDate } from '../../lib/datelib';
 import ActivityDateTime from '../../components/ActivityDateTime.astro';
+import { isActivityCancelled } from '../../lib/activityStatus';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
@@ -30,6 +31,7 @@ const firstDate = getFirstDate(
   activity.data.repeat
 );
 const dtstart = firstDate.toPlainDate().toString();
+const activityIsCancelled = isActivityCancelled(activity.data);
 ---
 
 <Layout title={`Ensembles - Register for ${activity.data.name}`}>
@@ -45,7 +47,14 @@ const dtstart = firstDate.toPlainDate().toString();
       />
     </div>
     {
-      !isFree && activity.data.cost && (
+      activityIsCancelled && (
+        <p class="cancelled-notice" role="status">
+          Registration is closed because this class has been cancelled.
+        </p>
+      )
+    }
+    {
+      !activityIsCancelled && !isFree && activity.data.cost && (
         <p>
           The cost of the class is{' '}
           {activity.data.cost.toLocaleString('en-US', {
@@ -55,59 +64,70 @@ const dtstart = firstDate.toPlainDate().toString();
         </p>
       )
     }
-    <form
-      id="registration-form"
-      class="registration-form"
-      data-activity-start={dtstart}
-      data-activity-age-min={activity.data.ageMin}
-      data-activity-age-max={activity.data.ageMax}
-    >
-      <input
-        type="hidden"
-        id="activityId"
-        name="activityId"
-        value={activityId}
-      />
+    {
+      !activityIsCancelled && (
+        <form
+          id="registration-form"
+          class="registration-form"
+          data-activity-start={dtstart}
+          data-activity-age-min={activity.data.ageMin}
+          data-activity-age-max={activity.data.ageMax}
+        >
+          <input
+            type="hidden"
+            id="activityId"
+            name="activityId"
+            value={activityId}
+          />
 
-      <div class="form-group">
-        <label for="birthdate">{possessiveParticipant} Birth Date</label>
-        <input
-          type="text"
-          id="birthdate"
-          name="birthdate"
-          required
-          class="form-input"
-        />
-      </div>
+          <div class="form-group">
+            <label for="birthdate">{possessiveParticipant} Birth Date</label>
+            <input
+              type="text"
+              id="birthdate"
+              name="birthdate"
+              required
+              class="form-input"
+            />
+          </div>
 
-      <div class="form-group">
-        <label for="firstName">{possessiveParticipant} First Name</label>
-        <input
-          type="text"
-          id="firstName"
-          name="firstName"
-          required
-          class="form-input"
-        />
-      </div>
+          <div class="form-group">
+            <label for="firstName">{possessiveParticipant} First Name</label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              required
+              class="form-input"
+            />
+          </div>
 
-      <div class="form-group">
-        <label for="lastName">{possessiveParticipant} Last Name</label>
-        <input
-          type="text"
-          id="lastName"
-          name="lastName"
-          required
-          class="form-input"
-        />
-      </div>
+          <div class="form-group">
+            <label for="lastName">{possessiveParticipant} Last Name</label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              required
+              class="form-input"
+            />
+          </div>
 
-      <button type="submit" class="submit-button oswald-cta"
-        >Next: Contact Information</button
-      >
+          <button type="submit" class="submit-button oswald-cta">
+            Next: Contact Information
+          </button>
 
-      <div id="form-message" class="form-message"></div>
-    </form>
+          <div id="form-message" class="form-message" />
+        </form>
+      )
+    }
+    {
+      activityIsCancelled && (
+        <p class="back-to-activities">
+          <a href="/activities">Browse other activities</a>
+        </p>
+      )
+    }
   </section>
 </Layout>
 
@@ -308,6 +328,24 @@ const dtstart = firstDate.toPlainDate().toString();
     margin-bottom: 1rem;
   }
 
+  .cancelled-notice {
+    padding: 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-weight: 500;
+  }
+
+  .back-to-activities {
+    margin-top: 1.5rem;
+  }
+
+  .back-to-activities a {
+    color: #2563eb;
+    font-weight: 500;
+  }
+
   .activity-datetime {
     font-size: 1.2rem;
   }
@@ -427,4 +465,3 @@ const dtstart = firstDate.toPlainDate().toString();
     }
   }
 </style>
-

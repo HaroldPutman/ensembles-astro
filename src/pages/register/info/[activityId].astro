@@ -4,146 +4,232 @@ export const prerender = true;
 import Layout from '../../../layouts/Layout.astro';
 
 import { getCollection } from 'astro:content';
+import { isActivityCancelled } from '../../../lib/activityStatus';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
   return activities.map(activity => ({
     // collection filenames get converted to lowercase ids
     params: { activityId: activity.id.toLowerCase() },
-    props: { activity }
+    props: { activity },
   }));
 }
 
 // Get the activity ID from the URL parameters
 const { activityId } = Astro.params;
 const { activity } = Astro.props;
-
+const activityIsCancelled = isActivityCancelled(activity.data);
 ---
 
 <Layout title={`Ensembles - ${activity.data.name} - Additional Information`}>
   <section class="registration-section">
     <h1>Additional Information</h1>
-    <p class="intro">Please provide this additional information to complete your registration for <strong>{activity.data.name}</strong>.</p>
-    
-    <form id="registration-info-form" class="registration-form">
-      <input type="hidden" id="activityId" name="activityId" value={activityId} />
-      
-      {activity.data.question && (
-        <div class="form-group">
-            <label for="registrationQuestion">{activity.data.question}</label>
-            <textarea 
-            id="answer" 
-            name="answer" 
-            class="form-input"
-            rows="2"
-        ></textarea>
-        </div>
-      )}
+    {
+      activityIsCancelled ? (
+        <>
+          <p class="cancelled-notice" role="status">
+            This class has been cancelled. You cannot complete registration
+            online.
+          </p>
+          <p class="back-to-activities">
+            <a href="/activities">Browse other activities</a>
+          </p>
+        </>
+      ) : (
+        <>
+          <p class="intro">
+            Please provide this additional information to complete your
+            registration for <strong>{activity.data.name}</strong>.
+          </p>
 
-      {!activity.data.cost && activity.data.suggestedDonation && (
-      <div class="form-group">
-        <p>There is no charge, but a suggested donation is ${activity.data.suggestedDonation}.</p>
-        <label for="donationAmount">Donation Amount (optional)</label>
-        <div class="donation-input-group">
-          <span class="currency-symbol">$</span>
-          <input 
-            type="number" 
-            id="donationAmount" 
-            name="donationAmount" 
-            min="0" 
-            step="1" 
-            placeholder="0.00"
-            class="form-input donation-input"
-          />
-        </div>
-        <small class="form-help">Any amount helps support our programs!</small>
-      </div>
-      )}
-
-      <div class="form-group">
-        <label for="note">Notes (optional)</label>
-        <textarea 
-          id="note" 
-          name="note" 
-          class="form-input"
-          rows="4"
-          placeholder="Any special requests, dietary restrictions, or additional information..."
-        ></textarea>
-      </div>
-
-      <div class="release-statement">
-        <h3>Release and Consent Agreement</h3>
-        <div class="release-text">
-          <ul>
-            <li>I hold Ensembles harmless against all claims or demands arising from participation in class.</li>
-            <li>I give Ensembles permission for medical treatment, in the event I cannot be reached in a timely manner.</li>
-            <li>There are no refunds for missed or cancelled sessions.</li>
-            <li>Unless you request otherwise, photos and videos from Ensembles activities may be used 
-                for promotional purposes. No names will be used.</li>
-          </ul>
-        </div>
-        
-        <h3>Guidelines and Expectations</h3>
-        <div class="release-text">
-          <p>I understand and agree to abide by and follow these guidelines and expectations listed below. I (we) understand that failing to do so will constitute grounds for dismissal from the program without refund of tuition.</p>
-          <ul>
-            <li>Arrive no earlier than 10 minutes before the scheduled start time</li>
-            <li>An adult must come into the building to pick up any child under 13</li>
-            <li>Participants will conduct themselves in a courteous, respectful manner toward the teachers and fellow students.</li>
-            <li>Participants will come prepared and ready to learn new skills.</li>
-          </ul>
-        </div>
-        
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              id="termsAgreement" 
-              name="termsAgreement" 
-              class="form-checkbox" 
-              required
+          <form id="registration-info-form" class="registration-form">
+            <input
+              type="hidden"
+              id="activityId"
+              name="activityId"
+              value={activityId}
             />
-            <span>I have read and agree to these terms and guidelines.</span>
-          </label>
-        </div>
-      </div>
 
-      <div class="email-subscription">
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              id="emailSubscription" 
-              name="emailSubscription" 
-              class="form-checkbox" 
-            />
-            <span>Keep me informed about upcoming events at Ensembles. <small>About one email per month. Your information will never be shared with any third party.</small></span>
-          </label>
-        </div>
-      </div>
+            {activity.data.question && (
+              <div class="form-group">
+                <label for="registrationQuestion">
+                  {activity.data.question}
+                </label>
+                <textarea
+                  id="answer"
+                  name="answer"
+                  class="form-input"
+                  rows="2"
+                />
+              </div>
+            )}
 
-      <button type="submit" name="pay-now" class="submit-button oswald-cta">Continue to Payment</button>
-      
-      <button type="submit" name="add-more" class="secondary-button oswald-cta" >Add Another Registration</button>
+            {!activity.data.cost && activity.data.suggestedDonation && (
+              <div class="form-group">
+                <p>
+                  There is no charge, but a suggested donation is $
+                  {activity.data.suggestedDonation}.
+                </p>
+                <label for="donationAmount">Donation Amount (optional)</label>
+                <div class="donation-input-group">
+                  <span class="currency-symbol">$</span>
+                  <input
+                    type="number"
+                    id="donationAmount"
+                    name="donationAmount"
+                    min="0"
+                    step="1"
+                    placeholder="0.00"
+                    class="form-input donation-input"
+                  />
+                </div>
+                <small class="form-help">
+                  Any amount helps support our programs!
+                </small>
+              </div>
+            )}
 
-      <div id="form-message" class="form-message"></div>
-    </form>
+            <div class="form-group">
+              <label for="note">Notes (optional)</label>
+              <textarea
+                id="note"
+                name="note"
+                class="form-input"
+                rows="4"
+                placeholder="Any special requests, dietary restrictions, or additional information..."
+              />
+            </div>
+
+            <div class="release-statement">
+              <h3>Release and Consent Agreement</h3>
+              <div class="release-text">
+                <ul>
+                  <li>
+                    I hold Ensembles harmless against all claims or demands
+                    arising from participation in class.
+                  </li>
+                  <li>
+                    I give Ensembles permission for medical treatment, in the
+                    event I cannot be reached in a timely manner.
+                  </li>
+                  <li>
+                    There are no refunds for missed or cancelled sessions.
+                  </li>
+                  <li>
+                    Unless you request otherwise, photos and videos from
+                    Ensembles activities may be used for promotional purposes.
+                    No names will be used.
+                  </li>
+                </ul>
+              </div>
+
+              <h3>Guidelines and Expectations</h3>
+              <div class="release-text">
+                <p>
+                  I understand and agree to abide by and follow these guidelines
+                  and expectations listed below. I (we) understand that failing
+                  to do so will constitute grounds for dismissal from the
+                  program without refund of tuition.
+                </p>
+                <ul>
+                  <li>
+                    Arrive no earlier than 10 minutes before the scheduled start
+                    time
+                  </li>
+                  <li>
+                    An adult must come into the building to pick up any child
+                    under 13
+                  </li>
+                  <li>
+                    Participants will conduct themselves in a courteous,
+                    respectful manner toward the teachers and fellow students.
+                  </li>
+                  <li>
+                    Participants will come prepared and ready to learn new
+                    skills.
+                  </li>
+                </ul>
+              </div>
+
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    id="termsAgreement"
+                    name="termsAgreement"
+                    class="form-checkbox"
+                    required
+                  />
+                  <span>
+                    I have read and agree to these terms and guidelines.
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="email-subscription">
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    id="emailSubscription"
+                    name="emailSubscription"
+                    class="form-checkbox"
+                  />
+                  <span>
+                    Keep me informed about upcoming events at Ensembles.{' '}
+                    <small>
+                      About one email per month. Your information will never be
+                      shared with any third party.
+                    </small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              name="pay-now"
+              class="submit-button oswald-cta"
+            >
+              Continue to Payment
+            </button>
+
+            <button
+              type="submit"
+              name="add-more"
+              class="secondary-button oswald-cta"
+            >
+              Add Another Registration
+            </button>
+
+            <div id="form-message" class="form-message" />
+          </form>
+        </>
+      )
+    }
   </section>
 </Layout>
 
 <script>
-  const form = document.getElementById('registration-info-form') as HTMLFormElement;
+  const form = document.getElementById(
+    'registration-info-form'
+  ) as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
-  const payNowButton = form?.querySelector('button[name="pay-now"]') as HTMLButtonElement;
-  const addMoreButton = form?.querySelector('button[name="add-more"]') as HTMLButtonElement;
+  const payNowButton = form?.querySelector(
+    'button[name="pay-now"]'
+  ) as HTMLButtonElement;
+  const addMoreButton = form?.querySelector(
+    'button[name="add-more"]'
+  ) as HTMLButtonElement;
 
-  form?.addEventListener('submit', async (e) => {
+  form?.addEventListener('submit', async e => {
     e.preventDefault();
-    
+
     if (!form || !messageDiv) return;
 
     const submitter = e.submitter as HTMLButtonElement;
-    
+
     if (submitter?.name === 'pay-now') {
       // Disable the submit button and show loading state
       payNowButton.disabled = true;
@@ -157,9 +243,11 @@ const { activity } = Astro.props;
     messageDiv.textContent = '';
     let registrations: string[] = [];
     try {
-        registrations = JSON.parse(sessionStorage.getItem('registrations') || '[]');
+      registrations = JSON.parse(
+        sessionStorage.getItem('registrations') || '[]'
+      );
     } catch (e) {
-        console.error('Error parsing registration IDs:', e);
+      console.error('Error parsing registration IDs:', e);
     }
 
     const formData = new FormData(form);
@@ -167,18 +255,21 @@ const { activity } = Astro.props;
     const data = {
       registrationId: registrations.at(-1),
       answer: formData.get('answer'),
-      donationAmount: formData.get('donationAmount') ? parseFloat(formData.get('donationAmount') as string) : null,
+      donationAmount: formData.get('donationAmount')
+        ? parseFloat(formData.get('donationAmount') as string)
+        : null,
       note: formData.get('note') || null,
       emailSubscription: formData.get('emailSubscription') === 'on',
-      termsAgreement: formData.get('termsAgreement') === 'on'
+      termsAgreement: formData.get('termsAgreement') === 'on',
     };
 
     // Validate terms agreement
     if (!data.termsAgreement) {
-      messageDiv.textContent = 'You must agree to the terms and conditions to continue.';
+      messageDiv.textContent =
+        'You must agree to the terms and conditions to continue.';
       messageDiv.className = 'form-message error';
       messageDiv.style.display = 'block';
-      
+
       // Re-enable buttons
       if (submitter?.name === 'pay-now') {
         payNowButton.disabled = false;
@@ -206,17 +297,17 @@ const { activity } = Astro.props;
       } else {
         result = { message: 'Server error occurred' };
       }
-    
+
       if (response.ok) {
         // If email subscription is checked, call the subscribe API
         if (data.emailSubscription) {
           try {
             // Get contact information from sessionStorage or form data
             const contactInfo = sessionStorage.getItem('contactInfo') || '{}';
-            
+
             // Parse to make sure it's an object
             const contact = JSON.parse(contactInfo);
-            
+
             if (contact.email) {
               await fetch('/api/subscribe', {
                 method: 'POST',
@@ -231,7 +322,7 @@ const { activity } = Astro.props;
             // Don't block the registration process if subscription fails
           }
         }
-        
+
         if (submitter?.name === 'pay-now') {
           window.location.href = '/register/payment';
         } else if (submitter?.name === 'add-more') {
@@ -242,7 +333,10 @@ const { activity } = Astro.props;
       }
     } catch (error) {
       console.error('Error:', error);
-      messageDiv.textContent = error instanceof Error ? error.message : 'Failed to save information. Please try again.';
+      messageDiv.textContent =
+        error instanceof Error
+          ? error.message
+          : 'Failed to save information. Please try again.';
       messageDiv.className = 'form-message error';
     } finally {
       // Re-enable the submit button and restore its text
@@ -475,6 +569,24 @@ const { activity } = Astro.props;
     display: block;
     background-color: #ffebee;
     color: #c62828;
+  }
+
+  .cancelled-notice {
+    padding: 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-weight: 500;
+  }
+
+  .back-to-activities {
+    margin-top: 1rem;
+  }
+
+  .back-to-activities a {
+    color: #2563eb;
+    font-weight: 500;
   }
 
   /* Mobile styles */

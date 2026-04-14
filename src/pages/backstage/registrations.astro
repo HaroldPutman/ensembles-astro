@@ -6,6 +6,7 @@ import { getPool } from '../../lib/db';
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import { getFirstAndLastDates } from '../../lib/datelib';
+import { isActivityCancelled } from '../../lib/activityStatus';
 import { Temporal } from '@js-temporal/polyfill';
 
 // Get all activities with their schedule info
@@ -27,6 +28,7 @@ interface ActivityInfo {
   formattedStartDate: string;
   isCurrent: boolean; // has started but not ended
   isUpcoming: boolean; // hasn't started yet
+  isCancelled: boolean;
 }
 
 const activityMap = new Map<string, ActivityInfo>();
@@ -90,7 +92,8 @@ for (const activity of activities) {
     Temporal.ZonedDateTime.compare(firstDate, now) <= 0 &&
     Temporal.ZonedDateTime.compare(lastDate, now) >= 0;
 
-  const isUpcoming = firstDate && Temporal.ZonedDateTime.compare(firstDate, now) > 0;
+  const isUpcoming =
+    firstDate && Temporal.ZonedDateTime.compare(firstDate, now) > 0;
 
   activityMap.set(activity.id, {
     id: activity.id,
@@ -107,6 +110,7 @@ for (const activity of activities) {
     formattedStartDate,
     isCurrent: !!isCurrent,
     isUpcoming: !!isUpcoming,
+    isCancelled: isActivityCancelled(activity.data),
   });
 }
 
@@ -157,22 +161,19 @@ try {
 }
 
 // Group registrations by activity
-const groupedByActivity = registrations.reduce(
-  (acc, reg) => {
-    if (!acc.has(reg.activity)) {
-      acc.set(reg.activity, []);
-    }
-    acc.get(reg.activity)!.push(reg);
-    return acc;
-  },
-  new Map<string, RegistrationRow[]>()
-);
+const groupedByActivity = registrations.reduce((acc, reg) => {
+  if (!acc.has(reg.activity)) {
+    acc.set(reg.activity, []);
+  }
+  acc.get(reg.activity)!.push(reg);
+  return acc;
+}, new Map<string, RegistrationRow[]>());
 
 // Pre-compute email lists for each activity (deduplicated by email)
 const emailListsByActivity = new Map<string, { list: string; count: number }>();
 for (const [activityId, regs] of groupedByActivity) {
   const uniqueContacts = new Map<string, string>();
-  regs.forEach((r) => {
+  regs.forEach(r => {
     if (r.contact_email) {
       const email = r.contact_email;
       if (!uniqueContacts.has(email)) {
@@ -183,7 +184,10 @@ for (const [activityId, regs] of groupedByActivity) {
   const emailList = Array.from(uniqueContacts.entries())
     .map(([email, name]) => `${name} <${email}>`)
     .join(', ');
-  emailListsByActivity.set(activityId, { list: emailList, count: uniqueContacts.size });
+  emailListsByActivity.set(activityId, {
+    list: emailList,
+    count: uniqueContacts.size,
+  });
 }
 
 // Separate into current and upcoming classes
@@ -203,22 +207,25 @@ for (const [activityId, regs] of groupedByActivity) {
 }
 
 // Sort classes by day of week (Sun=0, Mon=1, etc.) and then by start time
-function sortByDayAndTime(a: [string, RegistrationRow[]], b: [string, RegistrationRow[]]): number {
+function sortByDayAndTime(
+  a: [string, RegistrationRow[]],
+  b: [string, RegistrationRow[]]
+): number {
   const infoA = activityMap.get(a[0]);
   const infoB = activityMap.get(b[0]);
-  
+
   // Get day of week (Temporal uses 1=Mon to 7=Sun, convert to 0=Sun to 6=Sat for traditional ordering)
-  const dayA = infoA?.firstDate ? (infoA.firstDate.dayOfWeek % 7) : 7;
-  const dayB = infoB?.firstDate ? (infoB.firstDate.dayOfWeek % 7) : 7;
-  
+  const dayA = infoA?.firstDate ? infoA.firstDate.dayOfWeek % 7 : 7;
+  const dayB = infoB?.firstDate ? infoB.firstDate.dayOfWeek % 7 : 7;
+
   if (dayA !== dayB) {
     return dayA - dayB;
   }
-  
+
   // Same day, sort by start time
   const timeA = infoA?.firstDate?.toPlainTime().toString() || '23:59:59';
   const timeB = infoB?.firstDate?.toPlainTime().toString() || '23:59:59';
-  
+
   return timeA.localeCompare(timeB);
 }
 
@@ -231,7 +238,10 @@ function calculateAge(dob: Date): number | string {
   const today = new Date();
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age--;
   }
   return age >= 19 ? 'Adult' : age;
@@ -252,7 +262,8 @@ function getScheduleString(activityId: string): string {
   const parts = [];
   if (info.weekday) parts.push(info.weekday);
   if (info.formattedTime) parts.push(`at ${info.formattedTime}`);
-  if (info.formattedStartDate) parts.push(`beginning ${info.formattedStartDate}`);
+  if (info.formattedStartDate)
+    parts.push(`beginning ${info.formattedStartDate}`);
   return parts.join(' ');
 }
 ---
@@ -266,160 +277,240 @@ function getScheduleString(activityId: string): string {
       </a>
       <h1>Class Rosters</h1>
       <p class="subtitle">
-        {registrations.length} paid registration{registrations.length !== 1 ? 's' : ''} across {groupedByActivity.size} class{groupedByActivity.size !== 1 ? 'es' : ''}
+        {registrations.length} paid registration{
+          registrations.length !== 1 ? 's' : ''
+        } across {groupedByActivity.size} class{
+          groupedByActivity.size !== 1 ? 'es' : ''
+        }
       </p>
     </header>
 
-    {groupedByActivity.size === 0 ? (
-      <div class="empty-state">
-        <Icon name="mdi:clipboard-text-outline" width="64" height="64" />
-        <p>No paid registrations found</p>
-      </div>
-    ) : (
-      <>
-        {/* Upcoming Classes Section */}
-        {upcomingClasses.length > 0 && (
-          <details class="class-section" open>
-            <summary class="section-header">
-              <Icon name="mdi:calendar-clock" width="24" height="24" />
-              <span>Upcoming Classes</span>
-              <span class="section-count">{upcomingClasses.length}</span>
-            </summary>
-            <div class="section-content">
-              {upcomingClasses.map(([activityId, regs]) => {
-                const emailData = emailListsByActivity.get(activityId)!;
-                const activityInfo = activityMap.get(activityId);
-                const schedule = getScheduleString(activityId);
-                return (
-                  <div class="class-card">
-                    <div class="class-header">
-                      <div class="class-title">
-                        <a href={`/activities/${activityId}`}>
-                          {activityInfo?.name || activityId}
-                        </a>
-                        <span class="student-count">{regs.length} student{regs.length !== 1 ? 's' : ''}</span>
-                      </div>
-                      {schedule && <p class="schedule">{schedule}</p>}
-                      {emailData.count > 0 && (
-                        <button
-                          class="email-list-btn"
-                          data-activity={activityId}
-                          data-activity-name={activityInfo?.name || activityId}
-                          data-emails={emailData.list}
-                          title="Show email list"
-                        >
-                          <Icon name="mdi:email-outline" width="16" height="16" />
-                          Email ({emailData.count})
-                        </button>
-                      )}
-                    </div>
-                    <ul class="student-list">
-                      {regs.map((reg) => (
-                        <li class="student-item" data-registration-id={reg.registration_id}>
-                          <div class="student-main">
-                            <span class="student-name">{reg.firstname} {reg.lastname}</span>
-                            <span class="student-age">{calculateAge(reg.dob)}</span>
-                            <span class="reg-date">{formatDate(reg.created_at)}</span>
-                            <button
-                              class="cancel-btn"
-                              data-registration-id={reg.registration_id}
-                              data-student-name={`${reg.firstname} ${reg.lastname}`}
-                              data-activity-name={activityInfo?.name || activityId}
-                              title="Cancel registration"
-                            >
-                              <Icon name="mdi:close-circle-outline" width="16" height="16" />
-                            </button>
-                          </div>
-                          {(reg.answer || reg.note) && (
-                            <div class="student-notes">
-                              {reg.answer && <span class="note-text">{reg.answer}</span>}
-                              {reg.answer && reg.note && <span class="note-separator">·</span>}
-                              {reg.note && <span class="note-text">{reg.note}</span>}
-                            </div>
+    {
+      groupedByActivity.size === 0 ? (
+        <div class="empty-state">
+          <Icon name="mdi:clipboard-text-outline" width="64" height="64" />
+          <p>No paid registrations found</p>
+        </div>
+      ) : (
+        <>
+          {/* Upcoming Classes Section */}
+          {upcomingClasses.length > 0 && (
+            <details class="class-section" open>
+              <summary class="section-header">
+                <Icon name="mdi:calendar-clock" width="24" height="24" />
+                <span>Upcoming Classes</span>
+                <span class="section-count">{upcomingClasses.length}</span>
+              </summary>
+              <div class="section-content">
+                {upcomingClasses.map(([activityId, regs]) => {
+                  const emailData = emailListsByActivity.get(activityId)!;
+                  const activityInfo = activityMap.get(activityId);
+                  const schedule = getScheduleString(activityId);
+                  return (
+                    <div class="class-card">
+                      <div class="class-header">
+                        <div class="class-title">
+                          <a href={`/activities/${activityId}`}>
+                            {activityInfo?.name || activityId}
+                          </a>
+                          {activityInfo?.isCancelled && (
+                            <span class="status-badge cancelled">
+                              Cancelled
+                            </span>
                           )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </details>
-        )}
-                {/* Current Classes Section */}
-                {currentClasses.length > 0 && (
-          <details class="class-section" open>
-            <summary class="section-header">
-              <Icon name="mdi:play-circle" width="24" height="24" />
-              <span>Current Classes</span>
-              <span class="section-count">{currentClasses.length}</span>
-            </summary>
-            <div class="section-content">
-              {currentClasses.map(([activityId, regs]) => {
-                const emailData = emailListsByActivity.get(activityId)!;
-                const activityInfo = activityMap.get(activityId);
-                const schedule = getScheduleString(activityId);
-                return (
-                  <div class="class-card">
-                    <div class="class-header">
-                      <div class="class-title">
-                        <a href={`/activities/${activityId}`}>
-                          {activityInfo?.name || activityId}
-                        </a>
-                        <span class="student-count">{regs.length} student{regs.length !== 1 ? 's' : ''}</span>
+                          <span class="student-count">
+                            {regs.length} student{regs.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        {schedule && <p class="schedule">{schedule}</p>}
+                        {emailData.count > 0 && (
+                          <button
+                            class="email-list-btn"
+                            data-activity={activityId}
+                            data-activity-name={
+                              activityInfo?.name || activityId
+                            }
+                            data-emails={emailData.list}
+                            title="Show email list"
+                          >
+                            <Icon
+                              name="mdi:email-outline"
+                              width="16"
+                              height="16"
+                            />
+                            Email ({emailData.count})
+                          </button>
+                        )}
                       </div>
-                      {schedule && <p class="schedule">{schedule}</p>}
-                      {emailData.count > 0 && (
-                        <button
-                          class="email-list-btn"
-                          data-activity={activityId}
-                          data-activity-name={activityInfo?.name || activityId}
-                          data-emails={emailData.list}
-                          title="Show email list"
-                        >
-                          <Icon name="mdi:email-outline" width="16" height="16" />
-                          Email ({emailData.count})
-                        </button>
-                      )}
-                    </div>
-                    <ul class="student-list">
-                      {regs.map((reg) => (
-                        <li class="student-item" data-registration-id={reg.registration_id}>
-                          <div class="student-main">
-                            <span class="student-name">{reg.firstname} {reg.lastname}</span>
-                            <span class="student-age">{calculateAge(reg.dob)}</span>
-                            <span class="reg-date">{formatDate(reg.created_at)}</span>
-                            <button
-                              class="cancel-btn"
-                              data-registration-id={reg.registration_id}
-                              data-student-name={`${reg.firstname} ${reg.lastname}`}
-                              data-activity-name={activityInfo?.name || activityId}
-                              title="Cancel registration"
-                            >
-                              <Icon name="mdi:close-circle-outline" width="16" height="16" />
-                            </button>
-                          </div>
-                          {(reg.answer || reg.note) && (
-                            <div class="student-notes">
-                              {reg.answer && <span class="note-text">{reg.answer}</span>}
-                              {reg.answer && reg.note && <span class="note-separator">·</span>}
-                              {reg.note && <span class="note-text">{reg.note}</span>}
+                      <ul class="student-list">
+                        {regs.map(reg => (
+                          <li
+                            class="student-item"
+                            data-registration-id={reg.registration_id}
+                          >
+                            <div class="student-main">
+                              <span class="student-name">
+                                {reg.firstname} {reg.lastname}
+                              </span>
+                              <span class="student-age">
+                                {calculateAge(reg.dob)}
+                              </span>
+                              <span class="reg-date">
+                                {formatDate(reg.created_at)}
+                              </span>
+                              <button
+                                class="cancel-btn"
+                                data-registration-id={reg.registration_id}
+                                data-student-name={`${reg.firstname} ${reg.lastname}`}
+                                data-activity-name={
+                                  activityInfo?.name || activityId
+                                }
+                                title="Cancel registration"
+                              >
+                                <Icon
+                                  name="mdi:close-circle-outline"
+                                  width="16"
+                                  height="16"
+                                />
+                              </button>
                             </div>
+                            {(reg.answer || reg.note) && (
+                              <div class="student-notes">
+                                {reg.answer && (
+                                  <span class="note-text">{reg.answer}</span>
+                                )}
+                                {reg.answer && reg.note && (
+                                  <span class="note-separator">·</span>
+                                )}
+                                {reg.note && (
+                                  <span class="note-text">{reg.note}</span>
+                                )}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+          {/* Current Classes Section */}
+          {currentClasses.length > 0 && (
+            <details class="class-section" open>
+              <summary class="section-header">
+                <Icon name="mdi:play-circle" width="24" height="24" />
+                <span>Current Classes</span>
+                <span class="section-count">{currentClasses.length}</span>
+              </summary>
+              <div class="section-content">
+                {currentClasses.map(([activityId, regs]) => {
+                  const emailData = emailListsByActivity.get(activityId)!;
+                  const activityInfo = activityMap.get(activityId);
+                  const schedule = getScheduleString(activityId);
+                  return (
+                    <div class="class-card">
+                      <div class="class-header">
+                        <div class="class-title">
+                          <a href={`/activities/${activityId}`}>
+                            {activityInfo?.name || activityId}
+                          </a>
+                          {activityInfo?.isCancelled && (
+                            <span class="status-badge cancelled">
+                              Cancelled
+                            </span>
                           )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </details>
-        )}
-      </>
-    )}
+                          <span class="student-count">
+                            {regs.length} student{regs.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        {schedule && <p class="schedule">{schedule}</p>}
+                        {emailData.count > 0 && (
+                          <button
+                            class="email-list-btn"
+                            data-activity={activityId}
+                            data-activity-name={
+                              activityInfo?.name || activityId
+                            }
+                            data-emails={emailData.list}
+                            title="Show email list"
+                          >
+                            <Icon
+                              name="mdi:email-outline"
+                              width="16"
+                              height="16"
+                            />
+                            Email ({emailData.count})
+                          </button>
+                        )}
+                      </div>
+                      <ul class="student-list">
+                        {regs.map(reg => (
+                          <li
+                            class="student-item"
+                            data-registration-id={reg.registration_id}
+                          >
+                            <div class="student-main">
+                              <span class="student-name">
+                                {reg.firstname} {reg.lastname}
+                              </span>
+                              <span class="student-age">
+                                {calculateAge(reg.dob)}
+                              </span>
+                              <span class="reg-date">
+                                {formatDate(reg.created_at)}
+                              </span>
+                              <button
+                                class="cancel-btn"
+                                data-registration-id={reg.registration_id}
+                                data-student-name={`${reg.firstname} ${reg.lastname}`}
+                                data-activity-name={
+                                  activityInfo?.name || activityId
+                                }
+                                title="Cancel registration"
+                              >
+                                <Icon
+                                  name="mdi:close-circle-outline"
+                                  width="16"
+                                  height="16"
+                                />
+                              </button>
+                            </div>
+                            {(reg.answer || reg.note) && (
+                              <div class="student-notes">
+                                {reg.answer && (
+                                  <span class="note-text">{reg.answer}</span>
+                                )}
+                                {reg.answer && reg.note && (
+                                  <span class="note-separator">·</span>
+                                )}
+                                {reg.note && (
+                                  <span class="note-text">{reg.note}</span>
+                                )}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+        </>
+      )
+    }
 
     <!-- Cancel Confirmation Modal -->
-    <dialog id="cancel-modal" class="cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+    <dialog
+      id="cancel-modal"
+      class="cancel-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cancel-modal-title"
+    >
       <div class="modal-content">
         <header class="modal-header">
           <h3 id="cancel-modal-title">Cancel Registration</h3>
@@ -428,11 +519,19 @@ function getScheduleString(activityId: string): string {
           </button>
         </header>
         <div class="modal-body">
-          <p id="cancel-message">Are you sure you want to cancel <strong id="cancel-student-name"></strong>'s registration for <strong id="cancel-activity-name"></strong>?</p>
+          <p id="cancel-message">
+            Are you sure you want to cancel <strong id="cancel-student-name"
+            ></strong>'s registration for <strong id="cancel-activity-name"
+            ></strong>?
+          </p>
           <p class="cancel-warning">This action cannot be undone.</p>
           <div class="cancel-actions">
-            <button class="cancel-action-btn cancel-no" id="cancel-no">No, Keep Registration</button>
-            <button class="cancel-action-btn cancel-yes" id="cancel-yes">Yes, Cancel Registration</button>
+            <button class="cancel-action-btn cancel-no" id="cancel-no"
+              >No, Keep Registration</button
+            >
+            <button class="cancel-action-btn cancel-yes" id="cancel-yes"
+              >Yes, Cancel Registration</button
+            >
           </div>
           <p id="cancel-feedback" class="cancel-feedback"></p>
         </div>
@@ -440,16 +539,28 @@ function getScheduleString(activityId: string): string {
     </dialog>
 
     <!-- Email List Modal -->
-    <dialog id="email-modal" class="email-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <dialog
+      id="email-modal"
+      class="email-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       <div class="modal-content">
         <header class="modal-header">
           <h3 id="modal-title">Email List</h3>
-          <button class="close-btn" id="close-modal" aria-label="Close email list">
+          <button
+            class="close-btn"
+            id="close-modal"
+            aria-label="Close email list"
+          >
             <Icon name="mdi:close" width="24" height="24" />
           </button>
         </header>
         <div class="modal-body">
-          <p class="modal-instructions">Copy and paste this list into your email client's "BCC" field:</p>
+          <p class="modal-instructions">
+            Copy and paste this list into your email client's "BCC" field:
+          </p>
           <textarea id="email-list-text" readonly rows="6"></textarea>
           <button class="copy-btn" id="copy-btn">
             <Icon name="mdi:content-copy" width="18" height="18" />
@@ -466,23 +577,29 @@ function getScheduleString(activityId: string): string {
   // Email modal elements
   const modal = document.getElementById('email-modal') as HTMLDialogElement;
   const modalTitle = document.getElementById('modal-title')!;
-  const emailListText = document.getElementById('email-list-text') as HTMLTextAreaElement;
+  const emailListText = document.getElementById(
+    'email-list-text'
+  ) as HTMLTextAreaElement;
   const copyBtn = document.getElementById('copy-btn')!;
   const closeBtn = document.getElementById('close-modal')!;
   const copyFeedback = document.getElementById('copy-feedback')!;
 
   // Cancel modal elements
-  const cancelModal = document.getElementById('cancel-modal') as HTMLDialogElement;
+  const cancelModal = document.getElementById(
+    'cancel-modal'
+  ) as HTMLDialogElement;
   const cancelStudentName = document.getElementById('cancel-student-name')!;
   const cancelActivityName = document.getElementById('cancel-activity-name')!;
   const closeCancelBtn = document.getElementById('close-cancel-modal')!;
   const cancelNoBtn = document.getElementById('cancel-no') as HTMLButtonElement;
-  const cancelYesBtn = document.getElementById('cancel-yes') as HTMLButtonElement;
+  const cancelYesBtn = document.getElementById(
+    'cancel-yes'
+  ) as HTMLButtonElement;
   const cancelFeedback = document.getElementById('cancel-feedback')!;
   let currentRegistrationId: string | null = null;
 
   // Open modal when email list button is clicked
-  document.querySelectorAll('.email-list-btn').forEach((btn) => {
+  document.querySelectorAll('.email-list-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const activityName = btn.getAttribute('data-activity-name') || 'Class';
       const emails = btn.getAttribute('data-emails') || '';
@@ -496,7 +613,7 @@ function getScheduleString(activityId: string): string {
 
   // Close email modal
   closeBtn.addEventListener('click', () => modal.close());
-  modal.addEventListener('click', (e) => {
+  modal.addEventListener('click', e => {
     if (e.target === modal) modal.close();
   });
 
@@ -518,8 +635,8 @@ function getScheduleString(activityId: string): string {
   // Handle tap-to-reveal cancel button on touch devices
   let activeStudentItem: Element | null = null;
 
-  document.querySelectorAll('.student-item').forEach((item) => {
-    item.addEventListener('click', (e) => {
+  document.querySelectorAll('.student-item').forEach(item => {
+    item.addEventListener('click', e => {
       const target = e.target as Element;
       // If clicking the cancel button itself, let that handler run
       if (target.closest('.cancel-btn')) return;
@@ -539,7 +656,7 @@ function getScheduleString(activityId: string): string {
   });
 
   // Hide cancel button when clicking outside student items
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', e => {
     const target = e.target as Element;
     if (!target.closest('.student-item') && activeStudentItem) {
       activeStudentItem.classList.remove('show-cancel');
@@ -548,12 +665,14 @@ function getScheduleString(activityId: string): string {
   });
 
   // Open cancel modal when cancel button is clicked
-  document.querySelectorAll('.cancel-btn').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+  document.querySelectorAll('.cancel-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
       e.stopPropagation(); // Prevent triggering the student-item click
       currentRegistrationId = btn.getAttribute('data-registration-id');
-      const studentName = btn.getAttribute('data-student-name') || 'this student';
-      const activityName = btn.getAttribute('data-activity-name') || 'this class';
+      const studentName =
+        btn.getAttribute('data-student-name') || 'this student';
+      const activityName =
+        btn.getAttribute('data-activity-name') || 'this class';
       cancelStudentName.textContent = studentName;
       cancelActivityName.textContent = activityName;
       cancelFeedback.textContent = '';
@@ -567,7 +686,7 @@ function getScheduleString(activityId: string): string {
   // Close cancel modal
   closeCancelBtn.addEventListener('click', () => cancelModal.close());
   cancelNoBtn.addEventListener('click', () => cancelModal.close());
-  cancelModal.addEventListener('click', (e) => {
+  cancelModal.addEventListener('click', e => {
     if (e.target === cancelModal) cancelModal.close();
   });
 
@@ -600,7 +719,7 @@ function getScheduleString(activityId: string): string {
       if (response.ok) {
         cancelFeedback.textContent = '✓ Registration cancelled';
         cancelFeedback.className = 'cancel-feedback success';
-        
+
         // Remove the student item from the page
         const studentItem = document.querySelector(
           `li[data-registration-id="${currentRegistrationId}"]`
@@ -608,7 +727,7 @@ function getScheduleString(activityId: string): string {
         if (studentItem) {
           studentItem.remove();
         }
-        
+
         // Close modal after a brief delay
         setTimeout(() => {
           cancelModal.close();
@@ -620,7 +739,9 @@ function getScheduleString(activityId: string): string {
       }
     } catch (error) {
       cancelFeedback.textContent =
-        error instanceof Error ? error.message : 'Failed to cancel registration';
+        error instanceof Error
+          ? error.message
+          : 'Failed to cancel registration';
       cancelFeedback.className = 'cancel-feedback error';
       cancelYesBtn.disabled = false;
       cancelNoBtn.disabled = false;
@@ -769,6 +890,20 @@ function getScheduleString(activityId: string): string {
     font-weight: normal;
   }
 
+  .status-badge.cancelled {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #991b1b;
+    background: #fee2e2;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
   .schedule {
     margin: 0;
     font-size: 0.85rem;
@@ -876,7 +1011,10 @@ function getScheduleString(activityId: string): string {
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 4px;
-    transition: color 0.15s, background 0.15s, opacity 0.15s;
+    transition:
+      color 0.15s,
+      background 0.15s,
+      opacity 0.15s;
     opacity: 0;
     pointer-events: none;
   }
@@ -1027,7 +1165,9 @@ function getScheduleString(activityId: string): string {
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
+    transition:
+      background 0.15s,
+      opacity 0.15s;
   }
 
   .cancel-action-btn:disabled {
