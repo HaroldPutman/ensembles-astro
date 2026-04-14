@@ -5,6 +5,7 @@ import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
 import { getFirstAndLastDates } from '../../lib/datelib';
+import { isActivityCancelled } from '../../lib/activityStatus';
 import { Temporal } from '@js-temporal/polyfill';
 
 export async function getStaticPaths() {
@@ -25,6 +26,9 @@ const now = Temporal.Now.zonedDateTimeISO('America/Louisville');
 // Filter activities where this instructor is listed and the activity hasn't ended
 const instructorActivities = activities
   .filter(activity => {
+    if (isActivityCancelled(activity.data)) {
+      return false;
+    }
     // Check if instructor is in the activity's instructors array
     if (!activity.data.instructors?.includes(instructor.id)) {
       return false;

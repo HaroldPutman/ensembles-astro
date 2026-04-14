@@ -5,8 +5,11 @@ import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import { Temporal } from '@js-temporal/polyfill';
 import { getFirstAndLastDates } from '../lib/datelib';
+import { isActivityCancelled } from '../lib/activityStatus';
 
-const activities = await getCollection('activities');
+const activities = (await getCollection('activities')).filter(
+  a => !isActivityCancelled(a.data)
+);
 
 // Day codes from RRULE to day names
 const dayCodeToName: Record<string, string> = {

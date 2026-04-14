@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import type { PoolClient } from 'pg';
+import { getCollection } from 'astro:content';
 import { getPool } from '../../lib/db';
+import { isActivityCancelled } from '../../lib/activityStatus';
 
 export const prerender = false;
 
@@ -35,6 +37,38 @@ export const POST: APIRoute = async ({ request }) => {
         }),
         {
           status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    const activities = await getCollection('activities');
+    const activityEntry = activities.find(
+      a => a.id.toLowerCase() === String(activityId).toLowerCase()
+    );
+    if (!activityEntry) {
+      return new Response(
+        JSON.stringify({
+          message: 'Activity not found',
+        }),
+        {
+          status: 404,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+    const resolvedActivityId = activityEntry.id;
+    if (isActivityCancelled(activityEntry.data)) {
+      return new Response(
+        JSON.stringify({
+          message: 'This class is no longer open for registration.',
+        }),
+        {
+          status: 403,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -84,7 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
           `INSERT INTO registration (activity, student_id)
            VALUES ($1, $2)
            RETURNING id`,
-          [activityId, studentId]
+          [resolvedActivityId, studentId]
         );
 
         client.release();
@@ -94,7 +128,7 @@ export const POST: APIRoute = async ({ request }) => {
             message: 'Student and registration saved successfully',
             studentId: studentId,
             registrationId: registrationResult.rows[0].id,
-            activityId: activityId,
+            activityId: resolvedActivityId,
           }),
           {
             status: 200,
@@ -113,7 +147,7 @@ export const POST: APIRoute = async ({ request }) => {
           const existingReg = await client.query(
             `SELECT id, payment_id, contact_id FROM registration 
              WHERE activity = $1 AND student_id = $2`,
-            [activityId, studentId]
+            [resolvedActivityId, studentId]
           );
 
           client.release();
@@ -125,7 +159,7 @@ export const POST: APIRoute = async ({ request }) => {
                 message: 'Student already registered for this activity',
                 alreadyRegistered: true,
                 studentId: studentId,
-                activityId: activityId,
+                activityId: resolvedActivityId,
               }),
               {
                 status: 409,
@@ -143,7 +177,7 @@ export const POST: APIRoute = async ({ request }) => {
                 studentId: studentId,
                 registrationId: existingReg.rows[0]?.id,
                 contactId: existingReg.rows[0]?.contact_id,
-                activityId: activityId,
+                activityId: resolvedActivityId,
               }),
               {
                 status: 200,
