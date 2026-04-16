@@ -130,6 +130,7 @@ interface RegistrationRow {
   created_at: Date;
   answer: string | null;
   note: string | null;
+  transaction_id: string | null;
 }
 
 let registrations: RegistrationRow[] = [];
@@ -147,10 +148,12 @@ try {
       c.email as contact_email,
       r.created_at,
       r.answer,
-      r.note
+      r.note,
+      p.transaction_id as transaction_id
     FROM registration r
     JOIN student s ON r.student_id = s.id
     LEFT JOIN contact c ON r.contact_id = c.id
+    LEFT JOIN payment p ON r.payment_id = p.id
     WHERE r.cancelled_at IS NULL
       AND r.payment_id IS NOT NULL
     ORDER BY r.activity, s.lastname, s.firstname
@@ -190,20 +193,40 @@ for (const [activityId, regs] of groupedByActivity) {
   });
 }
 
-// Separate into current and upcoming classes
+function activityHasEnded(info: ActivityInfo | undefined): boolean {
+  if (!info?.lastDate) return false;
+  return Temporal.ZonedDateTime.compare(info.lastDate, now) < 0;
+}
+
+function emptyEmailEntry(): { list: string; count: number } {
+  return { list: '', count: 0 };
+}
+
+// Current / upcoming from content collection: drop ended classes; include zero-registration classes
 const currentClasses: [string, RegistrationRow[]][] = [];
 const upcomingClasses: [string, RegistrationRow[]][] = [];
 
-for (const [activityId, regs] of groupedByActivity) {
-  const activityInfo = activityMap.get(activityId);
-  if (activityInfo?.isCurrent) {
-    currentClasses.push([activityId, regs]);
-  } else if (activityInfo?.isUpcoming) {
+for (const activity of activities) {
+  const activityId = activity.id;
+  const info = activityMap.get(activityId);
+  if (!info || activityHasEnded(info)) continue;
+
+  const regs = groupedByActivity.get(activityId) ?? [];
+  if (!emailListsByActivity.has(activityId)) {
+    emailListsByActivity.set(activityId, emptyEmailEntry());
+  }
+
+  if (info.isUpcoming) {
     upcomingClasses.push([activityId, regs]);
   } else {
-    // Classes that have ended or unknown status - include in current for now
     currentClasses.push([activityId, regs]);
   }
+}
+
+// Paid registrations whose activity id is not in the collection (legacy slug, etc.)
+for (const activityId of groupedByActivity.keys()) {
+  if (activityMap.has(activityId)) continue;
+  currentClasses.push([activityId, groupedByActivity.get(activityId)!]);
 }
 
 // Sort classes by day of week (Sun=0, Mon=1, etc.) and then by start time
@@ -231,6 +254,9 @@ function sortByDayAndTime(
 
 currentClasses.sort(sortByDayAndTime);
 upcomingClasses.sort(sortByDayAndTime);
+
+const visibleClassCount = currentClasses.length + upcomingClasses.length;
+const hasAnyClassToShow = visibleClassCount > 0;
 
 // Calculate age from DOB
 function calculateAge(dob: Date): number | string {
@@ -266,6 +292,14 @@ function getScheduleString(activityId: string): string {
     parts.push(`beginning ${info.formattedStartDate}`);
   return parts.join(' ');
 }
+
+/** Icon next to student name from payment.transaction_id */
+function paymentTypeIconName(transactionId: string | null | undefined): string {
+  const id = transactionId ?? '';
+  if (id.startsWith('CHECK-')) return 'mdi:checkbook';
+  if (id.startsWith('FREE-')) return 'mdi:circle-outline';
+  return 'mdi:credit-card';
+}
 ---
 
 <FullWidthLayout title="Ensembles - Registrations">
@@ -279,17 +313,20 @@ function getScheduleString(activityId: string): string {
       <p class="subtitle">
         {registrations.length} paid registration{
           registrations.length !== 1 ? 's' : ''
-        } across {groupedByActivity.size} class{
-          groupedByActivity.size !== 1 ? 'es' : ''
+        }
+        {
+          hasAnyClassToShow
+            ? ` across ${visibleClassCount} class${visibleClassCount !== 1 ? 'es' : ''}`
+            : ''
         }
       </p>
     </header>
 
     {
-      groupedByActivity.size === 0 ? (
+      !hasAnyClassToShow ? (
         <div class="empty-state">
           <Icon name="mdi:clipboard-text-outline" width="64" height="64" />
-          <p>No paid registrations found</p>
+          <p>No current or upcoming classes to show</p>
         </div>
       ) : (
         <>
@@ -303,7 +340,8 @@ function getScheduleString(activityId: string): string {
               </summary>
               <div class="section-content">
                 {upcomingClasses.map(([activityId, regs]) => {
-                  const emailData = emailListsByActivity.get(activityId)!;
+                  const emailData =
+                    emailListsByActivity.get(activityId) ?? emptyEmailEntry();
                   const activityInfo = activityMap.get(activityId);
                   const schedule = getScheduleString(activityId);
                   return (
@@ -342,54 +380,69 @@ function getScheduleString(activityId: string): string {
                           </button>
                         )}
                       </div>
-                      <ul class="student-list">
-                        {regs.map(reg => (
-                          <li
-                            class="student-item"
-                            data-registration-id={reg.registration_id}
-                          >
-                            <div class="student-main">
-                              <span class="student-name">
-                                {reg.firstname} {reg.lastname}
-                              </span>
-                              <span class="student-age">
-                                {calculateAge(reg.dob)}
-                              </span>
-                              <span class="reg-date">
-                                {formatDate(reg.created_at)}
-                              </span>
-                              <button
-                                class="cancel-btn"
-                                data-registration-id={reg.registration_id}
-                                data-student-name={`${reg.firstname} ${reg.lastname}`}
-                                data-activity-name={
-                                  activityInfo?.name || activityId
-                                }
-                                title="Cancel registration"
-                              >
-                                <Icon
-                                  name="mdi:close-circle-outline"
-                                  width="16"
-                                  height="16"
-                                />
-                              </button>
-                            </div>
-                            {(reg.answer || reg.note) && (
-                              <div class="student-notes">
-                                {reg.answer && (
-                                  <span class="note-text">{reg.answer}</span>
-                                )}
-                                {reg.answer && reg.note && (
-                                  <span class="note-separator">·</span>
-                                )}
-                                {reg.note && (
-                                  <span class="note-text">{reg.note}</span>
-                                )}
+                      {regs.length === 0 ? (
+                        <p class="no-registrations">No Registrations</p>
+                      ) : (
+                        <ul class="student-list">
+                          {regs.map(reg => (
+                            <li
+                              class="student-item"
+                              data-registration-id={reg.registration_id}
+                            >
+                              <div class="student-main">
+                                <span class="student-name">
+                                  <Icon
+                                    name={paymentTypeIconName(
+                                      reg.transaction_id
+                                    )}
+                                    width="16"
+                                    height="16"
+                                    class="payment-type-icon"
+                                    aria-hidden="true"
+                                  />
+                                  <span class="student-name-text">
+                                    {reg.firstname} {reg.lastname}
+                                  </span>
+                                </span>
+                                <span class="student-age">
+                                  {calculateAge(reg.dob)}
+                                </span>
+                                <span class="reg-date">
+                                  {formatDate(reg.created_at)}
+                                </span>
+                                <button
+                                  class="cancel-btn"
+                                  data-registration-id={reg.registration_id}
+                                  data-student-name={`${reg.firstname} ${reg.lastname}`}
+                                  data-activity-name={
+                                    activityInfo?.name || activityId
+                                  }
+                                  title="Cancel registration"
+                                >
+                                  <Icon
+                                    name="mdi:close-circle-outline"
+                                    width="16"
+                                    height="16"
+                                  />
+                                </button>
                               </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                              {(reg.answer || reg.note) && (
+                                <div class="student-notes">
+                                  {reg.answer && (
+                                    <span class="note-text">{reg.answer}</span>
+                                  )}
+                                  {reg.answer && reg.note && (
+                                    <span class="note-separator">·</span>
+                                  )}
+                                  {reg.note && (
+                                    <span class="note-text">{reg.note}</span>
+                                  )}
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   );
                 })}
@@ -406,7 +459,8 @@ function getScheduleString(activityId: string): string {
               </summary>
               <div class="section-content">
                 {currentClasses.map(([activityId, regs]) => {
-                  const emailData = emailListsByActivity.get(activityId)!;
+                  const emailData =
+                    emailListsByActivity.get(activityId) ?? emptyEmailEntry();
                   const activityInfo = activityMap.get(activityId);
                   const schedule = getScheduleString(activityId);
                   return (
@@ -445,54 +499,69 @@ function getScheduleString(activityId: string): string {
                           </button>
                         )}
                       </div>
-                      <ul class="student-list">
-                        {regs.map(reg => (
-                          <li
-                            class="student-item"
-                            data-registration-id={reg.registration_id}
-                          >
-                            <div class="student-main">
-                              <span class="student-name">
-                                {reg.firstname} {reg.lastname}
-                              </span>
-                              <span class="student-age">
-                                {calculateAge(reg.dob)}
-                              </span>
-                              <span class="reg-date">
-                                {formatDate(reg.created_at)}
-                              </span>
-                              <button
-                                class="cancel-btn"
-                                data-registration-id={reg.registration_id}
-                                data-student-name={`${reg.firstname} ${reg.lastname}`}
-                                data-activity-name={
-                                  activityInfo?.name || activityId
-                                }
-                                title="Cancel registration"
-                              >
-                                <Icon
-                                  name="mdi:close-circle-outline"
-                                  width="16"
-                                  height="16"
-                                />
-                              </button>
-                            </div>
-                            {(reg.answer || reg.note) && (
-                              <div class="student-notes">
-                                {reg.answer && (
-                                  <span class="note-text">{reg.answer}</span>
-                                )}
-                                {reg.answer && reg.note && (
-                                  <span class="note-separator">·</span>
-                                )}
-                                {reg.note && (
-                                  <span class="note-text">{reg.note}</span>
-                                )}
+                      {regs.length === 0 ? (
+                        <p class="no-registrations">No Registrations</p>
+                      ) : (
+                        <ul class="student-list">
+                          {regs.map(reg => (
+                            <li
+                              class="student-item"
+                              data-registration-id={reg.registration_id}
+                            >
+                              <div class="student-main">
+                                <span class="student-name">
+                                  <Icon
+                                    name={paymentTypeIconName(
+                                      reg.transaction_id
+                                    )}
+                                    width="16"
+                                    height="16"
+                                    class="payment-type-icon"
+                                    aria-hidden="true"
+                                  />
+                                  <span class="student-name-text">
+                                    {reg.firstname} {reg.lastname}
+                                  </span>
+                                </span>
+                                <span class="student-age">
+                                  {calculateAge(reg.dob)}
+                                </span>
+                                <span class="reg-date">
+                                  {formatDate(reg.created_at)}
+                                </span>
+                                <button
+                                  class="cancel-btn"
+                                  data-registration-id={reg.registration_id}
+                                  data-student-name={`${reg.firstname} ${reg.lastname}`}
+                                  data-activity-name={
+                                    activityInfo?.name || activityId
+                                  }
+                                  title="Cancel registration"
+                                >
+                                  <Icon
+                                    name="mdi:close-circle-outline"
+                                    width="16"
+                                    height="16"
+                                  />
+                                </button>
                               </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                              {(reg.answer || reg.note) && (
+                                <div class="student-notes">
+                                  {reg.answer && (
+                                    <span class="note-text">{reg.answer}</span>
+                                  )}
+                                  {reg.answer && reg.note && (
+                                    <span class="note-separator">·</span>
+                                  )}
+                                  {reg.note && (
+                                    <span class="note-text">{reg.note}</span>
+                                  )}
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   );
                 })}
@@ -930,6 +999,15 @@ function getScheduleString(activityId: string): string {
     background: #2563eb;
   }
 
+  .no-registrations {
+    margin: 0;
+    padding: 0.75rem 1rem 1rem;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #888;
+    background: white;
+  }
+
   /* Student List Styles */
   .student-list {
     list-style: none;
@@ -957,8 +1035,20 @@ function getScheduleString(activityId: string): string {
   }
 
   .student-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
     flex: 1;
     font-weight: 500;
+    min-width: 0;
+  }
+
+  .payment-type-icon {
+    flex-shrink: 0;
+    color: #64748b;
+  }
+
+  .student-name-text {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
