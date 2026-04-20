@@ -6,6 +6,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import netlify from '@astrojs/netlify';
 import clerk from '@clerk/astro';
+import { activityLegacyRedirects } from './src/data/activity-legacy-redirects.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,6 +14,7 @@ export default defineConfig({
   site: 'https://ensemblesinc.org',
 
   redirects: {
+    ...activityLegacyRedirects,
     '/classes': '/activities?kind=class',
     '/camps': '/activities?kind=camp',
     '/contact-us': '/contact',
