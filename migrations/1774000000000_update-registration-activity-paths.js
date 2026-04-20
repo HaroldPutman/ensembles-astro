@@ -61,8 +61,8 @@ export const up = pgm => {
   UPDATE registration SET activity = '2025/08/jazz' WHERE LOWER(activity) = LOWER('jazz202508');
   UPDATE registration SET activity = '2026/01/jazz' WHERE LOWER(activity) = LOWER('jazz202601');
   UPDATE registration SET activity = '2026/01/mcdowell' WHERE LOWER(activity) = LOWER('mcdowell2026');
-  UPDATE registration SET activity = '2026/01/mini' WHERE LOWER(activity) = LOWER('mini202511');
-  UPDATE registration SET activity = '2025/11/mini' WHERE LOWER(activity) = LOWER('mini202601');
+  UPDATE registration SET activity = '2026/01/mini' WHERE LOWER(activity) = LOWER('mini202601');
+  UPDATE registration SET activity = '2025/11/mini' WHERE LOWER(activity) = LOWER('mini202511');
   UPDATE registration SET activity = '2026/02/mini' WHERE LOWER(activity) = LOWER('mini202602');
   UPDATE registration SET activity = '2026/04/mini' WHERE LOWER(activity) = LOWER('mini202603');
   UPDATE registration SET activity = '2026/02/perf' WHERE LOWER(activity) = LOWER('perf202602');
