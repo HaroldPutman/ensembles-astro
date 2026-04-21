@@ -15,8 +15,8 @@ export async function getStaticPaths() {
   }));
 }
 
-// Get the activity ID from the URL parameters
-const { activityId } = Astro.params;
+// Catch-all route: activityId is the full path (e.g. 2026/04/pno23)
+const activityId = Astro.params.activityId ?? '';
 const { activity } = Astro.props;
 const activityIsCancelled = isActivityCancelled(activity.data);
 ---

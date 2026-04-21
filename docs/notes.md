@@ -33,3 +33,18 @@ These are specs on images used on the site
 
 The instructor contact information is maintained in an encrypted file. This file is decrypted at build time.
 If you change it you need to re-encrypt with `npm run lock`.
+
+## Activity File Naming and organization
+
+Each activity that is a class is in a folder like `yyyy/mm` where yyyy is the year (2026) and mm is the two digit month in which event was originally scheduled.
+
+| Filename                            | Description                          |
+| ----------------------------------- | ------------------------------------ |
+| /activities/2026/03/piano1a.mdx     | class piano1a starting in March      |
+| /activities/2026/09/11-tailgate.mdx | Tailgate on 9/11                     |
+| /activities/2026/06/jazz.mdx        | Community Jazz band starting in June |
+
+If an event is rescheduled to another month we can leave the file in its original location. The actual start date
+comes from within the file itself.
+
+The Build can use this naming convention to ignore activities more than 18 months old.
