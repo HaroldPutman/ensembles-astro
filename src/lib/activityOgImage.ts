@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
@@ -85,13 +85,18 @@ export async function renderActivityOgPng(
 
   let bgDataUrl: string | undefined;
   if (input.imagePath?.startsWith('/')) {
-    const abs = join(root, 'public', input.imagePath.slice(1));
-    try {
-      const buf = await readFile(abs);
-      const mime = imageMime(input.imagePath);
-      bgDataUrl = `data:${mime};base64,${Buffer.from(buf).toString('base64')}`;
-    } catch {
-      bgDataUrl = undefined;
+    const publicDir = resolve(root, 'public');
+    const rel = input.imagePath.slice(1);
+    const abs = resolve(publicDir, rel);
+    const underPublic = abs.startsWith(publicDir + sep);
+    if (underPublic) {
+      try {
+        const buf = await readFile(abs);
+        const mime = imageMime(input.imagePath);
+        bgDataUrl = `data:${mime};base64,${Buffer.from(buf).toString('base64')}`;
+      } catch {
+        bgDataUrl = undefined;
+      }
     }
   }
 

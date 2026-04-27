@@ -76,7 +76,7 @@ const resolvedOgImageAlt = ogImageAlt ?? resolvedOgTitle;
     <meta name="twitter:image" content={resolvedOgImage} />
     <meta name="twitter:title" content={resolvedOgTitle} />
     <meta name="twitter:description" content={resolvedOgDescription} />
-    {description && <meta name="description" content={description} />}
+    <meta name="description" content={resolvedOgDescription} />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
