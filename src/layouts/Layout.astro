@@ -3,12 +3,37 @@ import FullWidthLayout from './FullWidthLayout.astro';
 
 interface Props {
   title?: string;
+  description?: string;
+  ogImage?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogUrl?: string;
+  ogType?: string;
+  ogImageAlt?: string;
 }
 
-const { title } = Astro.props;
+const {
+  title,
+  description,
+  ogImage,
+  ogTitle,
+  ogDescription,
+  ogUrl,
+  ogType,
+  ogImageAlt,
+} = Astro.props;
 ---
 
-<FullWidthLayout title={title}>
+<FullWidthLayout
+  title={title}
+  description={description}
+  ogImage={ogImage}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+  ogUrl={ogUrl}
+  ogType={ogType}
+  ogImageAlt={ogImageAlt}
+>
   <div class="container">
     <slot />
   </div>

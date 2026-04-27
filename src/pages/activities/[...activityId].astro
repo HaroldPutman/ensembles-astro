@@ -79,6 +79,11 @@ const startTimestamp =
 
 const ageRange = formatAgeRange(activity.data.ageMin, activity.data.ageMax);
 
+const site = Astro.site ?? new URL('https://chalrestownensembles.com');
+const canonicalUrl = new URL(Astro.url.pathname, site).href;
+const ogImageUrl = new URL(`/image/og/${activity.id}.png`, site).href;
+const pageDescription = `${activity.data.name} — group music and art classes at Ensembles, Inc.`;
+
 // Format cost
 function formatCost(cost?: number) {
   if (!cost || cost === 0) return 'Free';
@@ -97,7 +102,16 @@ function getKindLabel(kind: string) {
 }
 ---
 
-<Layout title={`Ensembles - ${activity.data.name}`}>
+<Layout
+  title={`Ensembles — ${activity.data.name}`}
+  description={pageDescription}
+  ogImage={ogImageUrl}
+  ogUrl={canonicalUrl}
+  ogTitle={`Ensembles — ${activity.data.name}`}
+  ogDescription={pageDescription}
+  ogType="article"
+  ogImageAlt={activity.data.name}
+>
   <article class="activity-detail">
     {
       activityIsCancelled && (

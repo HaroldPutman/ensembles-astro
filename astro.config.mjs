@@ -11,7 +11,7 @@ import { activityLegacyRedirects } from './src/data/activity-legacy-redirects.mj
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
-  site: 'https://ensemblesinc.org',
+  site: 'https://charlestownensembles.com',
 
   redirects: {
     ...activityLegacyRedirects,
