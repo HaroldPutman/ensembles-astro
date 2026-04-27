@@ -4,36 +4,79 @@ import Footer from '../components/Footer.astro';
 
 interface Props {
   title: string;
+  /** Used for meta description and Open Graph when no override */
+  description?: string;
+  /** Absolute URL for og:image / twitter:image */
+  ogImage?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  /** Canonical page URL for og:url */
+  ogUrl?: string;
+  ogType?: string;
+  /** og:image:alt */
+  ogImageAlt?: string;
 }
 
-const { title = 'Ensembles, Inc.' } = Astro.props;
+const {
+  title = 'Ensembles, Inc.',
+  description,
+  ogImage,
+  ogTitle,
+  ogDescription,
+  ogUrl,
+  ogType = 'website',
+  ogImageAlt,
+} = Astro.props;
+
+const site = Astro.site ?? new URL('https://ensemblesinc.org');
+const defaultOgImage = new URL('/image/poster.jpg', site).href;
+const resolvedOgImage = ogImage ?? defaultOgImage;
+const resolvedOgUrl = ogUrl ?? new URL(Astro.url.pathname, site).href;
+const resolvedOgTitle = ogTitle ?? title;
+const resolvedOgDescription =
+  ogDescription ?? description ?? 'Affordable Group Music and Art Classes';
+const resolvedOgImageAlt = ogImageAlt ?? resolvedOgTitle;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    {import.meta.env.PROD && (
-      <>
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-QG5N2GWPQN"></script>
-        <script is:inline>
+    {
+      import.meta.env.PROD && (
+        <>
+          {/* Google tag (gtag.js) */}
+          <script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id=G-QG5N2GWPQN"
+          />
+          <script
+            is:inline
+            set:html={`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', 'G-QG5N2GWPQN');
-        </script>
-      </>
-    )}
+        `}
+          />
+        </>
+      )
+    }
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta property="og:image" content="/image/poster.jpg" />
+    <meta property="og:image" content={resolvedOgImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://charlestownensembles.com" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content="Affordable Group Music and Art Classes" />
+    <meta property="og:image:alt" content={resolvedOgImageAlt} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={resolvedOgUrl} />
+    <meta property="og:title" content={resolvedOgTitle} />
+    <meta property="og:description" content={resolvedOgDescription} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={resolvedOgImage} />
+    <meta name="twitter:title" content={resolvedOgTitle} />
+    <meta name="twitter:description" content={resolvedOgDescription} />
+    {description && <meta name="description" content={description} />}
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

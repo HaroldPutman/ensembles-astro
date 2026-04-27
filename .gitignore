@@ -1,3 +1,6 @@
+# incremental OG build cache (see scripts/generate-activity-og.ts)
+.cache/
+
 # build output
 dist/
 
