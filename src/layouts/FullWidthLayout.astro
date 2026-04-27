@@ -28,7 +28,7 @@ const {
   ogImageAlt,
 } = Astro.props;
 
-const site = Astro.site ?? new URL('https://ensemblesinc.org');
+const site = Astro.site ?? new URL('https://charlestownensembles.com');
 const defaultOgImage = new URL('/image/poster.jpg', site).href;
 const resolvedOgImage = ogImage ?? defaultOgImage;
 const resolvedOgUrl = ogUrl ?? new URL(Astro.url.pathname, site).href;

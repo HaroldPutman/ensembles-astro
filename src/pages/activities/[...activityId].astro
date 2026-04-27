@@ -79,7 +79,7 @@ const startTimestamp =
 
 const ageRange = formatAgeRange(activity.data.ageMin, activity.data.ageMax);
 
-const site = Astro.site ?? new URL('https://ensemblesinc.org');
+const site = Astro.site ?? new URL('https://chalrestownensembles.com');
 const canonicalUrl = new URL(Astro.url.pathname, site).href;
 const ogImageUrl = new URL(`/image/og/${activity.id}.png`, site).href;
 const pageDescription = `${activity.data.name} — group music and art classes at Ensembles, Inc.`;
