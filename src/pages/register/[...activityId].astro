@@ -32,6 +32,10 @@ const firstDate = getFirstDate(
 );
 const dtstart = firstDate.toPlainDate().toString();
 const activityIsCancelled = isActivityCancelled(activity.data);
+const registration = activity.data.registration;
+const onSiteRegistration = registration === true;
+const externalRegistrationUrl =
+  typeof registration === 'string' ? registration : null;
 ---
 
 <Layout title={`Ensembles - Register for ${activity.data.name}`}>
@@ -54,18 +58,45 @@ const activityIsCancelled = isActivityCancelled(activity.data);
       )
     }
     {
-      !activityIsCancelled && !isFree && activity.data.cost && (
-        <p>
-          The cost of the class is{' '}
-          {activity.data.cost.toLocaleString('en-US', {
-            style: 'currency',
-            currency: 'USD',
-          })}
+      !activityIsCancelled &&
+        onSiteRegistration &&
+        !isFree &&
+        activity.data.cost && (
+          <p>
+            The cost of the class is{' '}
+            {activity.data.cost.toLocaleString('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            })}
+          </p>
+        )
+    }
+    {
+      !activityIsCancelled && registration === false && (
+        <p class="no-registration-notice" role="status">
+          This activity does not offer registration through Ensembles.
         </p>
       )
     }
     {
-      !activityIsCancelled && (
+      !activityIsCancelled && externalRegistrationUrl && (
+        <>
+          <p class="external-registration-intro">
+            Registration for this activity is handled on another website.
+          </p>
+          <a
+            href={externalRegistrationUrl}
+            class="submit-button oswald-cta external-register-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Continue to registration
+          </a>
+        </>
+      )
+    }
+    {
+      !activityIsCancelled && onSiteRegistration && (
         <form
           id="registration-form"
           class="registration-form"
@@ -122,7 +153,8 @@ const activityIsCancelled = isActivityCancelled(activity.data);
       )
     }
     {
-      activityIsCancelled && (
+      (activityIsCancelled ||
+        (!activityIsCancelled && !onSiteRegistration)) && (
         <p class="back-to-activities">
           <a href="/activities">Browse other activities</a>
         </p>
@@ -326,6 +358,29 @@ const activityIsCancelled = isActivityCancelled(activity.data);
     font-size: 2.5rem;
     color: #333;
     margin-bottom: 1rem;
+  }
+
+  .external-register-link {
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+    margin-top: 0.5rem;
+  }
+
+  .external-registration-intro {
+    font-size: 1.1rem;
+    color: #444;
+    margin: 1rem 0;
+    line-height: 1.5;
+  }
+
+  .no-registration-notice {
+    padding: 1rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #4b5563;
+    font-weight: 500;
   }
 
   .cancelled-notice {

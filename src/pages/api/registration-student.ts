@@ -76,6 +76,24 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    const registrationSetting = activityEntry.data.registration;
+    if (registrationSetting !== true) {
+      return new Response(
+        JSON.stringify({
+          message:
+            registrationSetting === false
+              ? 'This activity does not accept registrations through Ensembles.'
+              : 'Registration for this activity is handled on another website.',
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
     let client: PoolClient | undefined;
 
     try {

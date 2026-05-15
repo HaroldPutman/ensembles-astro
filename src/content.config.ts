@@ -80,7 +80,10 @@ const activities = defineCollection({
     question: z.string().optional(),
     suggestedDonation: z.number().optional(),
     image: z.string().optional(),
-    hasRegistration: z.boolean().optional().default(true),
+    registration: z
+      .union([z.literal(true), z.literal(false), z.string().url()])
+      .optional()
+      .default(true),
     status: z.enum(ACTIVITY_STATUSES).optional(),
   }),
 });
