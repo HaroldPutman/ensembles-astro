@@ -16,8 +16,10 @@
         "npm:@astrojs/sitemap@^3.6.0",
         "npm:@clerk/astro@^2.16.10",
         "npm:@eslint/js@^9.30.0",
+        "npm:@fontsource/public-sans@^5.2.7",
         "npm:@getbrevo/brevo@^3.0.1",
         "npm:@iconify-json/mdi@^1.2.3",
+        "npm:@resvg/resvg-js@^2.6.2",
         "npm:@types/jest@30",
         "npm:@types/pg@^8.15.4",
         "npm:@typescript-eslint/eslint-plugin@^8.35.0",
@@ -40,8 +42,10 @@
         "npm:prettier-plugin-astro@~0.14.1",
         "npm:prettier@^3.6.2",
         "npm:rrule-temporal@^1.4.7",
+        "npm:satori@0.26",
         "npm:ts-jest@^29.4.0",
-        "npm:tslib@^2.8.1"
+        "npm:tslib@^2.8.1",
+        "npm:tsx@^4.19.4"
       ]
     }
   }

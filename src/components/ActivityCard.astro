@@ -19,7 +19,8 @@ interface Props {
   instructors?: string[];
   sizeMax?: number;
   kind: string;
-  hasRegistration?: boolean;
+  /** `true`: on-site registration; `false`: none; string: external registration URL */
+  registration?: boolean | string;
 }
 
 const {
@@ -36,8 +37,12 @@ const {
   instructors,
   image,
   kind,
-  hasRegistration,
+  registration = true,
 } = Astro.props;
+
+const showRegistrationCta = registration !== false;
+const registerHref =
+  typeof registration === 'string' ? registration : `/register/${activityId}`;
 
 const [firstDate, lastDate] = getFirstAndLastDates(
   startDate,
@@ -118,9 +123,18 @@ const instructorData =
         >View Details</a
       >
       {
-        hasRegistration && (
+        showRegistrationCta && registerHref && (
           <>
-            <a href={`/register/${activityId}`} class="register-btn oswald-cta">
+            <a
+              href={registerHref}
+              class="register-btn oswald-cta"
+              target={typeof registration === 'string' ? '_blank' : undefined}
+              rel={
+                typeof registration === 'string'
+                  ? 'noopener noreferrer'
+                  : undefined
+              }
+            >
               Register Now
             </a>
             <p class="registration-status" />

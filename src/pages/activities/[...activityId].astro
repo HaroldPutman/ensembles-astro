@@ -79,6 +79,12 @@ const startTimestamp =
 
 const ageRange = formatAgeRange(activity.data.ageMin, activity.data.ageMax);
 
+const registration = activity.data.registration;
+const onSiteRegistration = registration === true;
+const externalRegistrationUrl =
+  typeof registration === 'string' ? registration : null;
+const showRegistrationCta = registration !== false && !activityIsCancelled;
+
 const site = Astro.site ?? new URL('https://chalrestownensembles.com');
 const canonicalUrl = new URL(Astro.url.pathname, site).href;
 const ogImageUrl = new URL(`/image/og/${activity.id}.png`, site).href;
@@ -196,27 +202,47 @@ function getKindLabel(kind: string) {
         }
 
         {
-          activity.data.hasRegistration && !activityIsCancelled && (
+          showRegistrationCta && (
             <div class="cta-section">
-              <ActivityStatus
-                server:defer
-                activityId={activity.id}
-                kind={activity.data.kind}
-                sizeMax={activity.data.sizeMax}
-                startTimestamp={startTimestamp}
-              >
-                <a
-                  href={`/register/${activity.id}`}
-                  class="btn btn-primary oswald-cta"
+              {onSiteRegistration && (
+                <ActivityStatus
+                  server:defer
+                  activityId={activity.id}
+                  kind={activity.data.kind}
+                  sizeMax={activity.data.sizeMax}
+                  startTimestamp={startTimestamp}
                 >
-                  Register Now
-                  <Icon name="mdi:arrow-right" width="20" height="20" />
-                </a>
-                <div slot="fallback" class="status-loading">
-                  <span class="loading-spinner" />
-                  Checking availability...
-                </div>
-              </ActivityStatus>
+                  <a
+                    href={`/register/${activity.id}`}
+                    class="btn btn-primary oswald-cta"
+                  >
+                    Register Now
+                    <Icon name="mdi:arrow-right" width="20" height="20" />
+                  </a>
+                  <div slot="fallback" class="status-loading">
+                    <span class="loading-spinner" />
+                    Checking availability...
+                  </div>
+                </ActivityStatus>
+              )}
+              {externalRegistrationUrl && (
+                <>
+                  <p class="external-registration-intro">
+                    Registration for this{' '}
+                    {getKindLabel(activity.data.kind).toLowerCase()} is handled
+                    on another site.
+                  </p>
+                  <a
+                    href={externalRegistrationUrl}
+                    class="btn btn-primary oswald-cta"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Register Now
+                    <Icon name="mdi:arrow-right" width="20" height="20" />
+                  </a>
+                </>
+              )}
             </div>
           )
         }
@@ -443,6 +469,13 @@ function getKindLabel(kind: string) {
   .instructor-name {
     font-weight: 500;
     color: #333;
+  }
+
+  .external-registration-intro {
+    margin: 0 0 1rem;
+    color: #555;
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
   .cta-section {
