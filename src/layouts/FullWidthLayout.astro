@@ -1,5 +1,6 @@
 ---
 import Header from '../components/Header.astro';
+import PencilBanner from '../components/PencilBanner.astro';
 import Footer from '../components/Footer.astro';
 
 interface Props {
@@ -88,6 +89,7 @@ const resolvedOgImageAlt = ogImageAlt ?? resolvedOgTitle;
   </head>
   <body>
     <Header />
+    <PencilBanner />
     <main class="full-width">
       <slot />
     </main>
