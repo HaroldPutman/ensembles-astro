@@ -1,0 +1,179 @@
+---
+import { render } from 'astro:content';
+import { getUpcomingPencilBannerEntries } from '../lib/pencilBannerContent';
+
+const entries = await getUpcomingPencilBannerEntries();
+const panels = await Promise.all(
+  entries.map(async entry => {
+    const { Content } = await render(entry);
+    return {
+      id: entry.id,
+      startDate: entry.data.startDate,
+      endDate: entry.data.endDate,
+      Content,
+    };
+  })
+);
+---
+
+{
+  panels.length > 0 && (
+    <aside id="pencil-banner" class="pencil-banner" hidden>
+      <div class="pencil-banner-inner">
+        {panels.map(({ id, startDate, endDate, Content }) => (
+          <div
+            class="pencil-banner-panel"
+            data-banner-id={id}
+            data-start-date={startDate}
+            data-end-date={endDate}
+            hidden
+          >
+            <div class="pencil-banner-content">
+              <Content />
+            </div>
+          </div>
+        ))}
+      </div>
+    </aside>
+  )
+}
+
+<script>
+  import { selectPencilBanner, todayLocal } from '../lib/pencilBanner';
+
+  function showPencilBanner() {
+    const aside = document.getElementById('pencil-banner');
+    if (!aside) return;
+
+    const panelEls = [
+      ...aside.querySelectorAll<HTMLElement>('.pencil-banner-panel'),
+    ];
+    const schedules = panelEls.map(panel => ({
+      id: panel.dataset.bannerId ?? '',
+      startDate: panel.dataset.startDate ?? '',
+      endDate: panel.dataset.endDate ?? '',
+      panel,
+    }));
+
+    for (const { panel } of schedules) {
+      panel.hidden = true;
+    }
+
+    const selected = selectPencilBanner(schedules, todayLocal());
+    if (!selected) {
+      aside.hidden = true;
+      return;
+    }
+
+    selected.panel.hidden = false;
+    aside.hidden = false;
+  }
+
+  showPencilBanner();
+  document.addEventListener('astro:page-load', showPencilBanner);
+</script>
+
+<style>
+  .pencil-banner {
+    width: 100%;
+    background: var(--color-background-tertiary);
+    color: var(--color-text-tertiary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .pencil-banner-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.55rem 2rem;
+    text-align: center;
+  }
+
+  .pencil-banner-content {
+    font-family: var(--font-primary);
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .pencil-banner-content :global(p) {
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .pencil-banner-content :global(p + p) {
+    margin-top: 0.15rem;
+    font-weight: 400;
+    opacity: 0.95;
+  }
+
+  .pencil-banner-content :global(a) {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .pencil-banner-content :global(a:hover),
+  .pencil-banner-content :global(a:focus) {
+    opacity: 0.9;
+  }
+
+  .pencil-banner-content :global(.btn),
+  .pencil-banner-content :global(.cta-button) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    font-family: var(--font-cta);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+    vertical-align: middle;
+    background: var(--color-text-tertiary);
+    color: var(--color-background-tertiary);
+    border: 2px solid var(--color-text-tertiary);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .pencil-banner-content :global(.btn:hover),
+  .pencil-banner-content :global(.btn:focus),
+  .pencil-banner-content :global(.cta-button:hover),
+  .pencil-banner-content :global(.cta-button:focus) {
+    background: transparent;
+    color: var(--color-text-tertiary);
+    opacity: 1;
+  }
+
+  .pencil-banner-content :global(img) {
+    display: inline-block;
+    max-height: 2.25rem;
+    width: auto;
+    margin: 0 0.35rem;
+    vertical-align: middle;
+  }
+
+  @media (max-width: 768px) {
+    .pencil-banner-inner {
+      padding: 0.5rem 1rem;
+    }
+
+    .pencil-banner-content {
+      font-size: 0.875rem;
+      line-height: 1.3;
+    }
+
+    .pencil-banner-content :global(img) {
+      max-height: 1.75rem;
+    }
+  }
+
+  @media print {
+    .pencil-banner {
+      display: none !important;
+    }
+  }
+</style>

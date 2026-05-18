@@ -88,5 +88,35 @@ const activities = defineCollection({
   }),
 });
 
+const bannerDateSchema = z
+  .string()
+  .regex(/^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/\d{4}$/, {
+    message: 'date must be in M/D/YYYY format',
+  });
+
+const banners = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './collections/banners' }),
+  schema: z
+    .object({
+      startDate: bannerDateSchema,
+      endDate: bannerDateSchema,
+    })
+    .superRefine((data, ctx) => {
+      const [startMonth, startDay, startYear] = data.startDate
+        .split('/')
+        .map(Number);
+      const [endMonth, endDay, endYear] = data.endDate.split('/').map(Number);
+      const start = new Date(startYear, startMonth - 1, startDay);
+      const end = new Date(endYear, endMonth - 1, endDay);
+      if (end < start) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'endDate must be on or after startDate',
+          path: ['endDate'],
+        });
+      }
+    }),
+});
+
 // 4. Export a single `collections` object to register your collection(s)
-export const collections = { board, activities, instructors };
+export const collections = { board, activities, instructors, banners };
