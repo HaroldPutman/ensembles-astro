@@ -9,6 +9,10 @@ import {
   parseAdditionalDateSpec,
   normalizeAdditionalDates,
   mergeActivityScheduleDates,
+  parseRegistrationClosesSpec,
+  resolveRegistrationClosesInstant,
+  formatRegistrationClosesDate,
+  isRegistrationClosedAt,
 } from './datelib';
 
 describe('datelib', () => {
@@ -381,6 +385,53 @@ describe('datelib', () => {
       ]);
       expect(merged).toHaveLength(1);
       expect(merged[0]!.durationISO).toBe('PT1H');
+    });
+  });
+
+  describe('registrationCloses', () => {
+    it('accepts absolute and relative specs', () => {
+      expect(() => parseRegistrationClosesSpec('7/17/2026')).not.toThrow();
+      expect(() => parseRegistrationClosesSpec('-4D')).not.toThrow();
+      expect(() => parseRegistrationClosesSpec('2d')).not.toThrow();
+      expect(() => parseRegistrationClosesSpec('bad')).toThrow();
+    });
+
+    it('resolves absolute dates to end of day in Louisville', () => {
+      const closesAt = resolveRegistrationClosesInstant(
+        '7/17/2026',
+        '6/8/2026'
+      );
+      expect(closesAt.toPlainDate().toString()).toBe('2026-07-17');
+      expect(closesAt.hour).toBe(23);
+      expect(closesAt.minute).toBe(59);
+    });
+
+    it('resolves relative offsets from startDate', () => {
+      const closesAt = resolveRegistrationClosesInstant('-4D', '6/8/2026');
+      expect(closesAt.toPlainDate().toString()).toBe('2026-06-04');
+    });
+
+    it('formats a readable close date', () => {
+      const closesAt = resolveRegistrationClosesInstant(
+        '7/17/2026',
+        '6/8/2026'
+      );
+      expect(formatRegistrationClosesDate(closesAt)).toBe('July 17, 2026');
+    });
+
+    it('detects when registration has closed', () => {
+      const closesAt = resolveRegistrationClosesInstant(
+        '7/17/2026',
+        '6/8/2026'
+      );
+      const beforeClose = Temporal.ZonedDateTime.from(
+        '2026-07-17T12:00:00[America/Louisville]'
+      );
+      const afterClose = Temporal.ZonedDateTime.from(
+        '2026-07-18T00:00:01[America/Louisville]'
+      );
+      expect(isRegistrationClosedAt(closesAt, beforeClose)).toBe(false);
+      expect(isRegistrationClosedAt(closesAt, afterClose)).toBe(true);
     });
   });
 });

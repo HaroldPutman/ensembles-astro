@@ -230,6 +230,7 @@ const sortedActivities = activities
     isFull: boolean;
     spotsRemaining: number | null;
     isCancelled?: boolean;
+    isRegistrationClosed?: boolean;
   }
 
   function categorizeActivities(): string[] {
@@ -370,6 +371,14 @@ const sortedActivities = activities
           if (statusEl) {
             statusEl.textContent = 'This class has been cancelled';
             statusEl.style.color = '#991b1b';
+          }
+        } else if (status.isRegistrationClosed) {
+          if (registerBtn) {
+            registerBtn.style.display = 'none';
+          }
+          if (statusEl) {
+            statusEl.textContent = 'Registration closed';
+            statusEl.style.color = '#4b5563';
           }
         } else if (status.isFull) {
           // Activity is full - hide register button and show message

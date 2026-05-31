@@ -7,9 +7,16 @@ interface Props {
   kind: string;
   sizeMax?: number;
   startTimestamp?: number; // Unix timestamp in milliseconds
+  registrationClosed?: boolean;
 }
 
-const { activityId, kind, sizeMax, startTimestamp } = Astro.props;
+const {
+  activityId,
+  kind,
+  sizeMax,
+  startTimestamp,
+  registrationClosed = false,
+} = Astro.props;
 
 // Cache this server island response for up to 15 minutes
 Astro.response.headers.set(
@@ -27,8 +34,8 @@ const hasStarted =
 let registeredCount = 0;
 let error = false;
 
-// Skip DB check if class has already started
-if (!hasStarted) {
+// Skip DB check if class has already started or registration has closed
+if (!hasStarted && !registrationClosed) {
   try {
     const pool = getPool();
     const client = await pool.connect();
@@ -59,6 +66,8 @@ const isLow =
       <div class="activity-started-message">
         This {kind} has already started and is no longer open for registration.
       </div>
+    ) : registrationClosed ? (
+      <div class="activity-closed-message">Registration closed</div>
     ) : error ? (
       <>
         <div class="error-message">
@@ -144,5 +153,16 @@ const isLow =
     color: #4b5563;
     border: 1px solid #d1d5db;
     border-radius: var(--radius-button);
+  }
+
+  .activity-closed-message {
+    text-align: center;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
+    border-radius: var(--radius-button);
+    font-weight: 600;
   }
 </style>

@@ -5,7 +5,10 @@ import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import { getFirstDate } from '../../lib/datelib';
 import ActivityDateTime from '../../components/ActivityDateTime.astro';
-import { isActivityCancelled } from '../../lib/activityStatus';
+import {
+  isActivityCancelled,
+  isRegistrationClosed,
+} from '../../lib/activityStatus';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
@@ -32,6 +35,7 @@ const firstDate = getFirstDate(
 );
 const dtstart = firstDate.toPlainDate().toString();
 const activityIsCancelled = isActivityCancelled(activity.data);
+const registrationClosed = isRegistrationClosed(activity.data);
 const registration = activity.data.registration;
 const onSiteRegistration = registration === true;
 const externalRegistrationUrl =
@@ -51,6 +55,13 @@ const externalRegistrationUrl =
       />
     </div>
     {
+      registrationClosed && !activityIsCancelled && (
+        <p class="registration-closed-notice" role="status">
+          Registration for this activity has closed.
+        </p>
+      )
+    }
+    {
       activityIsCancelled && (
         <p class="cancelled-notice" role="status">
           Registration is closed because this class has been cancelled.
@@ -59,6 +70,7 @@ const externalRegistrationUrl =
     }
     {
       !activityIsCancelled &&
+        !registrationClosed &&
         onSiteRegistration &&
         !isFree &&
         activity.data.cost && (
@@ -79,24 +91,26 @@ const externalRegistrationUrl =
       )
     }
     {
-      !activityIsCancelled && externalRegistrationUrl && (
-        <>
-          <p class="external-registration-intro">
-            Registration for this activity is handled on another website.
-          </p>
-          <a
-            href={externalRegistrationUrl}
-            class="submit-button oswald-cta external-register-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Continue to registration
-          </a>
-        </>
-      )
+      !activityIsCancelled &&
+        !registrationClosed &&
+        externalRegistrationUrl && (
+          <>
+            <p class="external-registration-intro">
+              Registration for this activity is handled on another website.
+            </p>
+            <a
+              href={externalRegistrationUrl}
+              class="submit-button oswald-cta external-register-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Continue to registration
+            </a>
+          </>
+        )
     }
     {
-      !activityIsCancelled && onSiteRegistration && (
+      !activityIsCancelled && !registrationClosed && onSiteRegistration && (
         <form
           id="registration-form"
           class="registration-form"
@@ -389,6 +403,15 @@ const externalRegistrationUrl =
     border: 1px solid #fecaca;
     border-radius: 8px;
     color: #991b1b;
+    font-weight: 500;
+  }
+
+  .registration-closed-notice {
+    padding: 1rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #4b5563;
     font-weight: 500;
   }
 

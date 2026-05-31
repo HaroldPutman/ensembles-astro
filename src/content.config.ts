@@ -4,7 +4,10 @@ import { defineCollection, z } from 'astro:content';
 // 2. Import loader(s)
 import { glob } from 'astro/loaders';
 import { ACTIVITY_STATUSES } from './lib/activityStatus';
-import { parseAdditionalDateSpec } from './lib/datelib';
+import {
+  parseAdditionalDateSpec,
+  parseRegistrationClosesSpec,
+} from './lib/datelib';
 
 // 3. Define your collection(s)
 const board = defineCollection({
@@ -84,6 +87,21 @@ const activities = defineCollection({
       .union([z.literal(true), z.literal(false), z.string().url()])
       .optional()
       .default(true),
+    registrationCloses: z
+      .string()
+      .optional()
+      .superRefine((spec, ctx) => {
+        if (spec === undefined) return;
+        try {
+          parseRegistrationClosesSpec(spec);
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'registrationCloses must be M/D/YYYY or a day offset like -4D',
+          });
+        }
+      }),
     status: z.enum(ACTIVITY_STATUSES).optional(),
   }),
 });

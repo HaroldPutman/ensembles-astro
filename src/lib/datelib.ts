@@ -402,6 +402,92 @@ export function mergeActivityScheduleDates(
  * @param dtstring - The date string to get the day of the week from (RFC 9557 format)
  * @returns The day of the week
  */
+const REGISTRATION_CLOSES_ABSOLUTE_RE =
+  /^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})$/;
+const REGISTRATION_CLOSES_RELATIVE_RE = /^(-?\d+)D$/i;
+
+/**
+ * Validate `registrationCloses` frontmatter: `M/D/YYYY` or signed day offset like `-4D`.
+ */
+export function parseRegistrationClosesSpec(spec: string): void {
+  const trimmed = spec.trim();
+  if (
+    REGISTRATION_CLOSES_ABSOLUTE_RE.test(trimmed) ||
+    REGISTRATION_CLOSES_RELATIVE_RE.test(trimmed)
+  ) {
+    return;
+  }
+  throw new Error(
+    `Invalid registrationCloses spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
+  );
+}
+
+/**
+ * Resolve when registration closes. Absolute dates and relative offsets use end of day in Louisville.
+ * Relative offsets are measured from `startDate`.
+ */
+export function resolveRegistrationClosesInstant(
+  spec: string,
+  startDate: string,
+  timeZone = 'America/Louisville'
+): Temporal.ZonedDateTime {
+  parseRegistrationClosesSpec(spec);
+  const trimmed = spec.trim();
+  let plainDate: Temporal.PlainDate;
+
+  const absoluteMatch = trimmed.match(REGISTRATION_CLOSES_ABSOLUTE_RE);
+  if (absoluteMatch) {
+    const [, month, day, year] = absoluteMatch;
+    plainDate = Temporal.PlainDate.from({
+      year: Number(year),
+      month: Number(month),
+      day: Number(day),
+    });
+  } else {
+    const relativeMatch = trimmed.match(REGISTRATION_CLOSES_RELATIVE_RE);
+    if (!relativeMatch) {
+      throw new Error(`Invalid registrationCloses spec: ${spec}`);
+    }
+    const [, offsetDays] = relativeMatch;
+    const [month, day, year] = startDate.split('/').map(Number);
+    plainDate = Temporal.PlainDate.from({
+      year,
+      month,
+      day,
+    }).add({ days: Number(offsetDays) });
+  }
+
+  return plainDate.toZonedDateTime({
+    plainTime: Temporal.PlainTime.from({
+      hour: 23,
+      minute: 59,
+      second: 59,
+      millisecond: 999,
+    }),
+    timeZone,
+  });
+}
+
+/** Display label for a registration close date, e.g. "July 17, 2026". */
+export function formatRegistrationClosesDate(
+  instant: Temporal.ZonedDateTime
+): string {
+  return instant.toLocaleString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+/** True when the current time is after the registration close instant. */
+export function isRegistrationClosedAt(
+  closesAt: Temporal.ZonedDateTime,
+  now?: Temporal.ZonedDateTime
+): boolean {
+  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(closesAt.timeZoneId);
+  return Temporal.ZonedDateTime.compare(nowInstant, closesAt) > 0;
+}
+
 export function getDayOfWeek(date: Temporal.ZonedDateTime) {
   const dayNames = [
     '_',
