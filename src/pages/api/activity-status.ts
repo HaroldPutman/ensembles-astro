@@ -1,7 +1,10 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { getPool, getActiveRegistrationCounts } from '../../lib/db';
-import { isActivityCancelled } from '../../lib/activityStatus';
+import {
+  isActivityCancelled,
+  isRegistrationClosed,
+} from '../../lib/activityStatus';
 
 export const prerender = false;
 
@@ -13,6 +16,7 @@ interface ActivityStatus {
   spotsRemaining: number | null;
   kind: string;
   isCancelled: boolean;
+  isRegistrationClosed: boolean;
 }
 
 export const GET: APIRoute = async ({ url }) => {
@@ -85,7 +89,12 @@ async function getActivityStatus(
     const activities = await getCollection('activities');
     const activitiesMap = new Map<
       string,
-      { sizeMax: number | undefined; kind: string; cancelled: boolean }
+      {
+        sizeMax: number | undefined;
+        kind: string;
+        cancelled: boolean;
+        registrationClosed: boolean;
+      }
     >();
 
     activities.forEach(activity => {
@@ -93,6 +102,7 @@ async function getActivityStatus(
         sizeMax: activity.data.sizeMax,
         kind: activity.data.kind,
         cancelled: isActivityCancelled(activity.data),
+        registrationClosed: isRegistrationClosed(activity.data),
       });
     });
 
@@ -114,10 +124,14 @@ async function getActivityStatus(
         const sizeMax = activity?.sizeMax ?? null;
         const kind = activity?.kind ?? 'class';
         const isCancelled = activity?.cancelled ?? false;
+        const isRegistrationClosedStatus =
+          activity?.registrationClosed ?? false;
         const isFull =
-          isCancelled || (sizeMax !== null && registeredCount >= sizeMax);
+          isCancelled ||
+          isRegistrationClosedStatus ||
+          (sizeMax !== null && registeredCount >= sizeMax);
         const spotsRemaining =
-          !isCancelled && sizeMax !== null
+          !isCancelled && !isRegistrationClosedStatus && sizeMax !== null
             ? Math.max(0, sizeMax - registeredCount)
             : null;
 
@@ -129,6 +143,7 @@ async function getActivityStatus(
           spotsRemaining,
           kind,
           isCancelled,
+          isRegistrationClosed: isRegistrationClosedStatus,
         };
       });
 
