@@ -34,7 +34,22 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { name, email, message } = body;
+    const { name, email, message, website } = body;
+
+    // Honeypot: silently accept but don't send email
+    if (website) {
+      return new Response(
+        JSON.stringify({
+          message: 'Message sent successfully',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
 
     // Validate the input
     if (!name || !email || !message) {
