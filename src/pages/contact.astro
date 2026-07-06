@@ -57,6 +57,8 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
+  import { isSpamContactSubmission } from '../lib/gibberish';
+
   const form = document.getElementById('contact-form') as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
   const submitButton = form?.querySelector(
@@ -76,21 +78,34 @@ import Layout from '../layouts/Layout.astro';
 
     const formData = new FormData(form);
 
-    // Honeypot: bots fill hidden fields; pretend success without sending
-    if (formData.get('website')) {
+    const name = String(formData.get('name') ?? '');
+    const message = String(formData.get('message') ?? '');
+
+    const showBotSuccess = () => {
       messageDiv.textContent =
         'Thank you for your message! We will get back to you soon.';
       messageDiv.className = 'form-message success';
       form.reset();
       submitButton.disabled = false;
       submitButton.textContent = 'Send Message';
+    };
+
+    // Honeypot: bots fill hidden fields; pretend success without sending
+    if (formData.get('website')) {
+      showBotSuccess();
+      return;
+    }
+
+    // Gibberish: pretend success without sending
+    if (isSpamContactSubmission(name, message)) {
+      showBotSuccess();
       return;
     }
 
     const data = {
-      name: formData.get('name'),
+      name,
       email: formData.get('email'),
-      message: formData.get('message'),
+      message,
     };
 
     try {
@@ -251,4 +266,3 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 </style>
-

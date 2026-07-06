@@ -4,6 +4,7 @@ import {
   TransactionalEmailsApiApiKeys,
   SendSmtpEmail,
 } from '@getbrevo/brevo';
+import { isSpamContactSubmission } from '../../lib/gibberish';
 
 export const prerender = false;
 
@@ -38,6 +39,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Honeypot: silently accept but don't send email
     if (website) {
+      return new Response(
+        JSON.stringify({
+          message: 'Message sent successfully',
+        }),
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    // Gibberish: silently accept but don't send email
+    if (isSpamContactSubmission(String(name), String(message))) {
       return new Response(
         JSON.stringify({
           message: 'Message sent successfully',
