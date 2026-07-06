@@ -1,9 +1,9 @@
 const COMMON_ENGLISH_WORDS = new Set(
   `
-a about after all also an and any are as at be because been before being but by
-can come could day do does doing done each email even every first for from get
-go good had has have he her here hi him his how i if in into is it its just
-know like look make me message more my name need new no not now of on one or
+a about after all also an and any are art as at band be because been before being bells but by
+can choir come could dance day do does doing done each email even every first for from get
+go good had has have he her here hi him his homeschool how i if in into is it its just
+know lessons like look make me message more my name need new no not now of on one or
 other our out over please question re really say see she should so some thank
 thanks that the their them then there these they this those time to too up us
 use very want was we well what when where which who why will with would write
@@ -12,21 +12,21 @@ among another around ask away back bad best better between both call came can
 child children class classes come contact could course dear did different does
 done down during each early end enough especially even ever every family far
 feel few find first follow following found free friend friends give going great
-group had happen happy having help here high hope hour hours however idea
-important include including information interest interested interested join just
-keep kids kind know large last late later learn least leave left less let life
+group guitar had happen happy having help here high hope hour hours however idea
+important include including information instrument interest interested interested jazz join just
+keep keyboard kids kind know large last late later learn least leave left less let life
 like little live long look looking lot love made make many may maybe mean might
 mind minute minutes miss month months morning most mother much must my myself
 name near need never next night no none nor not note nothing now number of off
 often old once only open or other others our out outside over own part people
-person place play please point possible program programs put question questions
+person piano place play please point possible program programs put question questions
 quick quite rather read ready really reason register registration right room
 run same say school see seem seen send set several shall she should show side
 since small so some someone something sometimes son soon sorry sound start
 still stop such sure take talk tell than thank that the their them then there
-these they thing things think this those though thought three through time to
-today together told too took try trying turn two under until up upon us use
-used using very want way we week weeks well went were what when where whether
+these they theater thing things think this those though thought three through time to
+today together told too took try trying turn two ukulele under until up upon us use
+used using very violin want way we week weeks well went were what when where whether
 which while who whole whom whose why will wish with within without wonder work
 working world would write year years yes yet you young your yours
 `
