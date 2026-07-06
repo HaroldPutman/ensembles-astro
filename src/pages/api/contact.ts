@@ -138,17 +138,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Send the email
     await apiInstance.sendTransacEmail(sendSmtpEmail);
 
-    return new Response(
-      JSON.stringify({
-        message: 'Message sent successfully',
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    return successResponse();
   } catch (error) {
     console.error('Error sending email:', error);
     return new Response(
