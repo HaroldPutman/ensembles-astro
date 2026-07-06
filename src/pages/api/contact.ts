@@ -4,6 +4,9 @@ import {
   TransactionalEmailsApiApiKeys,
   SendSmtpEmail,
 } from '@getbrevo/brevo';
+import { logBlockedContactSubmission } from '../../lib/blockedContactSubmission';
+import { getPool } from '../../lib/db';
+import { isSpamContactSubmission } from '../../lib/gibberish';
 
 export const prerender = false;
 
@@ -13,6 +16,36 @@ apiInstance.setApiKey(
   TransactionalEmailsApiApiKeys.apiKey,
   process.env.BREVO_API_KEY || ''
 );
+
+function successResponse() {
+  return new Response(
+    JSON.stringify({
+      message: 'Message sent successfully',
+    }),
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+}
+
+async function recordBlockedSubmission(
+  submission: Parameters<typeof logBlockedContactSubmission>[1]
+) {
+  try {
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      await logBlockedContactSubmission(client, submission);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Failed to log blocked contact submission:', error);
+  }
+}
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -34,7 +67,33 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { name, email, message } = body;
+    const { name, email, message, website } = body;
+    const submissionFields = {
+      name: String(name ?? ''),
+      email: String(email ?? ''),
+      message: String(message ?? ''),
+      website: website ? String(website) : null,
+    };
+
+    // Honeypot: log and silently accept without sending email
+    if (website) {
+      await recordBlockedSubmission({
+        ...submissionFields,
+        blockReason: 'honeypot',
+      });
+      return successResponse();
+    }
+
+    // Gibberish: log and silently accept without sending email
+    if (
+      isSpamContactSubmission(submissionFields.name, submissionFields.message)
+    ) {
+      await recordBlockedSubmission({
+        ...submissionFields,
+        blockReason: 'gibberish',
+      });
+      return successResponse();
+    }
 
     // Validate the input
     if (!name || !email || !message) {
@@ -79,17 +138,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Send the email
     await apiInstance.sendTransacEmail(sendSmtpEmail);
 
-    return new Response(
-      JSON.stringify({
-        message: 'Message sent successfully',
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    return successResponse();
   } catch (error) {
     console.error('Error sending email:', error);
     return new Response(
