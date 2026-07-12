@@ -31,8 +31,10 @@ These are specs on images used on the site
 
 ## Instructor PII
 
-The instructor contact information is maintained in an encrypted file. This file is decrypted at build time.
-If you change it you need to re-encrypt with `npm run lock`.
+To avoid storing personal information about instructors in GitHub. The instructor contact information is
+maintained in an encrypted file. This file is decrypted at build time.
+After updatin personal information in `collections/instructors-private.json` you will need to re-encrypt
+with `npm run lock`.
 
 ## Activity File Naming and organization
 
