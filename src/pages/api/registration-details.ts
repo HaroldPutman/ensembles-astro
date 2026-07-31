@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { getPool, getActiveRegistrationCounts } from '../../lib/db';
+import { parseCapacityOverrideIds } from '../../lib/capacityOverride';
 
 export const prerender = false;
 
@@ -24,6 +25,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const { registrationIds } = body;
+    const capacityOverrideIds = new Set(
+      parseCapacityOverrideIds(body.capacityOverride)
+    );
 
     if (
       !registrationIds ||
@@ -133,8 +137,8 @@ export const POST: APIRoute = async ({ request }) => {
           const activityData = activitiesMap.get(activityId);
           const sizeMax = activityData?.sizeMax;
 
-          if (sizeMax === undefined) {
-            // No capacity limit - accept all
+          if (sizeMax === undefined || capacityOverrideIds.has(activityId)) {
+            // No capacity limit, or override allows past sizeMax
             acceptedRows.push(...rows);
           } else {
             const currentCount = registrationCounts.get(activityId) || 0;

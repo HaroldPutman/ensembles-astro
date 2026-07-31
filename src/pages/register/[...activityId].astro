@@ -178,12 +178,40 @@ const externalRegistrationUrl =
 </Layout>
 
 <script>
+  import {
+    CAPACITY_OVERRIDE_PARAM,
+    CAPACITY_OVERRIDE_STORAGE_KEY,
+    parseCapacityOverrideIds,
+  } from '../../lib/capacityOverride';
+
   const form = document.getElementById('registration-form') as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
   const submitButton = form?.querySelector(
     'button[type="submit"]'
   ) as HTMLButtonElement;
   const birthdateInput = document.getElementById('birthdate');
+
+  // Persist capacity override when arriving via /register/...?overfull
+  {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has(CAPACITY_OVERRIDE_PARAM)) {
+      const activityId = (
+        document.getElementById('activityId') as HTMLInputElement | null
+      )?.value?.toLowerCase();
+      if (activityId) {
+        const overrides = parseCapacityOverrideIds(
+          sessionStorage.getItem(CAPACITY_OVERRIDE_STORAGE_KEY)
+        );
+        if (!overrides.includes(activityId)) {
+          overrides.push(activityId);
+          sessionStorage.setItem(
+            CAPACITY_OVERRIDE_STORAGE_KEY,
+            JSON.stringify(overrides)
+          );
+        }
+      }
+    }
+  }
 
   /**
    * Calculate the age of student at the activity start date.
