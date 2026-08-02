@@ -27,6 +27,7 @@ interface ActivityData {
   startTime: string;
   duration: string;
   repeat: string;
+  location?: string;
   firstDate: Temporal.ZonedDateTime;
 }
 
@@ -130,6 +131,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
             startTime: activity.data.startTime,
             duration: activity.data.duration,
             repeat: activity.data.repeat || '',
+            location: activity.data.location,
             firstDate,
           });
         }
@@ -287,6 +289,7 @@ export const GET: APIRoute = async ({ url, locals, request }) => {
             weekday: formattedWeekday,
             startDate: formattedDate,
             startTime: formattedTime,
+            location: group.activity.location,
             participants: group.participants.map(p => ({
               studentName: p.studentName,
             })),

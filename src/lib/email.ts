@@ -7,6 +7,7 @@ interface RegistrationItem {
   activityName: string;
   cost: number;
   donation?: number;
+  location?: string;
 }
 
 interface VoucherInfo {
@@ -56,11 +57,15 @@ function generateRegistrationsHtml(registrations: RegistrationItem[]): string {
   const fontStack = 'Arial, Helvetica, sans-serif';
   return registrations
     .map(reg => {
+      const location = reg.location?.trim();
+      const locationHtml = location
+        ? `<br><span style="color: #666; font-size: 0.9em;">Location: ${escapeHtml(location)}</span>`
+        : '';
       let html = `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; font-family: ${fontStack};">
           <strong>${escapeHtml(reg.studentName)}</strong><br>
-          <span style="color: #666;">${escapeHtml(reg.activityName)}</span>
+          <span style="color: #666;">${escapeHtml(reg.activityName)}</span>${locationHtml}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e0e0e0; text-align: right; font-family: ${fontStack};">
           ${formatCurrency(reg.cost)}`;
@@ -278,6 +283,10 @@ function generateEmailText(data: PaymentConfirmationData): string {
       if (reg.donation && reg.donation > 0) {
         line += ` (+ ${formatCurrency(reg.donation)} donation)`;
       }
+      const location = reg.location?.trim();
+      if (location) {
+        line += `\n  Location: ${location}`;
+      }
       return line;
     })
     .join('\n');
@@ -445,6 +454,7 @@ interface ClassReminderData {
   weekday: string; // formatted day like "Tuesday"
   startDate: string; // formatted date like "January 14"
   startTime: string; // formatted time like "2:00 PM"
+  location?: string; // optional venue override; defaults to Monroe St. in copy
   participants: ReminderParticipant[];
 }
 
@@ -455,6 +465,14 @@ function generateReminderEmailHtml(data: ClassReminderData): string {
   const fontStack = 'Arial, Helvetica, sans-serif';
   const safeName = escapeHtml(data.recipientName);
   const safeActivityName = escapeHtml(data.activityName);
+  const customLocation = data.location?.trim();
+  const venue =
+    customLocation ||
+    'Charlestown Ensembles, 1120 Monroe St., Charlestown, IN.';
+  const safeVenue = escapeHtml(venue);
+  const venueSentence = customLocation
+    ? `This class will be held at ${safeVenue.replace(/\.$/, '')}.`
+    : `All classes are held at ${safeVenue}`;
 
   const participantList = data.participants
     .map(
@@ -474,6 +492,12 @@ function generateReminderEmailHtml(data: ClassReminderData): string {
       : `<p style="margin: 0 0 12px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
         <strong>${escapeHtml(data.participants[0].studentName)}</strong> is registered for this class.
       </p>`;
+
+  const locationDetailHtml = customLocation
+    ? `<p style="margin: 8px 0 0; font-size: 14px; color: #666; font-family: ${fontStack};">
+                      <strong>Location:</strong> ${safeVenue}
+                    </p>`
+    : '';
 
   return `
 <!DOCTYPE html>
@@ -521,6 +545,7 @@ function generateReminderEmailHtml(data: ClassReminderData): string {
                     <p style="margin: 0; font-size: 14px; color: #666; font-family: ${fontStack};">
                       <strong>Time:</strong> ${escapeHtml(data.startTime)}
                     </p>
+                    ${locationDetailHtml}
                   </td>
                 </tr>
               </table>
@@ -528,7 +553,7 @@ function generateReminderEmailHtml(data: ClassReminderData): string {
               ${participantHtml}
               
               <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #333; font-family: ${fontStack};">
-                All classes are held at Charlestown Ensembles, 1120 Monroe St., Charlestown, IN.
+                ${venueSentence}
                 We look forward to seeing you there!
               </p>
             </td>
@@ -558,6 +583,11 @@ function generateReminderEmailText(data: ClassReminderData): string {
   const participantList = data.participants
     .map(p => `  - ${p.studentName}`)
     .join('\n');
+  const location = data.location?.trim();
+  const locationLine = location ? `\nLocation: ${location}` : '';
+  const venueSentence = location
+    ? `This class will be held at ${location.replace(/\.$/, '')}.`
+    : 'All classes are held at Charlestown Ensembles, 1120 Monroe St., Charlestown, IN.';
 
   return `
 CLASS REMINDER
@@ -568,12 +598,12 @@ Your Ensembles class ${data.activityName} begins ${data.weekday} at ${data.start
 
 Class: ${data.activityName}
 Date: ${data.weekday}, ${data.startDate}
-Time: ${data.startTime}
+Time: ${data.startTime}${locationLine}
 
 Registered participants:
 ${participantList}
 
-All classes are held at Charlestown Ensembles, 1120 Monroe St., Charlestown, IN.
+${venueSentence}
 We look forward to seeing you there! 
 
 ---
