@@ -83,6 +83,7 @@ const activities = defineCollection({
     question: z.string().optional(),
     suggestedDonation: z.number().optional(),
     image: z.string().optional(),
+    location: z.string().optional(),
     registration: z
       .union([z.literal(true), z.literal(false), z.string().url()])
       .optional()

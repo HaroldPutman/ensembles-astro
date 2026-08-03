@@ -389,24 +389,31 @@ export const POST: APIRoute = async ({ request }) => {
           if (emailDataResult.rows.length > 0) {
             const contact = emailDataResult.rows[0];
 
-            // Get activities collection for activity names
+            // Get activities collection for activity names and locations
             const activities = await getCollection('activities');
-            const activitiesMap = new Map<string, string>();
-            activities.forEach((activity: any) => {
-              activitiesMap.set(activity.id.toLowerCase(), activity.data.name);
+            const activitiesMap = new Map<
+              string,
+              { name: string; location?: string }
+            >();
+            activities.forEach(activity => {
+              activitiesMap.set(activity.id.toLowerCase(), {
+                name: activity.data.name,
+                location: activity.data.location,
+              });
             });
 
             // Build registration items for the email
             const registrationItems: RegistrationItem[] =
               registrationsResult.rows.map(row => {
-                const activityName =
-                  activitiesMap.get(row.activity?.toLowerCase()) ||
-                  row.activity;
+                const activityInfo = activitiesMap.get(
+                  row.activity?.toLowerCase()
+                );
                 return {
                   studentName: '', // Will be populated below
-                  activityName,
+                  activityName: activityInfo?.name || row.activity,
                   cost: parseFloat(row.cost) || 0,
                   donation: row.donation ? parseFloat(row.donation) : undefined,
+                  location: activityInfo?.location,
                 };
               });
 
