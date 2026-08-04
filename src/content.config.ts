@@ -1,5 +1,6 @@
-// 1. Import utilities from `astro:content`
-import { defineCollection, z } from 'astro:content';
+// 1. Import utilities from `astro:content` and Zod from `astro/zod`
+import { defineCollection } from 'astro:content';
+import { z } from 'astro/zod';
 
 // 2. Import loader(s)
 import { glob } from 'astro/loaders';
@@ -79,7 +80,7 @@ const activities = defineCollection({
     kind: z.enum(['class', 'group', 'event', 'camp']),
     ageMin: z.number().optional(),
     ageMax: z.union([z.number().int().min(0), z.literal('adult')]).optional(),
-    sizeMax: z.number().positive().optional(),
+    sizeMax: z.number().int().positive().optional(),
     question: z.string().optional(),
     suggestedDonation: z.number().optional(),
     image: z.string().optional(),
