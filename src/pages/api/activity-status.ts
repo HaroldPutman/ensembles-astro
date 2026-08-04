@@ -116,12 +116,15 @@ async function getActivityStatus(
         activityIds
       );
 
-      // Build response for each requested activity
+      // Build response for each requested activity.
+      // Contract: sizeMax undefined in content = no limit; JSON uses null as unset.
+      // Schema requires sizeMax > 0 when set, so never treat 0 as a sentinel.
       const statuses: ActivityStatus[] = activityIds.map(activityId => {
         const id = activityId.toLowerCase();
         const registeredCount = registrationCounts.get(id) || 0;
         const activity = activitiesMap.get(id);
-        const sizeMax = activity?.sizeMax ?? null;
+        const sizeMax =
+          activity?.sizeMax !== undefined ? activity.sizeMax : null;
         const kind = activity?.kind ?? 'class';
         const isCancelled = activity?.cancelled ?? false;
         const isRegistrationClosedStatus =

@@ -50,8 +50,8 @@ if (!hasStarted && !registrationClosed) {
   }
 }
 
-// If no sizeMax, there's no capacity limit
-const hasCapacity = sizeMax !== undefined && sizeMax > 0;
+// If no sizeMax, there's no capacity limit (schema requires sizeMax > 0 when set)
+const hasCapacity = sizeMax !== undefined;
 const isFull = hasCapacity && registeredCount >= sizeMax;
 const spotsRemaining = hasCapacity
   ? Math.max(0, sizeMax - registeredCount)

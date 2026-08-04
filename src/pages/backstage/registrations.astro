@@ -303,12 +303,15 @@ function paymentTypeIconName(transactionId: string | null | undefined): string {
   return 'mdi:credit-card';
 }
 
-/** Capacity status from sizeMax and current registration count */
+/**
+ * Capacity status from sizeMax and current registration count.
+ * sizeMax undefined = no capacity limit; schema requires sizeMax > 0 when set.
+ */
 function getCapacityStatus(
   sizeMax: number | undefined,
   registeredCount: number
 ): { isFull: boolean; spotsLeft: number | null } {
-  if (sizeMax === undefined || sizeMax <= 0) {
+  if (sizeMax === undefined) {
     return { isFull: false, spotsLeft: null };
   }
   const spotsLeft = Math.max(0, sizeMax - registeredCount);
@@ -376,7 +379,7 @@ function getCapacityStatus(
                           )}
                           <span class="student-count">
                             {regs.length} student{regs.length !== 1 ? 's' : ''}
-                            {activityInfo?.sizeMax
+                            {activityInfo?.sizeMax !== undefined
                               ? ` / ${activityInfo.sizeMax}`
                               : ''}
                           </span>
@@ -513,7 +516,7 @@ function getCapacityStatus(
                           )}
                           <span class="student-count">
                             {regs.length} student{regs.length !== 1 ? 's' : ''}
-                            {activityInfo?.sizeMax
+                            {activityInfo?.sizeMax !== undefined
                               ? ` / ${activityInfo.sizeMax}`
                               : ''}
                           </span>
