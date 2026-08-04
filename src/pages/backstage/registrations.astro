@@ -29,6 +29,7 @@ interface ActivityInfo {
   isCurrent: boolean; // has started but not ended
   isUpcoming: boolean; // hasn't started yet
   isCancelled: boolean;
+  sizeMax?: number;
 }
 
 const activityMap = new Map<string, ActivityInfo>();
@@ -111,6 +112,7 @@ for (const activity of activities) {
     isCurrent: !!isCurrent,
     isUpcoming: !!isUpcoming,
     isCancelled: isActivityCancelled(activity.data),
+    sizeMax: activity.data.sizeMax,
   });
 }
 
@@ -300,6 +302,18 @@ function paymentTypeIconName(transactionId: string | null | undefined): string {
   if (id.startsWith('FREE-')) return 'mdi:circle-outline';
   return 'mdi:credit-card';
 }
+
+/** Capacity status from sizeMax and current registration count */
+function getCapacityStatus(
+  sizeMax: number | undefined,
+  registeredCount: number
+): { isFull: boolean; spotsLeft: number | null } {
+  if (sizeMax === undefined || sizeMax <= 0) {
+    return { isFull: false, spotsLeft: null };
+  }
+  const spotsLeft = Math.max(0, sizeMax - registeredCount);
+  return { isFull: registeredCount >= sizeMax, spotsLeft };
+}
 ---
 
 <FullWidthLayout title="Ensembles - Registrations">
@@ -344,6 +358,10 @@ function paymentTypeIconName(transactionId: string | null | undefined): string {
                     emailListsByActivity.get(activityId) ?? emptyEmailEntry();
                   const activityInfo = activityMap.get(activityId);
                   const schedule = getScheduleString(activityId);
+                  const capacity = getCapacityStatus(
+                    activityInfo?.sizeMax,
+                    regs.length
+                  );
                   return (
                     <div class="class-card">
                       <div class="class-header">
@@ -358,7 +376,21 @@ function paymentTypeIconName(transactionId: string | null | undefined): string {
                           )}
                           <span class="student-count">
                             {regs.length} student{regs.length !== 1 ? 's' : ''}
+                            {activityInfo?.sizeMax
+                              ? ` / ${activityInfo.sizeMax}`
+                              : ''}
                           </span>
+                          {capacity.isFull && (
+                            <span class="status-badge full">Full</span>
+                          )}
+                          {!capacity.isFull &&
+                            capacity.spotsLeft !== null &&
+                            capacity.spotsLeft <= 2 && (
+                              <span class="status-badge low-spots">
+                                {capacity.spotsLeft} spot
+                                {capacity.spotsLeft !== 1 ? 's' : ''} left
+                              </span>
+                            )}
                         </div>
                         {schedule && <p class="schedule">{schedule}</p>}
                         {emailData.count > 0 && (
@@ -463,6 +495,10 @@ function paymentTypeIconName(transactionId: string | null | undefined): string {
                     emailListsByActivity.get(activityId) ?? emptyEmailEntry();
                   const activityInfo = activityMap.get(activityId);
                   const schedule = getScheduleString(activityId);
+                  const capacity = getCapacityStatus(
+                    activityInfo?.sizeMax,
+                    regs.length
+                  );
                   return (
                     <div class="class-card">
                       <div class="class-header">
@@ -477,7 +513,21 @@ function paymentTypeIconName(transactionId: string | null | undefined): string {
                           )}
                           <span class="student-count">
                             {regs.length} student{regs.length !== 1 ? 's' : ''}
+                            {activityInfo?.sizeMax
+                              ? ` / ${activityInfo.sizeMax}`
+                              : ''}
                           </span>
+                          {capacity.isFull && (
+                            <span class="status-badge full">Full</span>
+                          )}
+                          {!capacity.isFull &&
+                            capacity.spotsLeft !== null &&
+                            capacity.spotsLeft <= 2 && (
+                              <span class="status-badge low-spots">
+                                {capacity.spotsLeft} spot
+                                {capacity.spotsLeft !== 1 ? 's' : ''} left
+                              </span>
+                            )}
                         </div>
                         {schedule && <p class="schedule">{schedule}</p>}
                         {emailData.count > 0 && (
@@ -969,6 +1019,31 @@ function paymentTypeIconName(transactionId: string | null | undefined): string {
     letter-spacing: 0.03em;
     color: #991b1b;
     background: #fee2e2;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
+  .status-badge.full {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #991b1b;
+    background: #fee2e2;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
+  .status-badge.low-spots {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: #92400e;
+    background: #fef3c7;
     border-radius: 4px;
     vertical-align: middle;
   }
