@@ -183,6 +183,11 @@ const externalRegistrationUrl =
     CAPACITY_OVERRIDE_STORAGE_KEY,
     parseCapacityOverrideIds,
   } from '../../lib/capacityOverride';
+  import {
+    ADDING_ANOTHER_STORAGE_KEY,
+    REGISTRATIONS_STORAGE_KEY,
+    parseRegistrationIds,
+  } from '../../lib/registrationCart';
 
   const form = document.getElementById('registration-form') as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
@@ -335,23 +340,28 @@ const externalRegistrationUrl =
       }
 
       if (response.ok) {
-        // store the registrationId and studentId in session storage
+        // Only append to an existing cart after "Add Another Registration".
+        // Otherwise replace the cart so an abandoned in-progress registration
+        // is not paid when the user later completes a different class.
+        const addingAnother =
+          sessionStorage.getItem(ADDING_ANOTHER_STORAGE_KEY) === 'true';
+        sessionStorage.removeItem(ADDING_ANOTHER_STORAGE_KEY);
 
         let registrations: string[] = [];
-        try {
-          registrations = JSON.parse(
-            sessionStorage.getItem('registrations') || '[]'
-          ) as string[];
-        } catch (e) {
-          console.error('Error parsing stored registrations:', e);
-        }
-        if (!registrations.includes(result.registrationId)) {
-          registrations.push(result.registrationId);
-          sessionStorage.setItem(
-            'registrations',
-            JSON.stringify(registrations)
+        if (addingAnother) {
+          registrations = parseRegistrationIds(
+            sessionStorage.getItem(REGISTRATIONS_STORAGE_KEY)
           );
         }
+
+        const registrationId = String(result.registrationId);
+        if (!registrations.includes(registrationId)) {
+          registrations.push(registrationId);
+        }
+        sessionStorage.setItem(
+          REGISTRATIONS_STORAGE_KEY,
+          JSON.stringify(registrations)
+        );
         const activityName =
           document.getElementById('activityName')?.textContent;
         activityName && sessionStorage.setItem('activityName', activityName);

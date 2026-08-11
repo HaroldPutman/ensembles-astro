@@ -128,7 +128,8 @@ export const POST: APIRoute = async ({ request }) => {
 
         // Verify registrations exist and get their total cost
         const registrationsResult = await client.query(
-          `SELECT id, activity, cost, donation FROM registration WHERE id = ANY($1)`,
+          `SELECT id, activity, cost, donation, terms_agreement, payment_id
+           FROM registration WHERE id = ANY($1)`,
           [registrationIds]
         );
 
@@ -146,6 +147,39 @@ export const POST: APIRoute = async ({ request }) => {
             }
           );
         }
+
+        // Only charge registrations that finished the info step. Abandoned cart
+        // IDs must not be marked paid when a later registration is completed.
+        const payableRows = registrationsResult.rows.filter(
+          row => row.terms_agreement === true && row.payment_id == null
+        );
+        if (payableRows.length === 0) {
+          await client.query('ROLLBACK');
+          return new Response(
+            JSON.stringify({
+              message:
+                'No registrations are ready for payment. Please complete registration before paying.',
+            }),
+            {
+              status: 400,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+        }
+        if (payableRows.length !== registrationsResult.rows.length) {
+          console.warn(
+            'Ignoring incomplete or already-paid registration IDs during payment:',
+            registrationsResult.rows
+              .filter(
+                row => !(row.terms_agreement === true && row.payment_id == null)
+              )
+              .map(row => row.id)
+          );
+        }
+        registrationsResult.rows = payableRows;
+        const payableRegistrationIds = payableRows.map(row => row.id);
 
         const activitiesForPayment = await getCollection('activities');
         const hasCancelledActivity = registrationsResult.rows.some(row => {
@@ -364,8 +398,10 @@ export const POST: APIRoute = async ({ request }) => {
         await client.query(
           `UPDATE registration 
            SET payment_id = $1
-           WHERE id = ANY($2)`,
-          [paymentId, registrationIds]
+           WHERE id = ANY($2)
+             AND terms_agreement IS TRUE
+             AND payment_id IS NULL`,
+          [paymentId, payableRegistrationIds]
         );
 
         // Commit the transaction
@@ -383,7 +419,7 @@ export const POST: APIRoute = async ({ request }) => {
             JOIN contact c ON r.contact_id = c.id
             WHERE r.id = ANY($1)
             LIMIT 1`,
-            [registrationIds]
+            [payableRegistrationIds]
           );
 
           if (emailDataResult.rows.length > 0) {
@@ -423,7 +459,7 @@ export const POST: APIRoute = async ({ request }) => {
               FROM registration r
               JOIN student s ON r.student_id = s.id
               WHERE r.id = ANY($1)`,
-              [registrationIds]
+              [payableRegistrationIds]
             );
 
             const studentNamesMap = new Map<
@@ -497,7 +533,7 @@ export const POST: APIRoute = async ({ request }) => {
             paypalOrderId: paymentMethod === 'paypal' ? paypalOrderId : null,
             transactionId: transactionId,
             amount: totalAmount,
-            registrationCount: registrationIds.length,
+            registrationCount: payableRegistrationIds.length,
             paymentMethod: paymentMethod,
           }),
           {
