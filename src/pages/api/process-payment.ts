@@ -129,7 +129,7 @@ export const POST: APIRoute = async ({ request }) => {
         // Verify registrations exist and get their total cost
         const registrationsResult = await client.query(
           `SELECT id, activity, cost, donation, terms_agreement, payment_id
-           FROM registration WHERE id = ANY($1)`,
+           FROM registration WHERE id = ANY($1) FOR UPDATE`,
           [registrationIds]
         );
 

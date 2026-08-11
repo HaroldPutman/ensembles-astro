@@ -8,6 +8,7 @@ import {
   fillContactForm,
   fillStudentForm,
   getSessionRegistrationIds,
+  setSessionRegistrationIds,
   payByCheck,
   completeInfoAndContinueToPayment,
   uniqueTestPerson,
@@ -19,7 +20,8 @@ import {
  * completes registration + payment for class B in the same browser tab.
  *
  * Starting a new class (without "Add Another Registration") must replace the
- * cart so the abandoned class is not marked paid.
+ * cart. Even if both IDs are submitted at payment time, only the completed
+ * registration may receive payment_id.
  */
 const CLASS_A = '2026/08/piano2';
 const CLASS_B = '2026/08/guitar1';
@@ -63,6 +65,17 @@ test.describe('abandoned registration cart pollution', () => {
     const idsOnPayment = await getSessionRegistrationIds(page);
     expect(idsOnPayment).toEqual([paidRegistrationId]);
 
+    // Force a polluted checkout payload: both IDs are submitted at payment time.
+    // Server must still assign payment_id only to the completed registration.
+    await setSessionRegistrationIds(page, [
+      abandonedRegistrationId,
+      paidRegistrationId,
+    ]);
+    expect(await getSessionRegistrationIds(page)).toEqual([
+      abandonedRegistrationId,
+      paidRegistrationId,
+    ]);
+    await page.reload();
     await payByCheck(page);
     await expect(page.locator('body')).toContainText(/confirmation|success/i);
 

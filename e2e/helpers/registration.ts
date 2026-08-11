@@ -78,6 +78,15 @@ export async function getSessionRegistrationIds(page: Page): Promise<string[]> {
   });
 }
 
+export async function setSessionRegistrationIds(
+  page: Page,
+  ids: string[]
+): Promise<void> {
+  await page.evaluate(registrationIds => {
+    sessionStorage.setItem('registrations', JSON.stringify(registrationIds));
+  }, ids);
+}
+
 export function uniqueTestPerson(prefix: string) {
   const stamp = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   return {
