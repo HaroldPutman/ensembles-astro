@@ -212,6 +212,8 @@ const activityIsCancelled = isActivityCancelled(activity.data);
 </Layout>
 
 <script>
+  import { ADDING_ANOTHER_STORAGE_KEY } from '../../../lib/registrationCart';
+
   const form = document.getElementById(
     'registration-info-form'
   ) as HTMLFormElement;
@@ -326,6 +328,8 @@ const activityIsCancelled = isActivityCancelled(activity.data);
         if (submitter?.name === 'pay-now') {
           window.location.href = '/register/payment';
         } else if (submitter?.name === 'add-more') {
+          // Keep the completed registration in the cart for the next signup.
+          sessionStorage.setItem(ADDING_ANOTHER_STORAGE_KEY, 'true');
           window.location.href = '/activities';
         }
       } else {
