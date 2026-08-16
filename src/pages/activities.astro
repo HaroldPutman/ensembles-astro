@@ -385,6 +385,15 @@ const sortedActivities = activities
             statusEl.textContent = 'Registration closed';
             statusEl.style.color = '#4b5563';
           }
+        } else if (status.isFull) {
+          // Capacity full — same priority as ActivityStatus (before opens/preregister)
+          if (registerBtn) {
+            registerBtn.style.display = 'none';
+          }
+          if (statusEl) {
+            statusEl.textContent = `Sorry, this ${status.kind} is full`;
+            statusEl.style.color = '#991b1b';
+          }
         } else if (status.isRegistrationNotYetOpen) {
           const opensLabel = status.registrationOpensLabel || 'soon';
           const canPreregister =
@@ -402,15 +411,6 @@ const sortedActivities = activities
                 e.preventDefault();
               });
             }
-          }
-        } else if (status.isFull) {
-          // Activity is full - hide register button and show message
-          if (registerBtn) {
-            registerBtn.style.display = 'none';
-          }
-          if (statusEl) {
-            statusEl.textContent = `Sorry, this ${status.kind} is full`;
-            statusEl.style.color = '#991b1b';
           }
         } else if (
           status.spotsRemaining !== null &&
