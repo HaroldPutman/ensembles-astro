@@ -2,8 +2,8 @@ import { Temporal } from '@js-temporal/polyfill';
 import { RRuleTemporal } from 'rrule-temporal';
 import {
   buildRRuleString,
-  isRegistrationClosedAt,
-  isRegistrationNotYetOpenAt,
+  timeNowIsAfter,
+  timeNowIsBefore,
   makeICalDuration,
   mergeActivityScheduleDates,
   normalizeAdditionalDates,
@@ -49,7 +49,7 @@ export function isRegistrationNotYetOpen(data: {
 }): boolean {
   const opensAt = getRegistrationOpensAt(data);
   if (!opensAt) return false;
-  return isRegistrationNotYetOpenAt(opensAt);
+  return timeNowIsBefore(opensAt);
 }
 
 export function getRegistrationClosesAt(data: {
@@ -69,7 +69,7 @@ export function isRegistrationClosed(data: {
 }): boolean {
   const closesAt = getRegistrationClosesAt(data);
   if (!closesAt) return false;
-  return isRegistrationClosedAt(closesAt);
+  return timeNowIsAfter(closesAt);
 }
 
 /**
@@ -137,8 +137,7 @@ export function isActivityEnded(
 
   const last = occurrences[occurrences.length - 1]!;
   const endsAt = last.start.add(Temporal.Duration.from(last.durationISO));
-  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(endsAt.timeZoneId);
-  return Temporal.ZonedDateTime.compare(endsAt, nowInstant) < 0;
+  return timeNowIsAfter(endsAt, now);
 }
 
 /** Pre-registration early access applies only to classes. */

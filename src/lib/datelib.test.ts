@@ -14,8 +14,8 @@ import {
   resolveRegistrationOpensInstant,
   formatRegistrationClosesDate,
   formatRegistrationOpensDate,
-  isRegistrationClosedAt,
-  isRegistrationNotYetOpenAt,
+  timeNowIsAfter,
+  timeNowIsBefore,
 } from './datelib';
 
 describe('datelib', () => {
@@ -433,8 +433,8 @@ describe('datelib', () => {
       const afterClose = Temporal.ZonedDateTime.from(
         '2026-07-18T00:00:01[America/Louisville]'
       );
-      expect(isRegistrationClosedAt(closesAt, beforeClose)).toBe(false);
-      expect(isRegistrationClosedAt(closesAt, afterClose)).toBe(true);
+      expect(timeNowIsAfter(closesAt, beforeClose)).toBe(false);
+      expect(timeNowIsAfter(closesAt, afterClose)).toBe(true);
     });
   });
 
@@ -459,8 +459,8 @@ describe('datelib', () => {
       const atOpen = Temporal.ZonedDateTime.from(
         '2026-09-13T00:00:00[America/Louisville]'
       );
-      expect(isRegistrationNotYetOpenAt(opensAt, beforeOpen)).toBe(true);
-      expect(isRegistrationNotYetOpenAt(opensAt, atOpen)).toBe(false);
+      expect(timeNowIsBefore(opensAt, beforeOpen)).toBe(true);
+      expect(timeNowIsBefore(opensAt, atOpen)).toBe(false);
     });
   });
 });

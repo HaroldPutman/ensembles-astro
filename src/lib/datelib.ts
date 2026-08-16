@@ -521,22 +521,22 @@ export function formatRegistrationClosesDate(
   });
 }
 
-/** True when the current time is before the registration open instant. */
-export function isRegistrationNotYetOpenAt(
-  opensAt: Temporal.ZonedDateTime,
+/** True when now (or `now`) is before `instant`. */
+export function timeNowIsBefore(
+  instant: Temporal.ZonedDateTime,
   now?: Temporal.ZonedDateTime
 ): boolean {
-  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(opensAt.timeZoneId);
-  return Temporal.ZonedDateTime.compare(nowInstant, opensAt) < 0;
+  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(instant.timeZoneId);
+  return Temporal.ZonedDateTime.compare(nowInstant, instant) < 0;
 }
 
-/** True when the current time is after the registration close instant. */
-export function isRegistrationClosedAt(
-  closesAt: Temporal.ZonedDateTime,
+/** True when now (or `now`) is after `instant`. */
+export function timeNowIsAfter(
+  instant: Temporal.ZonedDateTime,
   now?: Temporal.ZonedDateTime
 ): boolean {
-  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(closesAt.timeZoneId);
-  return Temporal.ZonedDateTime.compare(nowInstant, closesAt) > 0;
+  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(instant.timeZoneId);
+  return Temporal.ZonedDateTime.compare(nowInstant, instant) > 0;
 }
 
 export function getDayOfWeek(date: Temporal.ZonedDateTime) {
