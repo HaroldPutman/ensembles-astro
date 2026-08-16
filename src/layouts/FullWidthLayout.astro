@@ -97,6 +97,24 @@ const resolvedOgImageAlt = ogImageAlt ?? resolvedOgTitle;
   </body>
 </html>
 
+<script>
+  import {
+    PREREGISTRATION_PARAM,
+    enablePreregistration,
+    hasPreregistrationParam,
+  } from '../lib/preregistration';
+
+  const params = new URLSearchParams(window.location.search);
+  if (hasPreregistrationParam(params)) {
+    enablePreregistration();
+    params.delete(PREREGISTRATION_PARAM);
+    const next = `${window.location.pathname}${
+      params.toString() ? `?${params.toString()}` : ''
+    }${window.location.hash}`;
+    window.history.replaceState({}, '', next);
+  }
+</script>
+
 <style is:global>
   :root {
     --font-primary:

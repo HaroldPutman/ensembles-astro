@@ -1,7 +1,10 @@
 import { Temporal } from '@js-temporal/polyfill';
 import {
+  getFirstAndLastDates,
   isRegistrationClosedAt,
+  isRegistrationNotYetOpenAt,
   resolveRegistrationClosesInstant,
+  resolveRegistrationOpensInstant,
 } from './datelib';
 
 /**
@@ -25,6 +28,26 @@ export function isActivityCancelled(data: {
   return data.status === ACTIVITY_STATUS_CANCELLED;
 }
 
+export function getRegistrationOpensAt(data: {
+  startDate: string;
+  registrationOpens?: string;
+}): Temporal.ZonedDateTime | undefined {
+  if (!data.registrationOpens) return undefined;
+  return resolveRegistrationOpensInstant(
+    data.registrationOpens,
+    data.startDate
+  );
+}
+
+export function isRegistrationNotYetOpen(data: {
+  startDate: string;
+  registrationOpens?: string;
+}): boolean {
+  const opensAt = getRegistrationOpensAt(data);
+  if (!opensAt) return false;
+  return isRegistrationNotYetOpenAt(opensAt);
+}
+
 export function getRegistrationClosesAt(data: {
   startDate: string;
   registrationCloses?: string;
@@ -43,4 +66,34 @@ export function isRegistrationClosed(data: {
   const closesAt = getRegistrationClosesAt(data);
   if (!closesAt) return false;
   return isRegistrationClosedAt(closesAt);
+}
+
+/**
+ * True when an activity's schedule has ended (last occurrence is in the past).
+ * Open-ended schedules (no until/count) are treated as not ended.
+ */
+export function isActivityEnded(data: {
+  startDate: string;
+  startTime: string;
+  duration: string;
+  repeat: string;
+}): boolean {
+  const [, lastDate] = getFirstAndLastDates(
+    data.startDate,
+    data.startTime,
+    data.duration,
+    data.repeat
+  );
+  if (!lastDate) return false;
+  return (
+    Temporal.ZonedDateTime.compare(
+      lastDate,
+      Temporal.Now.zonedDateTimeISO(lastDate.timeZoneId)
+    ) < 0
+  );
+}
+
+/** Pre-registration early access applies only to classes. */
+export function isClassActivity(data: { kind: string }): boolean {
+  return data.kind === 'class';
 }

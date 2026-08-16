@@ -5,7 +5,13 @@ import { getPool } from '../../lib/db';
 import {
   isActivityCancelled,
   isRegistrationClosed,
+  isRegistrationNotYetOpen,
+  isClassActivity,
 } from '../../lib/activityStatus';
+import {
+  getPaidRegistrationActivityIds,
+  studentHasCurrentClassEnrollment,
+} from '../../lib/currentClassEnrollment';
 
 export const prerender = false;
 
@@ -92,6 +98,22 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    const registrationNotYetOpen = isRegistrationNotYetOpen(activityEntry.data);
+    const isClass = isClassActivity(activityEntry.data);
+    if (registrationNotYetOpen && !isClass) {
+      return new Response(
+        JSON.stringify({
+          message: 'Registration for this activity has not opened yet.',
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
     const registrationSetting = activityEntry.data.registration;
     if (registrationSetting !== true) {
       return new Response(
@@ -143,6 +165,29 @@ export const POST: APIRoute = async ({ request }) => {
           }
         } else {
           throw error;
+        }
+      }
+
+      // Pre-registration: before public opens, require current class enrollment
+      if (registrationNotYetOpen && isClass) {
+        const paidActivityIds = await getPaidRegistrationActivityIds(
+          client,
+          studentId
+        );
+        if (!studentHasCurrentClassEnrollment(paidActivityIds, activities)) {
+          client.release();
+          return new Response(
+            JSON.stringify({
+              message:
+                'Pre-registration is only available for students currently enrolled in a class.',
+            }),
+            {
+              status: 403,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
         }
       }
 

@@ -1,6 +1,12 @@
 ---
 import { getPool, getActiveRegistrationCount } from '../lib/db';
 import { Icon } from 'astro-icon/components';
+import {
+  getRegistrationOpensAt,
+  isRegistrationNotYetOpen,
+} from '../lib/activityStatus';
+import { formatRegistrationOpensDate } from '../lib/datelib';
+import { PREREGISTRATION_STORAGE_KEY } from '../lib/preregistration';
 
 interface Props {
   activityId: string;
@@ -8,6 +14,10 @@ interface Props {
   sizeMax?: number;
   startTimestamp?: number; // Unix timestamp in milliseconds
   registrationClosed?: boolean;
+  /** When set, evaluated at request time inside this server island. */
+  startDate?: string;
+  registrationOpens?: string;
+  registerHref?: string;
 }
 
 const {
@@ -16,6 +26,9 @@ const {
   sizeMax,
   startTimestamp,
   registrationClosed = false,
+  startDate,
+  registrationOpens,
+  registerHref = `/register/${activityId}`,
 } = Astro.props;
 
 // Cache this server island response for up to 15 minutes
@@ -29,6 +42,15 @@ const hasStarted =
   (kind === 'class' || kind === 'camp') &&
   startTimestamp &&
   startTimestamp < Date.now();
+
+const registrationNotYetOpen =
+  startDate !== undefined &&
+  isRegistrationNotYetOpen({ startDate, registrationOpens });
+const opensAt =
+  startDate !== undefined
+    ? getRegistrationOpensAt({ startDate, registrationOpens })
+    : undefined;
+const opensLabel = opensAt ? formatRegistrationOpensDate(opensAt) : 'soon';
 
 // Fetch registration count from database
 let registeredCount = 0;
@@ -77,7 +99,7 @@ const isLow =
       </>
     ) : (
       <>
-        {isLow && (
+        {isLow && !registrationNotYetOpen && (
           <p class="spots-low-message">
             <Icon name="mdi:alert" width="20" height="20" /> Only{' '}
             {spotsRemaining} spot{spotsRemaining === 1 ? '' : 's'} left!
@@ -86,6 +108,25 @@ const isLow =
 
         {isFull ? (
           <div class="activity-full-message">Sorry, this {kind} is full</div>
+        ) : registrationNotYetOpen ? (
+          <div
+            class="registration-opens-gate"
+            data-kind={kind}
+            data-opens-label={opensLabel}
+            data-prereg-key={PREREGISTRATION_STORAGE_KEY}
+          >
+            <div class="activity-closed-message registration-opens-message">
+              Registration opens {opensLabel}
+            </div>
+            <a
+              href={registerHref}
+              class="btn btn-primary oswald-cta preregister-btn"
+              hidden
+            >
+              Pre-register Now
+              <Icon name="mdi:arrow-right" width="20" height="20" />
+            </a>
+          </div>
         ) : (
           <slot />
         )}
@@ -93,6 +134,43 @@ const isLow =
     )
   }
 </>
+
+<script>
+  import {
+    PREREGISTRATION_STORAGE_KEY,
+    isPreregistrationEnabled,
+  } from '../lib/preregistration';
+
+  function applyPreregistrationCtas() {
+    if (!isPreregistrationEnabled()) return;
+    document
+      .querySelectorAll('.registration-opens-gate[data-kind="class"]')
+      .forEach(gate => {
+        const message = gate.querySelector('.registration-opens-message');
+        const preregisterBtn = gate.querySelector('.preregister-btn');
+        if (message instanceof HTMLElement) message.hidden = true;
+        if (preregisterBtn instanceof HTMLElement) {
+          preregisterBtn.hidden = false;
+        }
+      });
+  }
+
+  applyPreregistrationCtas();
+  document.addEventListener('astro:page-load', applyPreregistrationCtas);
+
+  // Server islands arrive after first paint — watch for the gate node.
+  const observer = new MutationObserver(() => {
+    if (document.querySelector('.registration-opens-gate[data-kind="class"]')) {
+      applyPreregistrationCtas();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  // Stop watching after the common island load window.
+  setTimeout(() => observer.disconnect(), 15000);
+
+  // Keep the storage key referenced so the module stays aligned with the markup.
+  void PREREGISTRATION_STORAGE_KEY;
+</script>
 
 <style>
   .error-message {
@@ -164,5 +242,24 @@ const isLow =
     border: 1px solid #d1d5db;
     border-radius: var(--radius-button);
     font-weight: 600;
+  }
+
+  .registration-opens-gate {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .preregister-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-decoration: none;
+  }
+
+  .preregister-btn[hidden] {
+    display: none;
   }
 </style>

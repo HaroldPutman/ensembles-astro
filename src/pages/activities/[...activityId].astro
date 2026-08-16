@@ -15,12 +15,15 @@ import {
   mergeActivityScheduleDates,
   normalizeAdditionalDates,
   formatRegistrationClosesDate,
+  formatRegistrationOpensDate,
 } from '../../lib/datelib';
 import { getInstructors } from '../../lib/instructors';
 import {
   isActivityCancelled,
   isRegistrationClosed,
+  isRegistrationNotYetOpen,
   getRegistrationClosesAt,
+  getRegistrationOpensAt,
 } from '../../lib/activityStatus';
 
 export async function getStaticPaths() {
@@ -90,9 +93,14 @@ const externalRegistrationUrl =
   typeof registration === 'string' ? registration : null;
 const showRegistrationCta = registration !== false && !activityIsCancelled;
 const registrationClosed = isRegistrationClosed(activity.data);
+const registrationNotYetOpen = isRegistrationNotYetOpen(activity.data);
 const registrationClosesAt = getRegistrationClosesAt(activity.data);
 const registrationClosesLabel = registrationClosesAt
   ? formatRegistrationClosesDate(registrationClosesAt)
+  : undefined;
+const registrationOpensAt = getRegistrationOpensAt(activity.data);
+const registrationOpensLabel = registrationOpensAt
+  ? formatRegistrationOpensDate(registrationOpensAt)
   : undefined;
 
 const site = Astro.site ?? new URL('https://chalrestownensembles.com');
@@ -183,6 +191,14 @@ function getKindLabel(kind: string) {
         </div>
 
         {
+          registrationOpensLabel && registrationNotYetOpen && (
+            <p class="registration-closes-notice">
+              Registration opens {registrationOpensLabel}.
+            </p>
+          )
+        }
+
+        {
           registrationClosesLabel && (
             <p class="registration-closes-notice">
               Registration closes on {registrationClosesLabel}.
@@ -230,6 +246,9 @@ function getKindLabel(kind: string) {
                   sizeMax={activity.data.sizeMax}
                   startTimestamp={startTimestamp}
                   registrationClosed={registrationClosed}
+                  startDate={activity.data.startDate}
+                  registrationOpens={activity.data.registrationOpens}
+                  registerHref={`/register/${activity.id}`}
                 >
                   <a
                     href={`/register/${activity.id}`}
@@ -248,6 +267,10 @@ function getKindLabel(kind: string) {
                 (registrationClosed ? (
                   <div class="registration-closed-message">
                     Registration closed
+                  </div>
+                ) : registrationNotYetOpen ? (
+                  <div class="registration-closed-message">
+                    Registration opens {registrationOpensLabel || 'soon'}
                   </div>
                 ) : (
                   <>

@@ -407,9 +407,10 @@ const REGISTRATION_CLOSES_ABSOLUTE_RE =
 const REGISTRATION_CLOSES_RELATIVE_RE = /^(-?\d+)D$/i;
 
 /**
- * Validate `registrationCloses` frontmatter: `M/D/YYYY` or signed day offset like `-4D`.
+ * Validate registration window frontmatter (`registrationOpens` / `registrationCloses`):
+ * `M/D/YYYY` or signed day offset like `-4D`.
  */
-export function parseRegistrationClosesSpec(spec: string): void {
+export function parseRegistrationWindowSpec(spec: string): void {
   const trimmed = spec.trim();
   if (
     REGISTRATION_CLOSES_ABSOLUTE_RE.test(trimmed) ||
@@ -418,8 +419,64 @@ export function parseRegistrationClosesSpec(spec: string): void {
     return;
   }
   throw new Error(
-    `Invalid registrationCloses spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
+    `Invalid registration window spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
   );
+}
+
+/** @deprecated Prefer parseRegistrationWindowSpec */
+export function parseRegistrationClosesSpec(spec: string): void {
+  parseRegistrationWindowSpec(spec);
+}
+
+function resolveRegistrationWindowPlainDate(
+  spec: string,
+  startDate: string
+): Temporal.PlainDate {
+  parseRegistrationWindowSpec(spec);
+  const trimmed = spec.trim();
+
+  const absoluteMatch = trimmed.match(REGISTRATION_CLOSES_ABSOLUTE_RE);
+  if (absoluteMatch) {
+    const [, month, day, year] = absoluteMatch;
+    return Temporal.PlainDate.from({
+      year: Number(year),
+      month: Number(month),
+      day: Number(day),
+    });
+  }
+
+  const relativeMatch = trimmed.match(REGISTRATION_CLOSES_RELATIVE_RE);
+  if (!relativeMatch) {
+    throw new Error(`Invalid registration window spec: ${spec}`);
+  }
+  const [, offsetDays] = relativeMatch;
+  const [month, day, year] = startDate.split('/').map(Number);
+  return Temporal.PlainDate.from({
+    year,
+    month,
+    day,
+  }).add({ days: Number(offsetDays) });
+}
+
+/**
+ * Resolve when registration opens. Absolute dates and relative offsets use start of day in Louisville.
+ * Relative offsets are measured from `startDate`.
+ */
+export function resolveRegistrationOpensInstant(
+  spec: string,
+  startDate: string,
+  timeZone = 'America/Louisville'
+): Temporal.ZonedDateTime {
+  const plainDate = resolveRegistrationWindowPlainDate(spec, startDate);
+  return plainDate.toZonedDateTime({
+    plainTime: Temporal.PlainTime.from({
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    }),
+    timeZone,
+  });
 }
 
 /**
@@ -431,32 +488,7 @@ export function resolveRegistrationClosesInstant(
   startDate: string,
   timeZone = 'America/Louisville'
 ): Temporal.ZonedDateTime {
-  parseRegistrationClosesSpec(spec);
-  const trimmed = spec.trim();
-  let plainDate: Temporal.PlainDate;
-
-  const absoluteMatch = trimmed.match(REGISTRATION_CLOSES_ABSOLUTE_RE);
-  if (absoluteMatch) {
-    const [, month, day, year] = absoluteMatch;
-    plainDate = Temporal.PlainDate.from({
-      year: Number(year),
-      month: Number(month),
-      day: Number(day),
-    });
-  } else {
-    const relativeMatch = trimmed.match(REGISTRATION_CLOSES_RELATIVE_RE);
-    if (!relativeMatch) {
-      throw new Error(`Invalid registrationCloses spec: ${spec}`);
-    }
-    const [, offsetDays] = relativeMatch;
-    const [month, day, year] = startDate.split('/').map(Number);
-    plainDate = Temporal.PlainDate.from({
-      year,
-      month,
-      day,
-    }).add({ days: Number(offsetDays) });
-  }
-
+  const plainDate = resolveRegistrationWindowPlainDate(spec, startDate);
   return plainDate.toZonedDateTime({
     plainTime: Temporal.PlainTime.from({
       hour: 23,
@@ -465,6 +497,16 @@ export function resolveRegistrationClosesInstant(
       millisecond: 999,
     }),
     timeZone,
+  });
+}
+
+/** Display label for a registration open date, e.g. "Sep 13". */
+export function formatRegistrationOpensDate(
+  instant: Temporal.ZonedDateTime
+): string {
+  return instant.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
   });
 }
 
@@ -477,6 +519,15 @@ export function formatRegistrationClosesDate(
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+/** True when the current time is before the registration open instant. */
+export function isRegistrationNotYetOpenAt(
+  opensAt: Temporal.ZonedDateTime,
+  now?: Temporal.ZonedDateTime
+): boolean {
+  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(opensAt.timeZoneId);
+  return Temporal.ZonedDateTime.compare(nowInstant, opensAt) < 0;
 }
 
 /** True when the current time is after the registration close instant. */

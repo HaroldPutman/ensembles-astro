@@ -7,7 +7,7 @@ import { glob } from 'astro/loaders';
 import { ACTIVITY_STATUSES } from './lib/activityStatus';
 import {
   parseAdditionalDateSpec,
-  parseRegistrationClosesSpec,
+  parseRegistrationWindowSpec,
 } from './lib/datelib';
 
 // 3. Define your collection(s)
@@ -89,13 +89,28 @@ const activities = defineCollection({
       .union([z.literal(true), z.literal(false), z.string().url()])
       .optional()
       .default(true),
+    registrationOpens: z
+      .string()
+      .optional()
+      .superRefine((spec, ctx) => {
+        if (spec === undefined) return;
+        try {
+          parseRegistrationWindowSpec(spec);
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'registrationOpens must be M/D/YYYY or a day offset like -4D',
+          });
+        }
+      }),
     registrationCloses: z
       .string()
       .optional()
       .superRefine((spec, ctx) => {
         if (spec === undefined) return;
         try {
-          parseRegistrationClosesSpec(spec);
+          parseRegistrationWindowSpec(spec);
         } catch {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,

@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 export type StudentInfo = {
   firstName: string;
@@ -13,21 +14,28 @@ export type ContactInfo = {
   phone?: string;
 };
 
-export async function fillStudentForm(
+export async function submitStudentForm(
   page: Page,
   activityId: string,
   student: StudentInfo
 ): Promise<void> {
   await page.goto(`/register/${activityId}`);
   const form = page.locator('#registration-form');
+  await expect(form).toBeVisible();
   await form.locator('#birthdate').fill(student.birthdate);
   await form.locator('#birthdate').blur();
   await form.locator('#firstName').fill(student.firstName);
   await form.locator('#lastName').fill(student.lastName);
-  await Promise.all([
-    page.waitForURL(/\/register\/contact\?/),
-    form.getByRole('button', { name: 'Next: Contact Information' }).click(),
-  ]);
+  await form.getByRole('button', { name: 'Next: Contact Information' }).click();
+}
+
+export async function fillStudentForm(
+  page: Page,
+  activityId: string,
+  student: StudentInfo
+): Promise<void> {
+  await submitStudentForm(page, activityId, student);
+  await page.waitForURL(/\/register\/contact\?/);
 }
 
 export async function fillContactForm(
@@ -85,6 +93,16 @@ export async function setSessionRegistrationIds(
   await page.evaluate(registrationIds => {
     sessionStorage.setItem('registrations', JSON.stringify(registrationIds));
   }, ids);
+}
+
+/** Unlock class pre-registration for this browser session via `?preregister`. */
+export async function enablePreregistrationSession(page: Page): Promise<void> {
+  // Use home — avoids depending on /activities content being sortable.
+  await page.goto('/?preregister');
+  await page.waitForFunction(
+    () => sessionStorage.getItem('preregistration') === 'true'
+  );
+  await expect(page).not.toHaveURL(/[?&]preregister/);
 }
 
 export function uniqueTestPerson(prefix: string) {
