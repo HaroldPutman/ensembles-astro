@@ -1,4 +1,4 @@
-import { studentHasCurrentClassEnrollment } from './currentClassEnrollment';
+import { studentHasMatchingCurrentClassEnrollment } from './currentClassEnrollment';
 import type { CollectionEntry } from 'astro:content';
 
 function makeActivity(
@@ -8,13 +8,14 @@ function makeActivity(
     startDate: string;
     startTime: string;
     duration: string;
+    name?: string;
   }
 ): CollectionEntry<'activities'> {
   return {
     id,
     collection: 'activities',
     data: {
-      name: id,
+      name: data.name ?? id,
       instructors: [],
       repeat: '',
       additionalDates: [],
@@ -24,20 +25,32 @@ function makeActivity(
   } as CollectionEntry<'activities'>;
 }
 
-describe('studentHasCurrentClassEnrollment', () => {
+describe('studentHasMatchingCurrentClassEnrollment', () => {
   it('returns false with no paid registrations', () => {
-    expect(studentHasCurrentClassEnrollment([], [])).toBe(false);
+    expect(studentHasMatchingCurrentClassEnrollment([], [], 'Guitar 1')).toBe(
+      false
+    );
   });
 
-  it('requires a paid class that has not ended', () => {
-    const currentClass = makeActivity('2026/08/piano', {
+  it('requires a paid, non-ended class with the same name', () => {
+    const currentGuitar = makeActivity('2026/08/guitar1', {
+      name: 'Guitar 1',
       kind: 'class',
       startDate: '8/1/2026',
       startTime: '10:00 am',
       duration: '60',
       repeat: 'FREQ=WEEKLY;COUNT=8',
     });
-    const endedClass = makeActivity('2025/01/art', {
+    const currentPiano = makeActivity('2026/08/piano', {
+      name: 'Piano 2/3',
+      kind: 'class',
+      startDate: '8/1/2026',
+      startTime: '10:00 am',
+      duration: '60',
+      repeat: 'FREQ=WEEKLY;COUNT=8',
+    });
+    const endedGuitar = makeActivity('2025/01/guitar1', {
+      name: 'Guitar 1',
       kind: 'class',
       startDate: '1/1/2020',
       startTime: '10:00 am',
@@ -45,6 +58,7 @@ describe('studentHasCurrentClassEnrollment', () => {
       repeat: 'FREQ=WEEKLY;COUNT=2',
     });
     const camp = makeActivity('2026/06/camp', {
+      name: 'Guitar 1',
       kind: 'camp',
       startDate: '6/1/2026',
       startTime: '10:00 am',
@@ -53,13 +67,43 @@ describe('studentHasCurrentClassEnrollment', () => {
     });
 
     expect(
-      studentHasCurrentClassEnrollment(['2026/08/piano'], [currentClass])
+      studentHasMatchingCurrentClassEnrollment(
+        ['2026/08/guitar1'],
+        [currentGuitar, currentPiano],
+        'Guitar 1'
+      )
     ).toBe(true);
+
     expect(
-      studentHasCurrentClassEnrollment(['2025/01/art'], [endedClass])
+      studentHasMatchingCurrentClassEnrollment(
+        ['2026/08/guitar1'],
+        [currentGuitar, currentPiano],
+        'guitar 1'
+      )
+    ).toBe(true);
+
+    expect(
+      studentHasMatchingCurrentClassEnrollment(
+        ['2026/08/guitar1'],
+        [currentGuitar, currentPiano],
+        'Piano 2/3'
+      )
     ).toBe(false);
-    expect(studentHasCurrentClassEnrollment(['2026/06/camp'], [camp])).toBe(
-      false
-    );
+
+    expect(
+      studentHasMatchingCurrentClassEnrollment(
+        ['2025/01/guitar1'],
+        [endedGuitar],
+        'Guitar 1'
+      )
+    ).toBe(false);
+
+    expect(
+      studentHasMatchingCurrentClassEnrollment(
+        ['2026/06/camp'],
+        [camp],
+        'Guitar 1'
+      )
+    ).toBe(false);
   });
 });

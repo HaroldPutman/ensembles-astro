@@ -24,22 +24,29 @@ export async function getPaidRegistrationActivityIds(
   return result.rows.map((row: { activity: string }) => row.activity);
 }
 
+function normalizeClassName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
 /**
- * True when the student has a paid enrollment in a class that has not ended.
+ * True when the student has a paid enrollment in a non-ended class with the
+ * same name as the target activity (pre-registration continuing-student gate).
  */
-export function studentHasCurrentClassEnrollment(
+export function studentHasMatchingCurrentClassEnrollment(
   paidActivityIds: string[],
-  activities: CollectionEntry<'activities'>[]
+  activities: CollectionEntry<'activities'>[],
+  targetClassName: string
 ): boolean {
   if (paidActivityIds.length === 0) return false;
 
   const paidIds = new Set(paidActivityIds.map(id => id.toLowerCase()));
+  const targetName = normalizeClassName(targetClassName);
 
   return activities.some(activity => {
     if (!paidIds.has(activity.id.toLowerCase())) return false;
     if (!isClassActivity(activity.data)) return false;
     if (isActivityCancelled(activity.data)) return false;
     if (isActivityEnded(activity.data)) return false;
-    return true;
+    return normalizeClassName(activity.data.name) === targetName;
   });
 }

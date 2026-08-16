@@ -10,7 +10,7 @@ import {
 } from '../../lib/activityStatus';
 import {
   getPaidRegistrationActivityIds,
-  studentHasCurrentClassEnrollment,
+  studentHasMatchingCurrentClassEnrollment,
 } from '../../lib/currentClassEnrollment';
 
 export const prerender = false;
@@ -168,18 +168,25 @@ export const POST: APIRoute = async ({ request }) => {
         }
       }
 
-      // Pre-registration: before public opens, require current class enrollment
+      // Pre-registration: before public opens, require current enrollment
+      // in a class with the same name.
       if (registrationNotYetOpen && isClass) {
         const paidActivityIds = await getPaidRegistrationActivityIds(
           client,
           studentId
         );
-        if (!studentHasCurrentClassEnrollment(paidActivityIds, activities)) {
+        if (
+          !studentHasMatchingCurrentClassEnrollment(
+            paidActivityIds,
+            activities,
+            activityEntry.data.name
+          )
+        ) {
           client.release();
           return new Response(
             JSON.stringify({
               message:
-                'Pre-registration is only available for students currently enrolled in a class.',
+                'Pre-registration is only available for students currently enrolled in this class.',
             }),
             {
               status: 403,

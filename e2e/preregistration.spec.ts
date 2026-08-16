@@ -19,6 +19,7 @@ import {
  */
 const CURRENT_CLASS = '2026/08/guitar1';
 const UPCOMING_CLASS = '2026/09/guitar1';
+const UPCOMING_OTHER_CLASS = '2026/09/piano1a';
 const OPENS_LABEL = /Registration opens\s+Aug 22/i;
 
 test.describe('class pre-registration', () => {
@@ -85,8 +86,33 @@ test.describe('class pre-registration', () => {
     await submitStudentForm(page, UPCOMING_CLASS, person.student);
 
     const message = page.locator('#registration-form #form-message');
-    await expect(message).toContainText(/currently enrolled in a class/i);
+    await expect(message).toContainText(/currently enrolled in this class/i);
     await expect(page).toHaveURL(new RegExp(`/register/${UPCOMING_CLASS}`));
+  });
+
+  test('rejects enrolled students pre-registering for a differently named class', async ({
+    page,
+  }) => {
+    const person = uniqueTestPerson('Mismatch');
+
+    await fillStudentForm(page, CURRENT_CLASS, person.student);
+    const currentIds = await getSessionRegistrationIds(page);
+    expect(currentIds).toHaveLength(1);
+    createdRegistrationIds.push(currentIds[0]);
+
+    await fillContactForm(page, person.contact);
+    await completeInfoAndContinueToPayment(page);
+    await payByCheck(page);
+    await expect(page.locator('body')).toContainText(/confirmation|success/i);
+
+    await enablePreregistrationSession(page);
+    await submitStudentForm(page, UPCOMING_OTHER_CLASS, person.student);
+
+    const message = page.locator('#registration-form #form-message');
+    await expect(message).toContainText(/currently enrolled in this class/i);
+    await expect(page).toHaveURL(
+      new RegExp(`/register/${UPCOMING_OTHER_CLASS}`)
+    );
   });
 
   test('allows a currently enrolled student to pre-register', async ({
