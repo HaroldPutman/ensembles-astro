@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill';
 import { studentHasMatchingCurrentClassEnrollment } from './currentClassEnrollment';
 import type { CollectionEntry } from 'astro:content';
 
@@ -33,6 +34,11 @@ describe('studentHasMatchingCurrentClassEnrollment', () => {
   });
 
   it('requires a paid, non-ended class with the same name', () => {
+    // 8/1/2026 weekly × 8 ends on 9/19/2026; keep "now" before that final session.
+    const now = Temporal.ZonedDateTime.from(
+      '2026-08-15T12:00:00[America/Louisville]'
+    );
+
     const currentGuitar = makeActivity('2026/08/guitar1', {
       name: 'Guitar 1',
       kind: 'class',
@@ -70,7 +76,8 @@ describe('studentHasMatchingCurrentClassEnrollment', () => {
       studentHasMatchingCurrentClassEnrollment(
         ['2026/08/guitar1'],
         [currentGuitar, currentPiano],
-        'Guitar 1'
+        'Guitar 1',
+        now
       )
     ).toBe(true);
 
@@ -78,7 +85,8 @@ describe('studentHasMatchingCurrentClassEnrollment', () => {
       studentHasMatchingCurrentClassEnrollment(
         ['2026/08/guitar1'],
         [currentGuitar, currentPiano],
-        'guitar 1'
+        'guitar 1',
+        now
       )
     ).toBe(true);
 
@@ -86,7 +94,8 @@ describe('studentHasMatchingCurrentClassEnrollment', () => {
       studentHasMatchingCurrentClassEnrollment(
         ['2026/08/guitar1'],
         [currentGuitar, currentPiano],
-        'Piano 2/3'
+        'Piano 2/3',
+        now
       )
     ).toBe(false);
 
@@ -94,7 +103,8 @@ describe('studentHasMatchingCurrentClassEnrollment', () => {
       studentHasMatchingCurrentClassEnrollment(
         ['2025/01/guitar1'],
         [endedGuitar],
-        'Guitar 1'
+        'Guitar 1',
+        now
       )
     ).toBe(false);
 
@@ -102,7 +112,8 @@ describe('studentHasMatchingCurrentClassEnrollment', () => {
       studentHasMatchingCurrentClassEnrollment(
         ['2026/06/camp'],
         [camp],
-        'Guitar 1'
+        'Guitar 1',
+        now
       )
     ).toBe(false);
   });

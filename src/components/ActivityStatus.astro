@@ -2,6 +2,7 @@
 import { getPool, getActiveRegistrationCount } from '../lib/db';
 import { Icon } from 'astro-icon/components';
 import {
+  cacheControlUntilNearestRegistrationOpens,
   getRegistrationOpensAt,
   isRegistrationNotYetOpen,
 } from '../lib/activityStatus';
@@ -31,18 +32,6 @@ const {
   registerHref = `/register/${activityId}`,
 } = Astro.props;
 
-// Cache this server island response for up to 15 minutes
-Astro.response.headers.set(
-  'Cache-Control',
-  'public, max-age=900, s-maxage=900, stale-while-revalidate=60'
-);
-
-// Check if class/camp has already started
-const hasStarted =
-  (kind === 'class' || kind === 'camp') &&
-  startTimestamp &&
-  startTimestamp < Date.now();
-
 const registrationNotYetOpen =
   startDate !== undefined &&
   isRegistrationNotYetOpen({ startDate, registrationOpens });
@@ -51,6 +40,17 @@ const opensAt =
     ? getRegistrationOpensAt({ startDate, registrationOpens })
     : undefined;
 const opensLabel = opensAt ? formatRegistrationOpensDate(opensAt) : 'soon';
+
+Astro.response.headers.set(
+  'Cache-Control',
+  cacheControlUntilNearestRegistrationOpens([opensAt], 900)
+);
+
+// Check if class/camp has already started
+const hasStarted =
+  (kind === 'class' || kind === 'camp') &&
+  startTimestamp &&
+  startTimestamp < Date.now();
 
 // Fetch registration count from database
 let registeredCount = 0;

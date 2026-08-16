@@ -82,7 +82,8 @@ export const POST: APIRoute = async ({ request }) => {
  * and spotsRemaining.
  *
  * @param activityIds - Array of activity IDs to include (matching against stored activities is case-insensitive)
- * @param noCache - When true, omits the Cache-Control header from the response; when false, includes a public caching policy
+ * @param noCache - When true, sets Cache-Control to no-store; otherwise caches
+ *   with a TTL capped by the nearest upcoming registrationOpens transition
  * @returns A Response whose successful body is `{ activities: ActivityStatus[] }` with status 200; on failure returns a 500 Response with `{ message: 'Failed to fetch activity status' }`
  */
 async function getActivityStatus(

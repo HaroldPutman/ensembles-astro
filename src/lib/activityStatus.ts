@@ -1,8 +1,12 @@
 import { Temporal } from '@js-temporal/polyfill';
+import { RRuleTemporal } from 'rrule-temporal';
 import {
-  getFirstAndLastDates,
+  buildRRuleString,
   isRegistrationClosedAt,
   isRegistrationNotYetOpenAt,
+  makeICalDuration,
+  mergeActivityScheduleDates,
+  normalizeAdditionalDates,
   resolveRegistrationClosesInstant,
   resolveRegistrationOpensInstant,
 } from './datelib';
@@ -69,28 +73,72 @@ export function isRegistrationClosed(data: {
 }
 
 /**
- * True when an activity's schedule has ended (last occurrence is in the past).
- * Open-ended schedules (no until/count) are treated as not ended.
+ * Cache-Control for registration status responses.
+ * Caps TTL so a cached "not yet open" response cannot outlive the next opens transition.
  */
-export function isActivityEnded(data: {
-  startDate: string;
-  startTime: string;
-  duration: string;
-  repeat: string;
-}): boolean {
-  const [, lastDate] = getFirstAndLastDates(
+export function cacheControlUntilNearestRegistrationOpens(
+  opensAts: Array<Temporal.ZonedDateTime | undefined>,
+  defaultMaxAgeSeconds: number
+): string {
+  const nowMs = Temporal.Now.instant().epochMilliseconds;
+  let maxAge = defaultMaxAgeSeconds;
+
+  for (const opensAt of opensAts) {
+    if (!opensAt) continue;
+    const secondsUntilOpen = Math.floor(
+      (opensAt.epochMilliseconds - nowMs) / 1000
+    );
+    if (secondsUntilOpen > 0) {
+      maxAge = Math.min(maxAge, secondsUntilOpen);
+    }
+  }
+
+  if (maxAge <= 0) {
+    return 'private, no-store';
+  }
+
+  // Omit stale-while-revalidate so we never serve pre-open past the transition.
+  return `public, max-age=${maxAge}, s-maxage=${maxAge}`;
+}
+
+/**
+ * True when an activity's schedule has ended (last merged session end is past).
+ * Open-ended RRULE schedules (no until/count) are treated as not ended.
+ */
+export function isActivityEnded(
+  data: {
+    startDate: string;
+    startTime: string;
+    duration: string;
+    repeat: string;
+    additionalDates?: string | string[];
+  },
+  now?: Temporal.ZonedDateTime
+): boolean {
+  const rruleString = buildRRuleString(
     data.startDate,
     data.startTime,
     data.duration,
     data.repeat
   );
-  if (!lastDate) return false;
-  return (
-    Temporal.ZonedDateTime.compare(
-      lastDate,
-      Temporal.Now.zonedDateTimeISO(lastDate.timeZoneId)
-    ) < 0
+  const rruleTemporal = new RRuleTemporal({ rruleString });
+  const options = rruleTemporal.options();
+  const hasEnd = options.until !== undefined || options.count !== undefined;
+  if (!hasEnd) return false;
+
+  const rruleDates = rruleTemporal.all((_dt, i) => i < 100);
+  const durationISO = makeICalDuration(data.duration);
+  const occurrences = mergeActivityScheduleDates(
+    rruleDates,
+    durationISO,
+    normalizeAdditionalDates(data.additionalDates)
   );
+  if (occurrences.length === 0) return false;
+
+  const last = occurrences[occurrences.length - 1]!;
+  const endsAt = last.start.add(Temporal.Duration.from(last.durationISO));
+  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(endsAt.timeZoneId);
+  return Temporal.ZonedDateTime.compare(endsAt, nowInstant) < 0;
 }
 
 /** Pre-registration early access applies only to classes. */

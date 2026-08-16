@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import type { CollectionEntry } from 'astro:content';
+import { Temporal } from '@js-temporal/polyfill';
 import {
   isActivityCancelled,
   isActivityEnded,
@@ -35,7 +36,8 @@ function normalizeClassName(name: string): string {
 export function studentHasMatchingCurrentClassEnrollment(
   paidActivityIds: string[],
   activities: CollectionEntry<'activities'>[],
-  targetClassName: string
+  targetClassName: string,
+  now?: Temporal.ZonedDateTime
 ): boolean {
   if (paidActivityIds.length === 0) return false;
 
@@ -46,7 +48,7 @@ export function studentHasMatchingCurrentClassEnrollment(
     if (!paidIds.has(activity.id.toLowerCase())) return false;
     if (!isClassActivity(activity.data)) return false;
     if (isActivityCancelled(activity.data)) return false;
-    if (isActivityEnded(activity.data)) return false;
+    if (isActivityEnded(activity.data, now)) return false;
     return normalizeClassName(activity.data.name) === targetName;
   });
 }
