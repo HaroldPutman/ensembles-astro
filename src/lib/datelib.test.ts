@@ -9,7 +9,7 @@ import {
   parseAdditionalDateSpec,
   normalizeAdditionalDates,
   mergeActivityScheduleDates,
-  parseRegistrationClosesSpec,
+  validateRegistrationWindowSpec,
   resolveRegistrationClosesInstant,
   resolveRegistrationOpensInstant,
   formatRegistrationClosesDate,
@@ -393,10 +393,10 @@ describe('datelib', () => {
 
   describe('registrationCloses', () => {
     it('accepts absolute and relative specs', () => {
-      expect(() => parseRegistrationClosesSpec('7/17/2026')).not.toThrow();
-      expect(() => parseRegistrationClosesSpec('-4D')).not.toThrow();
-      expect(() => parseRegistrationClosesSpec('2d')).not.toThrow();
-      expect(() => parseRegistrationClosesSpec('bad')).toThrow();
+      expect(() => validateRegistrationWindowSpec('7/17/2026')).not.toThrow();
+      expect(() => validateRegistrationWindowSpec('-4D')).not.toThrow();
+      expect(() => validateRegistrationWindowSpec('2d')).not.toThrow();
+      expect(() => validateRegistrationWindowSpec('bad')).toThrow();
     });
 
     it('resolves absolute dates to end of day in Louisville', () => {

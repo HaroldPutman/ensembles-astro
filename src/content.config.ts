@@ -7,7 +7,7 @@ import { glob } from 'astro/loaders';
 import { ACTIVITY_STATUSES } from './lib/activityStatus';
 import {
   parseAdditionalDateSpec,
-  parseRegistrationWindowSpec,
+  validateRegistrationWindowSpec,
 } from './lib/datelib';
 
 // 3. Define your collection(s)
@@ -95,7 +95,7 @@ const activities = defineCollection({
       .superRefine((spec, ctx) => {
         if (spec === undefined) return;
         try {
-          parseRegistrationWindowSpec(spec);
+          validateRegistrationWindowSpec(spec);
         } catch {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -110,7 +110,7 @@ const activities = defineCollection({
       .superRefine((spec, ctx) => {
         if (spec === undefined) return;
         try {
-          parseRegistrationWindowSpec(spec);
+          validateRegistrationWindowSpec(spec);
         } catch {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,

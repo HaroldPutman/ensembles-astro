@@ -85,11 +85,11 @@ const isLow =
 <>
   {
     hasStarted ? (
-      <div class="activity-started-message">
+      <div class="activity-status-message">
         This {kind} has already started and is no longer open for registration.
       </div>
     ) : registrationClosed ? (
-      <div class="activity-closed-message">Registration closed</div>
+      <div class="activity-status-message">Registration closed</div>
     ) : error ? (
       <>
         <div class="error-message">
@@ -115,7 +115,7 @@ const isLow =
             data-opens-label={opensLabel}
             data-prereg-key={PREREGISTRATION_STORAGE_KEY}
           >
-            <div class="activity-closed-message registration-opens-message">
+            <div class="activity-status-message registration-opens-message">
               Registration opens {opensLabel}
             </div>
             <a
@@ -223,17 +223,7 @@ const isLow =
     font-weight: 600;
   }
 
-  .activity-started-message {
-    text-align: center;
-    padding: 0.75rem 1rem;
-    margin-top: 1rem;
-    background: #f3f4f6;
-    color: #4b5563;
-    border: 1px solid #d1d5db;
-    border-radius: var(--radius-button);
-  }
-
-  .activity-closed-message {
+  .activity-status-message {
     text-align: center;
     padding: 0.75rem 1rem;
     margin-top: 1rem;

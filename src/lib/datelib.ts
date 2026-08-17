@@ -278,11 +278,11 @@ export function getFirstAndLastDates(
   duration: string,
   repeat: string
 ): [
-  Temporal.ZonedDateTime,
-  Temporal.ZonedDateTime | undefined,
-  number | undefined,
-  string | undefined,
-] {
+    Temporal.ZonedDateTime,
+    Temporal.ZonedDateTime | undefined,
+    number | undefined,
+    string | undefined,
+  ] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
     rruleString,
@@ -397,25 +397,18 @@ export function mergeActivityScheduleDates(
   return deduped;
 }
 
-/**
- * Get the day of the week from a date string
- * @param dtstring - The date string to get the day of the week from (RFC 9557 format)
- * @returns The day of the week
- */
-const REGISTRATION_CLOSES_ABSOLUTE_RE =
+
+const ABSOLUTE_DATE_RE =
   /^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})$/;
-const REGISTRATION_CLOSES_RELATIVE_RE = /^(-?\d+)D$/i;
+const RELATIVE_DATE_RE = /^(-?\d+)D$/i;
 
 /**
  * Validate registration window frontmatter (`registrationOpens` / `registrationCloses`):
  * `M/D/YYYY` or signed day offset like `-4D`.
  */
-export function parseRegistrationWindowSpec(spec: string): void {
+export function validateRegistrationWindowSpec(spec: string): void {
   const trimmed = spec.trim();
-  if (
-    REGISTRATION_CLOSES_ABSOLUTE_RE.test(trimmed) ||
-    REGISTRATION_CLOSES_RELATIVE_RE.test(trimmed)
-  ) {
+  if (ABSOLUTE_DATE_RE.test(trimmed) || RELATIVE_DATE_RE.test(trimmed)) {
     return;
   }
   throw new Error(
@@ -423,19 +416,19 @@ export function parseRegistrationWindowSpec(spec: string): void {
   );
 }
 
-/** @deprecated Prefer parseRegistrationWindowSpec */
+/** @deprecated Prefer validateRegistrationWindowSpec */
 export function parseRegistrationClosesSpec(spec: string): void {
-  parseRegistrationWindowSpec(spec);
+  validateRegistrationWindowSpec(spec);
 }
 
 function resolveRegistrationWindowPlainDate(
   spec: string,
   startDate: string
 ): Temporal.PlainDate {
-  parseRegistrationWindowSpec(spec);
+  validateRegistrationWindowSpec(spec);
   const trimmed = spec.trim();
 
-  const absoluteMatch = trimmed.match(REGISTRATION_CLOSES_ABSOLUTE_RE);
+  const absoluteMatch = trimmed.match(ABSOLUTE_DATE_RE);
   if (absoluteMatch) {
     const [, month, day, year] = absoluteMatch;
     return Temporal.PlainDate.from({
@@ -445,7 +438,7 @@ function resolveRegistrationWindowPlainDate(
     });
   }
 
-  const relativeMatch = trimmed.match(REGISTRATION_CLOSES_RELATIVE_RE);
+  const relativeMatch = trimmed.match(RELATIVE_DATE_RE);
   if (!relativeMatch) {
     throw new Error(`Invalid registration window spec: ${spec}`);
   }
@@ -592,9 +585,9 @@ export function shortDescription(
   }
   const endDateString = lastDate
     ? lastDate.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      })
+      month: 'short',
+      day: 'numeric',
+    })
     : '';
 
   // Calculate end time by adding duration to first date
