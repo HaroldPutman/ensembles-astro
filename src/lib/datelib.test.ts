@@ -399,6 +399,15 @@ describe('datelib', () => {
       expect(() => validateRegistrationWindowSpec('bad')).toThrow();
     });
 
+    it('rejects impossible absolute calendar dates', () => {
+      expect(() => validateRegistrationWindowSpec('2/31/2026')).toThrow(
+        /Invalid registration window spec/
+      );
+      expect(() => validateRegistrationWindowSpec('4/31/2026')).toThrow(
+        /Invalid registration window spec/
+      );
+    });
+
     it('resolves absolute dates to end of day in Louisville', () => {
       const closesAt = resolveRegistrationClosesInstant(
         '7/17/2026',

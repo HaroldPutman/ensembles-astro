@@ -408,9 +408,31 @@ const RELATIVE_DATE_RE = /^(-?\d+)D$/i;
  */
 export function validateRegistrationWindowSpec(spec: string): void {
   const trimmed = spec.trim();
-  if (ABSOLUTE_DATE_RE.test(trimmed) || RELATIVE_DATE_RE.test(trimmed)) {
+
+  const absoluteMatch = trimmed.match(ABSOLUTE_DATE_RE);
+  if (absoluteMatch) {
+    const [, month, day, year] = absoluteMatch;
+    try {
+      Temporal.PlainDate.from(
+        {
+          year: Number(year),
+          month: Number(month),
+          day: Number(day),
+        },
+        { overflow: 'reject' }
+      );
+      return;
+    } catch {
+      throw new Error(
+        `Invalid registration window spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
+      );
+    }
+  }
+
+  if (RELATIVE_DATE_RE.test(trimmed)) {
     return;
   }
+
   throw new Error(
     `Invalid registration window spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
   );
@@ -431,11 +453,14 @@ function resolveRegistrationWindowPlainDate(
   const absoluteMatch = trimmed.match(ABSOLUTE_DATE_RE);
   if (absoluteMatch) {
     const [, month, day, year] = absoluteMatch;
-    return Temporal.PlainDate.from({
-      year: Number(year),
-      month: Number(month),
-      day: Number(day),
-    });
+    return Temporal.PlainDate.from(
+      {
+        year: Number(year),
+        month: Number(month),
+        day: Number(day),
+      },
+      { overflow: 'reject' }
+    );
   }
 
   const relativeMatch = trimmed.match(RELATIVE_DATE_RE);
