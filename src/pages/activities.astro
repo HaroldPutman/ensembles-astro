@@ -24,7 +24,8 @@ const sortedActivities = activities
     );
     return { activity, firstDate };
   })
-  .sort((a, b) => Temporal.ZonedDateTime.compare(a.firstDate, b.firstDate))
+  .filter(entry => entry.firstDate != null)
+  .sort((a, b) => Temporal.ZonedDateTime.compare(a.firstDate!, b.firstDate!))
   .map(({ activity }) => activity);
 ---
 
@@ -222,6 +223,8 @@ const sortedActivities = activities
 </style>
 
 <script>
+  import { isPreregistrationEnabled } from '../lib/preregistration';
+
   interface ActivityStatus {
     activityId: string;
     kind: string;
@@ -231,6 +234,8 @@ const sortedActivities = activities
     spotsRemaining: number | null;
     isCancelled?: boolean;
     isRegistrationClosed?: boolean;
+    isRegistrationNotYetOpen?: boolean;
+    registrationOpensLabel?: string | null;
   }
 
   function categorizeActivities(): string[] {
@@ -381,13 +386,31 @@ const sortedActivities = activities
             statusEl.style.color = '#4b5563';
           }
         } else if (status.isFull) {
-          // Activity is full - hide register button and show message
+          // Capacity full — same priority as ActivityStatus (before opens/preregister)
           if (registerBtn) {
             registerBtn.style.display = 'none';
           }
           if (statusEl) {
             statusEl.textContent = `Sorry, this ${status.kind} is full`;
             statusEl.style.color = '#991b1b';
+          }
+        } else if (status.isRegistrationNotYetOpen) {
+          const opensLabel = status.registrationOpensLabel || 'soon';
+          const canPreregister =
+            status.kind === 'class' && isPreregistrationEnabled();
+          if (registerBtn) {
+            if (canPreregister) {
+              registerBtn.textContent = 'Pre-register Now';
+              registerBtn.classList.remove('is-disabled');
+              registerBtn.removeAttribute('aria-disabled');
+            } else {
+              registerBtn.textContent = `Registration opens ${opensLabel}`;
+              registerBtn.classList.add('is-disabled');
+              registerBtn.setAttribute('aria-disabled', 'true');
+              registerBtn.addEventListener('click', e => {
+                e.preventDefault();
+              });
+            }
           }
         } else if (
           status.spotsRemaining !== null &&

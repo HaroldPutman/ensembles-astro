@@ -8,7 +8,11 @@ import ActivityDateTime from '../../components/ActivityDateTime.astro';
 import {
   isActivityCancelled,
   isRegistrationClosed,
+  isRegistrationNotYetOpen,
+  isClassActivity,
+  getRegistrationOpensAt,
 } from '../../lib/activityStatus';
+import { formatRegistrationOpensDate } from '../../lib/datelib';
 
 export async function getStaticPaths() {
   const activities = await getCollection('activities');
@@ -36,6 +40,12 @@ const firstDate = getFirstDate(
 const dtstart = firstDate.toPlainDate().toString();
 const activityIsCancelled = isActivityCancelled(activity.data);
 const registrationClosed = isRegistrationClosed(activity.data);
+const registrationNotYetOpen = isRegistrationNotYetOpen(activity.data);
+const registrationOpensAt = getRegistrationOpensAt(activity.data);
+const registrationOpensLabel = registrationOpensAt
+  ? formatRegistrationOpensDate(registrationOpensAt)
+  : undefined;
+const allowsClassPreregistration = isClassActivity(activity.data);
 const registration = activity.data.registration;
 const onSiteRegistration = registration === true;
 const externalRegistrationUrl =
@@ -62,6 +72,31 @@ const externalRegistrationUrl =
       )
     }
     {
+      !registrationClosed && registrationNotYetOpen && !activityIsCancelled && (
+        <p
+          class="registration-opens-notice"
+          id="registration-opens-notice"
+          role="status"
+          data-allows-preregistration={
+            allowsClassPreregistration ? 'true' : 'false'
+          }
+        >
+          Registration opens{' '}
+          <span id="registration-opens-label">
+            {registrationOpensLabel || 'soon'}
+          </span>
+          .
+          {allowsClassPreregistration && (
+            <span class="preregistration-hint" hidden>
+              {' '}
+              Pre-registration is open for students currently enrolled in this
+              class.
+            </span>
+          )}
+        </p>
+      )
+    }
+    {
       activityIsCancelled && (
         <p class="cancelled-notice" role="status">
           Registration is closed because this class has been cancelled.
@@ -74,7 +109,7 @@ const externalRegistrationUrl =
         onSiteRegistration &&
         !isFree &&
         activity.data.cost && (
-          <p>
+          <p id="registration-cost-notice">
             The cost of the class is{' '}
             {activity.data.cost.toLocaleString('en-US', {
               style: 'currency',
@@ -93,6 +128,7 @@ const externalRegistrationUrl =
     {
       !activityIsCancelled &&
         !registrationClosed &&
+        !registrationNotYetOpen &&
         externalRegistrationUrl && (
           <>
             <p class="external-registration-intro">
@@ -117,6 +153,13 @@ const externalRegistrationUrl =
           data-activity-start={dtstart}
           data-activity-age-min={activity.data.ageMin}
           data-activity-age-max={activity.data.ageMax}
+          data-registration-not-yet-open={
+            registrationNotYetOpen ? 'true' : 'false'
+          }
+          data-allows-preregistration={
+            allowsClassPreregistration ? 'true' : 'false'
+          }
+          hidden={registrationNotYetOpen}
         >
           <input
             type="hidden"
@@ -183,6 +226,7 @@ const externalRegistrationUrl =
     CAPACITY_OVERRIDE_STORAGE_KEY,
     parseCapacityOverrideIds,
   } from '../../lib/capacityOverride';
+  import { isPreregistrationEnabled } from '../../lib/preregistration';
   import {
     ADDING_ANOTHER_STORAGE_KEY,
     REGISTRATIONS_STORAGE_KEY,
@@ -195,6 +239,7 @@ const externalRegistrationUrl =
     'button[type="submit"]'
   ) as HTMLButtonElement;
   const birthdateInput = document.getElementById('birthdate');
+  const opensNotice = document.getElementById('registration-opens-notice');
 
   // Persist capacity override when arriving via /register/...?overfull
   {
@@ -216,6 +261,64 @@ const externalRegistrationUrl =
         }
       }
     }
+  }
+
+  // Unlock the form for current-student pre-registration when flagged.
+  // Also re-check opens status from the live API (page may be prerendered).
+  {
+    const activityIdInput = document.getElementById(
+      'activityId'
+    ) as HTMLInputElement | null;
+    const activityIdValue = activityIdInput?.value;
+    const allowsPrereg = form?.dataset.allowsPreregistration === 'true';
+    const opensLabelEl = document.getElementById('registration-opens-label');
+
+    async function syncRegistrationOpenState() {
+      if (!activityIdValue || !(form instanceof HTMLFormElement)) return;
+
+      let notYetOpen = form.dataset.registrationNotYetOpen === 'true';
+      let opensLabel = opensLabelEl?.textContent?.trim() || 'soon';
+
+      try {
+        const response = await fetch(
+          `/api/activity-status?id=${encodeURIComponent(activityIdValue)}&no-cache`,
+          { headers: { Accept: 'application/json' } }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const status = data.activities?.[0];
+          if (status) {
+            notYetOpen = Boolean(status.isRegistrationNotYetOpen);
+            if (status.registrationOpensLabel) {
+              opensLabel = status.registrationOpensLabel;
+            }
+          }
+        }
+      } catch {
+        // Fall back to prerendered data attributes
+      }
+
+      form.dataset.registrationNotYetOpen = notYetOpen ? 'true' : 'false';
+      if (opensLabelEl) opensLabelEl.textContent = opensLabel;
+
+      if (!notYetOpen) {
+        form.hidden = false;
+        if (opensNotice) opensNotice.hidden = true;
+        return;
+      }
+
+      if (opensNotice) opensNotice.hidden = false;
+
+      if (allowsPrereg && isPreregistrationEnabled()) {
+        form.hidden = false;
+        const hint = opensNotice?.querySelector('.preregistration-hint');
+        if (hint instanceof HTMLElement) hint.hidden = false;
+      } else {
+        form.hidden = true;
+      }
+    }
+
+    void syncRegistrationOpenState();
   }
 
   /**
@@ -332,10 +435,9 @@ const externalRegistrationUrl =
       });
 
       let result;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      try {
         result = await response.json();
-      } else {
+      } catch {
         result = { message: 'Server error occurred' };
       }
 
@@ -445,6 +547,15 @@ const externalRegistrationUrl =
   }
 
   .registration-closed-notice {
+    padding: 1rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #4b5563;
+    font-weight: 500;
+  }
+
+  .registration-opens-notice {
     padding: 1rem;
     background: #f3f4f6;
     border: 1px solid #d1d5db;

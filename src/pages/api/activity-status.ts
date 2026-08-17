@@ -4,7 +4,10 @@ import { getPool, getActiveRegistrationCounts } from '../../lib/db';
 import {
   isActivityCancelled,
   isRegistrationClosed,
+  isRegistrationNotYetOpen,
+  getRegistrationOpensAt,
 } from '../../lib/activityStatus';
+import { formatRegistrationOpensDate } from '../../lib/datelib';
 
 export const prerender = false;
 
@@ -17,6 +20,8 @@ interface ActivityStatus {
   kind: string;
   isCancelled: boolean;
   isRegistrationClosed: boolean;
+  isRegistrationNotYetOpen: boolean;
+  registrationOpensLabel: string | null;
 }
 
 export const GET: APIRoute = async ({ url }) => {
@@ -77,7 +82,8 @@ export const POST: APIRoute = async ({ request }) => {
  * and spotsRemaining.
  *
  * @param activityIds - Array of activity IDs to include (matching against stored activities is case-insensitive)
- * @param noCache - When true, omits the Cache-Control header from the response; when false, includes a public caching policy
+ * @param noCache - When true, sets Cache-Control to no-store; otherwise caches
+ *   with a TTL capped by the nearest upcoming registrationOpens transition
  * @returns A Response whose successful body is `{ activities: ActivityStatus[] }` with status 200; on failure returns a 500 Response with `{ message: 'Failed to fetch activity status' }`
  */
 async function getActivityStatus(
@@ -94,15 +100,22 @@ async function getActivityStatus(
         kind: string;
         cancelled: boolean;
         registrationClosed: boolean;
+        registrationNotYetOpen: boolean;
+        registrationOpensLabel: string | null;
       }
     >();
 
     activities.forEach(activity => {
+      const opensAt = getRegistrationOpensAt(activity.data);
       activitiesMap.set(activity.id.toLowerCase(), {
         sizeMax: activity.data.sizeMax,
         kind: activity.data.kind,
         cancelled: isActivityCancelled(activity.data),
         registrationClosed: isRegistrationClosed(activity.data),
+        registrationNotYetOpen: isRegistrationNotYetOpen(activity.data),
+        registrationOpensLabel: opensAt
+          ? formatRegistrationOpensDate(opensAt)
+          : null,
       });
     });
 
@@ -129,6 +142,9 @@ async function getActivityStatus(
         const isCancelled = activity?.cancelled ?? false;
         const isRegistrationClosedStatus =
           activity?.registrationClosed ?? false;
+        const isRegistrationNotYetOpenStatus =
+          activity?.registrationNotYetOpen ?? false;
+        const registrationOpensLabel = activity?.registrationOpensLabel ?? null;
         const isFull =
           isCancelled ||
           isRegistrationClosedStatus ||
@@ -147,6 +163,8 @@ async function getActivityStatus(
           kind,
           isCancelled,
           isRegistrationClosed: isRegistrationClosedStatus,
+          isRegistrationNotYetOpen: isRegistrationNotYetOpenStatus,
+          registrationOpensLabel,
         };
       });
 

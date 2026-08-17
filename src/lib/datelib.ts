@@ -278,11 +278,11 @@ export function getFirstAndLastDates(
   duration: string,
   repeat: string
 ): [
-  Temporal.ZonedDateTime,
-  Temporal.ZonedDateTime | undefined,
-  number | undefined,
-  string | undefined,
-] {
+    Temporal.ZonedDateTime,
+    Temporal.ZonedDateTime | undefined,
+    number | undefined,
+    string | undefined,
+  ] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
     rruleString,
@@ -397,29 +397,104 @@ export function mergeActivityScheduleDates(
   return deduped;
 }
 
-/**
- * Get the day of the week from a date string
- * @param dtstring - The date string to get the day of the week from (RFC 9557 format)
- * @returns The day of the week
- */
-const REGISTRATION_CLOSES_ABSOLUTE_RE =
+
+const ABSOLUTE_DATE_RE =
   /^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})$/;
-const REGISTRATION_CLOSES_RELATIVE_RE = /^(-?\d+)D$/i;
+const RELATIVE_DATE_RE = /^(-?\d+)D$/i;
 
 /**
- * Validate `registrationCloses` frontmatter: `M/D/YYYY` or signed day offset like `-4D`.
+ * Validate registration window frontmatter (`registrationOpens` / `registrationCloses`):
+ * `M/D/YYYY` or signed day offset like `-4D`.
  */
-export function parseRegistrationClosesSpec(spec: string): void {
+export function validateRegistrationWindowSpec(spec: string): void {
   const trimmed = spec.trim();
-  if (
-    REGISTRATION_CLOSES_ABSOLUTE_RE.test(trimmed) ||
-    REGISTRATION_CLOSES_RELATIVE_RE.test(trimmed)
-  ) {
+
+  const absoluteMatch = trimmed.match(ABSOLUTE_DATE_RE);
+  if (absoluteMatch) {
+    const [, month, day, year] = absoluteMatch;
+    try {
+      Temporal.PlainDate.from(
+        {
+          year: Number(year),
+          month: Number(month),
+          day: Number(day),
+        },
+        { overflow: 'reject' }
+      );
+      return;
+    } catch {
+      throw new Error(
+        `Invalid registration window spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
+      );
+    }
+  }
+
+  if (RELATIVE_DATE_RE.test(trimmed)) {
     return;
   }
+
   throw new Error(
-    `Invalid registrationCloses spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
+    `Invalid registration window spec: ${spec}. Use M/D/YYYY or a day offset like -4D.`
   );
+}
+
+/** @deprecated Prefer validateRegistrationWindowSpec */
+export function parseRegistrationClosesSpec(spec: string): void {
+  validateRegistrationWindowSpec(spec);
+}
+
+function resolveRegistrationWindowPlainDate(
+  spec: string,
+  startDate: string
+): Temporal.PlainDate {
+  validateRegistrationWindowSpec(spec);
+  const trimmed = spec.trim();
+
+  const absoluteMatch = trimmed.match(ABSOLUTE_DATE_RE);
+  if (absoluteMatch) {
+    const [, month, day, year] = absoluteMatch;
+    return Temporal.PlainDate.from(
+      {
+        year: Number(year),
+        month: Number(month),
+        day: Number(day),
+      },
+      { overflow: 'reject' }
+    );
+  }
+
+  const relativeMatch = trimmed.match(RELATIVE_DATE_RE);
+  if (!relativeMatch) {
+    throw new Error(`Invalid registration window spec: ${spec}`);
+  }
+  const [, offsetDays] = relativeMatch;
+  const [month, day, year] = startDate.split('/').map(Number);
+  return Temporal.PlainDate.from({
+    year,
+    month,
+    day,
+  }).add({ days: Number(offsetDays) });
+}
+
+/**
+ * Resolve when registration opens. Absolute dates and relative offsets use start of day in Louisville.
+ * Relative offsets are measured from `startDate`.
+ */
+export function resolveRegistrationOpensInstant(
+  spec: string,
+  startDate: string,
+  timeZone = 'America/Louisville'
+): Temporal.ZonedDateTime {
+  const plainDate = resolveRegistrationWindowPlainDate(spec, startDate);
+  return plainDate.toZonedDateTime({
+    plainTime: Temporal.PlainTime.from({
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    }),
+    timeZone,
+  });
 }
 
 /**
@@ -431,32 +506,7 @@ export function resolveRegistrationClosesInstant(
   startDate: string,
   timeZone = 'America/Louisville'
 ): Temporal.ZonedDateTime {
-  parseRegistrationClosesSpec(spec);
-  const trimmed = spec.trim();
-  let plainDate: Temporal.PlainDate;
-
-  const absoluteMatch = trimmed.match(REGISTRATION_CLOSES_ABSOLUTE_RE);
-  if (absoluteMatch) {
-    const [, month, day, year] = absoluteMatch;
-    plainDate = Temporal.PlainDate.from({
-      year: Number(year),
-      month: Number(month),
-      day: Number(day),
-    });
-  } else {
-    const relativeMatch = trimmed.match(REGISTRATION_CLOSES_RELATIVE_RE);
-    if (!relativeMatch) {
-      throw new Error(`Invalid registrationCloses spec: ${spec}`);
-    }
-    const [, offsetDays] = relativeMatch;
-    const [month, day, year] = startDate.split('/').map(Number);
-    plainDate = Temporal.PlainDate.from({
-      year,
-      month,
-      day,
-    }).add({ days: Number(offsetDays) });
-  }
-
+  const plainDate = resolveRegistrationWindowPlainDate(spec, startDate);
   return plainDate.toZonedDateTime({
     plainTime: Temporal.PlainTime.from({
       hour: 23,
@@ -465,6 +515,16 @@ export function resolveRegistrationClosesInstant(
       millisecond: 999,
     }),
     timeZone,
+  });
+}
+
+/** Display label for a registration open date, e.g. "Sep 13". */
+export function formatRegistrationOpensDate(
+  instant: Temporal.ZonedDateTime
+): string {
+  return instant.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
   });
 }
 
@@ -479,13 +539,22 @@ export function formatRegistrationClosesDate(
   });
 }
 
-/** True when the current time is after the registration close instant. */
-export function isRegistrationClosedAt(
-  closesAt: Temporal.ZonedDateTime,
+/** True when now (or `now`) is before `instant`. */
+export function timeNowIsBefore(
+  instant: Temporal.ZonedDateTime,
   now?: Temporal.ZonedDateTime
 ): boolean {
-  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(closesAt.timeZoneId);
-  return Temporal.ZonedDateTime.compare(nowInstant, closesAt) > 0;
+  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(instant.timeZoneId);
+  return Temporal.ZonedDateTime.compare(nowInstant, instant) < 0;
+}
+
+/** True when now (or `now`) is after `instant`. */
+export function timeNowIsAfter(
+  instant: Temporal.ZonedDateTime,
+  now?: Temporal.ZonedDateTime
+): boolean {
+  const nowInstant = now ?? Temporal.Now.zonedDateTimeISO(instant.timeZoneId);
+  return Temporal.ZonedDateTime.compare(nowInstant, instant) > 0;
 }
 
 export function getDayOfWeek(date: Temporal.ZonedDateTime) {
@@ -541,9 +610,9 @@ export function shortDescription(
   }
   const endDateString = lastDate
     ? lastDate.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      })
+      month: 'short',
+      day: 'numeric',
+    })
     : '';
 
   // Calculate end time by adding duration to first date

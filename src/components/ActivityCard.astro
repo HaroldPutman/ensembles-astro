@@ -288,6 +288,15 @@ const instructorData =
     border-color: var(--color-button-primary-hover-border);
   }
 
+  .register-btn.is-disabled,
+  .register-btn.is-disabled:hover {
+    background: #e5e7eb;
+    color: #4b5563;
+    border-color: #d1d5db;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
   .registration-status {
     font-size: 0.9rem;
     color: #666;

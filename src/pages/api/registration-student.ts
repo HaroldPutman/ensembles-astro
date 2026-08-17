@@ -5,7 +5,13 @@ import { getPool } from '../../lib/db';
 import {
   isActivityCancelled,
   isRegistrationClosed,
+  isRegistrationNotYetOpen,
+  isClassActivity,
 } from '../../lib/activityStatus';
+import {
+  getPaidRegistrationActivityIds,
+  studentHasMatchingCurrentClassEnrollment,
+} from '../../lib/currentClassEnrollment';
 
 export const prerender = false;
 
@@ -52,12 +58,14 @@ export const POST: APIRoute = async ({ request }) => {
       a => a.id.toLowerCase() === String(activityId).toLowerCase()
     );
     if (!activityEntry) {
+      // Use 400 (not 404): Netlify serves the HTML 404 page for status 404,
+      // which hides the JSON body from the registration form.
       return new Response(
         JSON.stringify({
-          message: 'Activity not found',
+          message: `Activity not found: ${activityId}`,
         }),
         {
-          status: 404,
+          status: 400,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -82,6 +90,22 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           message: 'Registration for this activity has closed.',
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    const registrationNotYetOpen = isRegistrationNotYetOpen(activityEntry.data);
+    const isClass = isClassActivity(activityEntry.data);
+    if (registrationNotYetOpen && !isClass) {
+      return new Response(
+        JSON.stringify({
+          message: 'Registration for this activity has not opened yet.',
         }),
         {
           status: 403,
@@ -143,6 +167,37 @@ export const POST: APIRoute = async ({ request }) => {
           }
         } else {
           throw error;
+        }
+      }
+
+      // Pre-registration: before public opens, require current enrollment
+      // in a class with the same name.
+      if (registrationNotYetOpen && isClass) {
+        const paidActivityIds = await getPaidRegistrationActivityIds(
+          client,
+          studentId
+        );
+        if (
+          !studentHasMatchingCurrentClassEnrollment(
+            paidActivityIds,
+            activities,
+            activityEntry.data.name
+          )
+        ) {
+          client.release();
+          const className = activityEntry.data.name;
+          const studentName = `${firstName} ${lastName}`.trim();
+          return new Response(
+            JSON.stringify({
+              message: `Pre-registration for ${className} is not available for ${studentName} because they are not currently enrolled in ${className}`,
+            }),
+            {
+              status: 403,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
         }
       }
 

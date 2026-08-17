@@ -9,10 +9,13 @@ import {
   parseAdditionalDateSpec,
   normalizeAdditionalDates,
   mergeActivityScheduleDates,
-  parseRegistrationClosesSpec,
+  validateRegistrationWindowSpec,
   resolveRegistrationClosesInstant,
+  resolveRegistrationOpensInstant,
   formatRegistrationClosesDate,
-  isRegistrationClosedAt,
+  formatRegistrationOpensDate,
+  timeNowIsAfter,
+  timeNowIsBefore,
 } from './datelib';
 
 describe('datelib', () => {
@@ -390,10 +393,19 @@ describe('datelib', () => {
 
   describe('registrationCloses', () => {
     it('accepts absolute and relative specs', () => {
-      expect(() => parseRegistrationClosesSpec('7/17/2026')).not.toThrow();
-      expect(() => parseRegistrationClosesSpec('-4D')).not.toThrow();
-      expect(() => parseRegistrationClosesSpec('2d')).not.toThrow();
-      expect(() => parseRegistrationClosesSpec('bad')).toThrow();
+      expect(() => validateRegistrationWindowSpec('7/17/2026')).not.toThrow();
+      expect(() => validateRegistrationWindowSpec('-4D')).not.toThrow();
+      expect(() => validateRegistrationWindowSpec('2d')).not.toThrow();
+      expect(() => validateRegistrationWindowSpec('bad')).toThrow();
+    });
+
+    it('rejects impossible absolute calendar dates', () => {
+      expect(() => validateRegistrationWindowSpec('2/31/2026')).toThrow(
+        /Invalid registration window spec/
+      );
+      expect(() => validateRegistrationWindowSpec('4/31/2026')).toThrow(
+        /Invalid registration window spec/
+      );
     });
 
     it('resolves absolute dates to end of day in Louisville', () => {
@@ -430,8 +442,34 @@ describe('datelib', () => {
       const afterClose = Temporal.ZonedDateTime.from(
         '2026-07-18T00:00:01[America/Louisville]'
       );
-      expect(isRegistrationClosedAt(closesAt, beforeClose)).toBe(false);
-      expect(isRegistrationClosedAt(closesAt, afterClose)).toBe(true);
+      expect(timeNowIsAfter(closesAt, beforeClose)).toBe(false);
+      expect(timeNowIsAfter(closesAt, afterClose)).toBe(true);
+    });
+  });
+
+  describe('registrationOpens', () => {
+    it('resolves absolute dates to start of day in Louisville', () => {
+      const opensAt = resolveRegistrationOpensInstant('9/13/2026', '9/20/2026');
+      expect(opensAt.toPlainDate().toString()).toBe('2026-09-13');
+      expect(opensAt.hour).toBe(0);
+      expect(opensAt.minute).toBe(0);
+    });
+
+    it('formats a short open date', () => {
+      const opensAt = resolveRegistrationOpensInstant('9/13/2026', '9/20/2026');
+      expect(formatRegistrationOpensDate(opensAt)).toBe('Sep 13');
+    });
+
+    it('detects when registration has not opened yet', () => {
+      const opensAt = resolveRegistrationOpensInstant('9/13/2026', '9/20/2026');
+      const beforeOpen = Temporal.ZonedDateTime.from(
+        '2026-09-12T23:59:59[America/Louisville]'
+      );
+      const atOpen = Temporal.ZonedDateTime.from(
+        '2026-09-13T00:00:00[America/Louisville]'
+      );
+      expect(timeNowIsBefore(opensAt, beforeOpen)).toBe(true);
+      expect(timeNowIsBefore(opensAt, atOpen)).toBe(false);
     });
   });
 });
