@@ -86,7 +86,9 @@ test.describe('class pre-registration', () => {
     await submitStudentForm(page, UPCOMING_CLASS, person.student);
 
     const message = page.locator('#registration-form #form-message');
-    await expect(message).toContainText(/currently enrolled in this class/i);
+    await expect(message).toHaveText(
+      `Pre-registration for Guitar 1 is not available for ${person.student.firstName} ${person.student.lastName} because they are not currently enrolled in Guitar 1`
+    );
     await expect(page).toHaveURL(new RegExp(`/register/${UPCOMING_CLASS}`));
   });
 
@@ -109,7 +111,9 @@ test.describe('class pre-registration', () => {
     await submitStudentForm(page, UPCOMING_OTHER_CLASS, person.student);
 
     const message = page.locator('#registration-form #form-message');
-    await expect(message).toContainText(/currently enrolled in this class/i);
+    await expect(message).toHaveText(
+      `Pre-registration for Beginning Piano (4pm) is not available for ${person.student.firstName} ${person.student.lastName} because they are not currently enrolled in Beginning Piano (4pm)`
+    );
     await expect(page).toHaveURL(
       new RegExp(`/register/${UPCOMING_OTHER_CLASS}`)
     );

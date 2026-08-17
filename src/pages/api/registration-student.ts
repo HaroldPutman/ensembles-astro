@@ -58,12 +58,14 @@ export const POST: APIRoute = async ({ request }) => {
       a => a.id.toLowerCase() === String(activityId).toLowerCase()
     );
     if (!activityEntry) {
+      // Use 400 (not 404): Netlify serves the HTML 404 page for status 404,
+      // which hides the JSON body from the registration form.
       return new Response(
         JSON.stringify({
-          message: 'Activity not found',
+          message: `Activity not found: ${activityId}`,
         }),
         {
-          status: 404,
+          status: 400,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -183,10 +185,11 @@ export const POST: APIRoute = async ({ request }) => {
           )
         ) {
           client.release();
+          const className = activityEntry.data.name;
+          const studentName = `${firstName} ${lastName}`.trim();
           return new Response(
             JSON.stringify({
-              message:
-                'Pre-registration is only available for students currently enrolled in this class.',
+              message: `Pre-registration for ${className} is not available for ${studentName} because they are not currently enrolled in ${className}`,
             }),
             {
               status: 403,

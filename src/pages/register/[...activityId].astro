@@ -435,10 +435,9 @@ const externalRegistrationUrl =
       });
 
       let result;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      try {
         result = await response.json();
-      } else {
+      } catch {
         result = { message: 'Server error occurred' };
       }
 
