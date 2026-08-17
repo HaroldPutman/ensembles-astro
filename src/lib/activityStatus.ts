@@ -85,11 +85,10 @@ export function cacheControlUntilNearestRegistrationOpens(
 
   for (const opensAt of opensAts) {
     if (!opensAt) continue;
-    const secondsUntilOpen = Math.floor(
-      (opensAt.epochMilliseconds - nowMs) / 1000
-    );
-    if (secondsUntilOpen > 0) {
-      maxAge = Math.min(maxAge, secondsUntilOpen);
+    const msUntilOpen = opensAt.epochMilliseconds - nowMs;
+    // Include 0ms (immediate) and sub-second futures so maxAge becomes 0 → no-store.
+    if (msUntilOpen >= 0) {
+      maxAge = Math.min(maxAge, Math.floor(msUntilOpen / 1000));
     }
   }
 

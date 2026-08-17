@@ -82,4 +82,16 @@ describe('cacheControlUntilNearestRegistrationOpens', () => {
       'private, no-store'
     );
   });
+
+  it('returns no-store for immediate and sub-second openings', () => {
+    const now = Temporal.Now.zonedDateTimeISO('America/Louisville');
+    const immediate = now;
+    const subSecond = now.add({ milliseconds: 500 });
+    expect(cacheControlUntilNearestRegistrationOpens([immediate], 600)).toBe(
+      'private, no-store'
+    );
+    expect(cacheControlUntilNearestRegistrationOpens([subSecond], 600)).toBe(
+      'private, no-store'
+    );
+  });
 });
