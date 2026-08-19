@@ -1,6 +1,8 @@
 import {
   PREREGISTRATION_PARAM,
   PREREGISTRATION_STORAGE_KEY,
+  SITE_ORIGIN,
+  buildPreregistrationActivityUrl,
   enablePreregistration,
   hasPreregistrationParam,
   isPreregistrationEnabled,
@@ -27,5 +29,11 @@ describe('preregistration', () => {
     enablePreregistration(storage);
     expect(store.get(PREREGISTRATION_STORAGE_KEY)).toBe('true');
     expect(isPreregistrationEnabled(storage)).toBe(true);
+  });
+
+  it('builds a class detail URL with a bare preregister param', () => {
+    expect(buildPreregistrationActivityUrl('2026/09/piano1a')).toBe(
+      `${SITE_ORIGIN}/activities/2026/09/piano1a?${PREREGISTRATION_PARAM}`
+    );
   });
 });

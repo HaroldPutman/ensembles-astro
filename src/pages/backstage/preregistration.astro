@@ -1,0 +1,233 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
+import { getCollection } from 'astro:content';
+import { Temporal } from '@js-temporal/polyfill';
+import { getPool } from '../../lib/db';
+import { loadPreregistrationInviteGroups } from '../../lib/preregistrationInvites';
+
+const activities = await getCollection('activities');
+const now = Temporal.Now.zonedDateTimeISO('America/Louisville');
+
+let groups: Awaited<ReturnType<typeof loadPreregistrationInviteGroups>> = [];
+let loadError: string | undefined;
+
+const pool = getPool();
+const client = await pool.connect();
+try {
+  groups = await loadPreregistrationInviteGroups(client, activities, now);
+} catch (error) {
+  loadError =
+    error instanceof Error
+      ? error.message
+      : 'Failed to load preregistration invites';
+} finally {
+  client.release();
+}
+
+const byUpcoming = new Map<
+  string,
+  {
+    name: string;
+    url: string;
+    startLabel: string;
+    invites: typeof groups;
+  }
+>();
+
+for (const group of groups) {
+  const existing = byUpcoming.get(group.upcomingActivityId);
+  const startLabel = group.upcomingFirstDate.toLocaleString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  if (!existing) {
+    byUpcoming.set(group.upcomingActivityId, {
+      name: group.upcomingActivityName,
+      url: group.preregisterUrl,
+      startLabel,
+      invites: [group],
+    });
+  } else {
+    existing.invites.push(group);
+  }
+}
+---
+
+<Layout title="Ensembles - Pre-registration invites">
+  <section class="prereg-page">
+    <a href="/backstage" class="back-link">
+      <Icon name="mdi:arrow-left" width="20" height="20" />
+      Back to Backstage
+    </a>
+    <h1>Pre-registration invites</h1>
+    <p class="subtitle">
+      Email current students a link to pre-register for the next session of the
+      same class (matched by id, e.g. piano1b).
+    </p>
+
+    {
+      loadError ? (
+        <p class="error-banner" role="alert">
+          {loadError}
+        </p>
+      ) : groups.length === 0 ? (
+        <p class="empty">
+          No invites to send. Either there is no in-session class with a future
+          session of the same id, or those families have already been invited or
+          registered.
+        </p>
+      ) : (
+        <>
+          <p class="summary">
+            {groups.length} email{groups.length === 1 ? '' : 's'} across{' '}
+            {byUpcoming.size} upcoming class{byUpcoming.size === 1 ? '' : 'es'}
+          </p>
+          <button type="button" class="send-btn" id="send-invites">
+            Send {groups.length} invite{groups.length === 1 ? '' : 's'}
+          </button>
+          <p class="send-status" id="send-status" hidden />
+          {[...byUpcoming.entries()].map(([activityId, info]) => (
+            <article class="class-block">
+              <h2>
+                <a href={`/activities/${activityId}`}>{info.name}</a>
+              </h2>
+              <p class="meta">
+                {info.startLabel}
+                <span aria-hidden="true"> · </span>
+                <a href={info.url}>preregister link</a>
+              </p>
+              <ul>
+                {info.invites.map(invite => (
+                  <li>
+                    <strong>{invite.contactName}</strong>
+                    {' <'}
+                    {invite.contactEmail}
+                    {'>'} —{' '}
+                    {invite.participants.map(p => p.studentName).join(', ')}
+                    {invite.currentActivityName !== invite.upcomingActivityName
+                      ? ` (from ${invite.currentActivityName})`
+                      : ''}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </>
+      )
+    }
+  </section>
+</Layout>
+
+<script>
+  const sendBtn = document.getElementById('send-invites');
+  const statusEl = document.getElementById('send-status');
+  if (sendBtn instanceof HTMLButtonElement && statusEl) {
+    sendBtn.addEventListener('click', async () => {
+      if (
+        !confirm(
+          'Send pre-registration invite emails to the contacts listed on this page?'
+        )
+      ) {
+        return;
+      }
+      sendBtn.disabled = true;
+      statusEl.hidden = false;
+      statusEl.textContent = 'Sending…';
+      try {
+        const response = await fetch('/api/send-preregistration');
+        const data = await response.json();
+        statusEl.textContent = data.message || 'Done';
+        if (data.success) {
+          window.setTimeout(() => window.location.reload(), 1200);
+        } else {
+          sendBtn.disabled = false;
+        }
+      } catch {
+        statusEl.textContent = 'Failed to send invites.';
+        sendBtn.disabled = false;
+      }
+    });
+  }
+</script>
+
+<style>
+  .prereg-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #555;
+    text-decoration: none;
+    margin-bottom: 1rem;
+  }
+
+  .subtitle,
+  .summary,
+  .meta,
+  .empty {
+    color: #555;
+  }
+
+  .error-banner {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+  }
+
+  .send-btn {
+    margin: 0.5rem 0 1.5rem;
+    padding: 0.7rem 1.25rem;
+    background: #2c5530;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .send-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .send-status {
+    margin: 0 0 1.5rem;
+    font-weight: 600;
+  }
+
+  .class-block {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .class-block h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.15rem;
+  }
+
+  .class-block ul {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+  }
+
+  .class-block li {
+    margin-bottom: 0.35rem;
+  }
+</style>
