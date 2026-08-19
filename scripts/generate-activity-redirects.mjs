@@ -45,10 +45,10 @@ function slugFromBasename(basename, start) {
   throw new Error('No slug rule for: ' + basename);
 }
 
-const out = execSync(
-  'git ls-tree -r HEAD --name-only collections/activities',
-  { cwd: root, encoding: 'utf8' }
-);
+const out = execSync('git ls-tree -r HEAD --name-only collections/activities', {
+  cwd: root,
+  encoding: 'utf8',
+});
 const oldPaths = out
   .split('\n')
   .map(s => s.trim())
@@ -68,7 +68,12 @@ for (const gitPath of oldPaths) {
   const slug = slugFromBasename(basename, start);
   const oldId = basename;
   const newId = `${start.yyyy}/${start.mm}/${slug}`;
-  const newFsPath = path.join(root, 'collections', 'activities', ...newId.split('/'));
+  const newFsPath = path.join(
+    root,
+    'collections',
+    'activities',
+    ...newId.split('/')
+  );
   if (!fs.existsSync(`${newFsPath}.mdx`)) {
     throw new Error(`Missing ${newFsPath}.mdx for old ${oldId}`);
   }

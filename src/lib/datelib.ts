@@ -278,11 +278,11 @@ export function getFirstAndLastDates(
   duration: string,
   repeat: string
 ): [
-    Temporal.ZonedDateTime,
-    Temporal.ZonedDateTime | undefined,
-    number | undefined,
-    string | undefined,
-  ] {
+  Temporal.ZonedDateTime,
+  Temporal.ZonedDateTime | undefined,
+  number | undefined,
+  string | undefined,
+] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
   const rruleTemporal = new RRuleTemporal({
     rruleString,
@@ -396,7 +396,6 @@ export function mergeActivityScheduleDates(
   }
   return deduped;
 }
-
 
 const ABSOLUTE_DATE_RE =
   /^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/(\d{4})$/;
@@ -610,9 +609,9 @@ export function shortDescription(
   }
   const endDateString = lastDate
     ? lastDate.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    })
+        month: 'short',
+        day: 'numeric',
+      })
     : '';
 
   // Calculate end time by adding duration to first date

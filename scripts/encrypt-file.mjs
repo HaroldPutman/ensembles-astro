@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';

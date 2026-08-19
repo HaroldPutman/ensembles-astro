@@ -2,6 +2,8 @@
  * Email utilities using Brevo Transactional Email API
  */
 
+import { formatEnjoyingClassHope } from './emailCopy';
+
 interface RegistrationItem {
   studentName: string;
   activityName: string;
@@ -985,6 +987,270 @@ export async function sendRosterEmail(
   }
 }
 
+// =============================================================================
+// PREREGISTRATION INVITE EMAIL
+// =============================================================================
+
+interface PreregistrationInviteParticipant {
+  firstName: string;
+  lastName: string;
+}
+
+interface PreregistrationInviteEmailData {
+  recipientEmail: string;
+  recipientName: string;
+  recipientFirstName: string;
+  recipientLastName: string;
+  currentActivityName: string;
+  upcomingActivityName: string;
+  weekday: string;
+  startDate: string;
+  startTime: string;
+  cost?: string;
+  location?: string;
+  registrationOpensLabel?: string;
+  preregisterUrl: string;
+  participants: PreregistrationInviteParticipant[];
+}
+
+function generatePreregistrationInviteHtml(
+  data: PreregistrationInviteEmailData
+): string {
+  const fontStack = 'Arial, Helvetica, sans-serif';
+  const greetingName =
+    data.recipientFirstName.trim() || data.recipientName.trim();
+  const safeName = escapeHtml(greetingName);
+  const safeUpcoming = escapeHtml(data.upcomingActivityName);
+  const safeUrl = escapeHtml(data.preregisterUrl);
+  const hopeSentence = formatEnjoyingClassHope(
+    data.currentActivityName,
+    data.participants,
+    {
+      firstName: data.recipientFirstName,
+      lastName: data.recipientLastName,
+    }
+  );
+  const hopeHtml = `<p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                ${escapeHtml(hopeSentence)}
+              </p>`;
+
+  const costHtml = data.cost
+    ? `<p style="margin: 0 0 8px; font-size: 14px; color: #666; font-family: ${fontStack};">
+         <strong>Cost:</strong> ${escapeHtml(data.cost)}
+       </p>`
+    : '';
+  const locationHtml = data.location?.trim()
+    ? `<p style="margin: 0; font-size: 14px; color: #666; font-family: ${fontStack};">
+         <strong>Location:</strong> ${escapeHtml(data.location.trim())}
+       </p>`
+    : '';
+  const opensHtml = data.registrationOpensLabel
+    ? `<p style="margin: 16px 0 0; font-size: 14px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+         Public registration opens ${escapeHtml(data.registrationOpensLabel)}. This link lets current students pre-register now.
+       </p>`
+    : '';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pre-register for ${safeUpcoming}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: ${fontStack};">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+    <tr>
+      <td style="padding: 20px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background-color: #2c5530; padding: 24px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold; font-family: ${fontStack};">
+                Pre-register for the next session
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px 24px;">
+              <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                Hi ${safeName},
+              </p>
+              ${hopeHtml}
+              <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.5; color: #333; font-family: ${fontStack};">
+                The next session of this class is coming up. To guarantee you a spot, current students can pre-register before registration opens to the public.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa; border-radius: 8px; margin: 24px 0;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 8px; font-size: 14px; color: #666; font-family: ${fontStack};">
+                      <strong>Next session:</strong> ${safeUpcoming}
+                    </p>
+                    <p style="margin: 0 0 8px; font-size: 14px; color: #666; font-family: ${fontStack};">
+                      <strong>Starts:</strong> ${escapeHtml(data.weekday)}, ${escapeHtml(data.startDate)} at ${escapeHtml(data.startTime)}
+                    </p>
+                    ${costHtml}
+                    ${locationHtml}
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 16px;">
+                <tr>
+                  <td style="background-color: #2c5530; border-radius: 6px;">
+                    <a href="${safeUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-weight: bold; font-family: ${fontStack}; font-size: 16px;">
+                      Pre-register now
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #666; font-family: ${fontStack}; word-break: break-all;">
+                Or paste this link into your browser:<br>
+                <a href="${safeUrl}" style="color: #2c5530;">${safeUrl}</a>
+              </p>
+              ${opensHtml}
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 24px; text-align: center; border-top: 1px solid #e0e0e0;">
+              <p style="margin: 0; font-size: 14px; color: #666; font-family: ${fontStack};">
+                Ensembles, Inc.<br>
+                <a href="https://charlestownensembles.com" style="color: #2c5530;">CharlestownEnsembles.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function generatePreregistrationInviteText(
+  data: PreregistrationInviteEmailData
+): string {
+  const greetingName =
+    data.recipientFirstName.trim() || data.recipientName.trim();
+  const hopeSentence = formatEnjoyingClassHope(
+    data.currentActivityName,
+    data.participants,
+    {
+      firstName: data.recipientFirstName,
+      lastName: data.recipientLastName,
+    }
+  );
+  const costLine = data.cost ? `\nCost: ${data.cost}` : '';
+  const locationLine = data.location?.trim()
+    ? `\nLocation: ${data.location.trim()}`
+    : '';
+  const opensLine = data.registrationOpensLabel
+    ? `\nPublic registration opens ${data.registrationOpensLabel}. This link lets current students pre-register now.`
+    : '';
+
+  return `
+PRE-REGISTER FOR THE NEXT SESSION
+
+Hi ${greetingName},
+
+${hopeSentence}
+
+A new session of this class is coming up. Current students can pre-register before registration opens to the public.
+
+Next session: ${data.upcomingActivityName}
+Starts: ${data.weekday}, ${data.startDate} at ${data.startTime}${costLine}${locationLine}
+
+Pre-register now:
+${data.preregisterUrl}
+${opensLine}
+
+---
+Ensembles, Inc.
+https://charlestownensembles.com
+`.trim();
+}
+
+export async function sendPreregistrationInviteEmail(
+  data: PreregistrationInviteEmailData
+): Promise<{ success: boolean; error?: string; messageId?: string }> {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    console.error('BREVO_API_KEY is not set');
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  if (!senderEmail) {
+    console.error('BREVO_SENDER_EMAIL is not set');
+    return { success: false, error: 'Email sender not configured' };
+  }
+
+  if (
+    !data.recipientEmail ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.recipientEmail)
+  ) {
+    return { success: false, error: 'Invalid recipient email address' };
+  }
+  if (!data.participants.length || !data.preregisterUrl) {
+    return { success: false, error: 'Missing required email data' };
+  }
+
+  const subject = `Pre-register for the next session of ${data.upcomingActivityName}`;
+
+  const emailPayload = {
+    sender: {
+      name: 'Ensembles',
+      email: senderEmail,
+    },
+    to: [
+      {
+        email: data.recipientEmail,
+        name: data.recipientName,
+      },
+    ],
+    subject,
+    htmlContent: generatePreregistrationInviteHtml(data),
+    textContent: generatePreregistrationInviteText(data),
+  };
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify(emailPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Brevo API error:', errorData);
+      return {
+        success: false,
+        error: errorData.message || 'Failed to send preregistration email',
+      };
+    }
+
+    const result = await response.json();
+    // eslint-disable-next-line no-console
+    console.log('Preregistration invite email sent successfully:', result);
+
+    return {
+      success: true,
+      messageId: result.messageId,
+    };
+  } catch (error) {
+    console.error('Error sending preregistration invite email:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to send preregistration email',
+    };
+  }
+}
+
 export type {
   PaymentConfirmationData,
   RegistrationItem,
@@ -993,4 +1259,5 @@ export type {
   RosterEmailData,
   ClassRosterData,
   RosterStudent,
+  PreregistrationInviteEmailData,
 };

@@ -48,20 +48,26 @@ import { Icon } from 'astro-icon/components';
 
           <div class="form-group">
             <label for="repeat">repeat:</label>
-            <input
-              type="text"
-              id="repeat"
-              name="repeat"
-            />
-            <small>Click an example to use it:
+            <input type="text" id="repeat" name="repeat" />
+            <small
+              >Click an example to use it:
               <ul class="examples-list">
                 <li>
-                  <button type="button" class="example-btn" data-rrule="FREQ=WEEKLY;COUNT=6;BYDAY=TU">
+                  <button
+                    type="button"
+                    class="example-btn"
+                    data-rrule="FREQ=WEEKLY;COUNT=6;BYDAY=TU"
+                  >
                     6-week class every Tuesday
                   </button>
                 </li>
                 <li>
-                  <button type="button" class="example-btn" data-start-date="11/4/2025" data-rrule="FREQ=WEEKLY;COUNT=6;BYDAY=TU;EXDATE=11/25/2025">
+                  <button
+                    type="button"
+                    class="example-btn"
+                    data-start-date="11/4/2025"
+                    data-rrule="FREQ=WEEKLY;COUNT=6;BYDAY=TU;EXDATE=11/25/2025"
+                  >
                     6-week session with 1 week break
                   </button>
                 </li>
@@ -71,7 +77,12 @@ import { Icon } from 'astro-icon/components';
                   </button>
                 </li>
                 <li>
-                  <button type="button" class="example-btn" data-start-date="8/29/2025" data-rrule="FREQ=WEEKLY;UNTIL=10/10/2025;EXDATE=9/12/2025,10/3/2025">
+                  <button
+                    type="button"
+                    class="example-btn"
+                    data-start-date="8/29/2025"
+                    data-rrule="FREQ=WEEKLY;UNTIL=10/10/2025;EXDATE=9/12/2025,10/3/2025"
+                  >
                     5 Friday nights
                   </button>
                 </li>
@@ -86,7 +97,7 @@ import { Icon } from 'astro-icon/components';
       <div class="right-column">
         <div id="results" style="display: none;">
           <h2>Results</h2>
-          
+
           <div id="text-description-container">
             <h3>Description:</h3>
             <p>
@@ -122,31 +133,48 @@ import { Icon } from 'astro-icon/components';
 <script>
   import { RRuleTemporal } from 'rrule-temporal';
   import { toText } from 'rrule-temporal/totext';
-  import {
-    buildRRuleString,
-    getFirstAndLastDates,
-  } from '../../lib/datelib';
+  import { buildRRuleString, getFirstAndLastDates } from '../../lib/datelib';
 
   const form = document.getElementById('rrule-form') as HTMLFormElement;
   const resultsDiv = document.getElementById('results') as HTMLDivElement;
-  const textDescription = document.getElementById('text-description') as HTMLParagraphElement;
-  const rruleStringPre = document.getElementById('rrule-string') as HTMLPreElement;
-  const occurrencesList = document.getElementById('occurrences-list') as HTMLUListElement;
-  const occurrenceCount = document.getElementById('occurrence-count') as HTMLDivElement;
-  const errorContainer = document.getElementById('error-container') as HTMLDivElement;
-  const errorMessage = document.getElementById('error-message') as HTMLPreElement;
+  const textDescription = document.getElementById(
+    'text-description'
+  ) as HTMLParagraphElement;
+  const rruleStringPre = document.getElementById(
+    'rrule-string'
+  ) as HTMLPreElement;
+  const occurrencesList = document.getElementById(
+    'occurrences-list'
+  ) as HTMLUListElement;
+  const occurrenceCount = document.getElementById(
+    'occurrence-count'
+  ) as HTMLDivElement;
+  const errorContainer = document.getElementById(
+    'error-container'
+  ) as HTMLDivElement;
+  const errorMessage = document.getElementById(
+    'error-message'
+  ) as HTMLPreElement;
   const repeatInput = document.getElementById('repeat') as HTMLInputElement;
-  const startDateInput = document.getElementById('startDate') as HTMLInputElement;
-  const firstDateSpan = document.getElementById('first-date') as HTMLSpanElement;
+  const startDateInput = document.getElementById(
+    'startDate'
+  ) as HTMLInputElement;
+  const firstDateSpan = document.getElementById(
+    'first-date'
+  ) as HTMLSpanElement;
   const lastDateSpan = document.getElementById('last-date') as HTMLSpanElement;
-  const deviationNoteLine = document.getElementById('deviation-note-line') as HTMLSpanElement;
-  const deviationNoteSpan = document.getElementById('deviation-note') as HTMLSpanElement;
+  const deviationNoteLine = document.getElementById(
+    'deviation-note-line'
+  ) as HTMLSpanElement;
+  const deviationNoteSpan = document.getElementById(
+    'deviation-note'
+  ) as HTMLSpanElement;
 
   // Handle example button clicks
   const exampleButtons = document.querySelectorAll('.example-btn');
   exampleButtons.forEach(button => {
     button.addEventListener('click', () => {
-      const startDate = button.getAttribute('data-start-date'); 
+      const startDate = button.getAttribute('data-start-date');
       if (startDate) {
         startDateInput.value = startDate;
       }
@@ -158,7 +186,7 @@ import { Icon } from 'astro-icon/components';
     });
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', e => {
     e.preventDefault();
 
     const formData = new FormData(form);
@@ -169,17 +197,22 @@ import { Icon } from 'astro-icon/components';
 
     try {
       // Build the RRule string
-      const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
-      
+      const rruleString = buildRRuleString(
+        startDate,
+        startTime,
+        duration,
+        repeat
+      );
+
       // Display the RRule string
       rruleStringPre.textContent = rruleString;
 
       // Parse with RRuleTemporal
       const rruleTemporal = new RRuleTemporal({ rruleString });
-      
+
       // Display the human-readable text
       textDescription.textContent = toText(rruleString);
-      
+
       // Get all occurrences (limit to 100 for safety)
       const occurrences = rruleTemporal.all((dt, i) => i < 100);
 
@@ -215,7 +248,7 @@ import { Icon } from 'astro-icon/components';
         month: 'short',
         day: 'numeric',
       });
-      
+
       if (lastDate) {
         lastDateSpan.textContent = lastDate.toLocaleString('en-US', {
           month: 'short',
@@ -235,15 +268,16 @@ import { Icon } from 'astro-icon/components';
 
       // Show results
       resultsDiv.style.display = 'block';
-      
+
       // Scroll results into view
       resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       // Show error
-      errorMessage.textContent = error instanceof Error ? error.message : String(error);
+      errorMessage.textContent =
+        error instanceof Error ? error.message : String(error);
       errorContainer.style.display = 'block';
       resultsDiv.style.display = 'block';
-      
+
       // Scroll results into view
       resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -475,4 +509,3 @@ import { Icon } from 'astro-icon/components';
     background: #f9f9f9;
   }
 </style>
-

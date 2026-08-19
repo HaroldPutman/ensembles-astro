@@ -8,14 +8,15 @@ import { Icon } from 'astro-icon/components';
   <section class="already-registered-section">
     <div class="already-registered-content">
       <div class="info-icon">
-        <Icon name="mdi:emoticon-happy-outline" width="96" height="96"/>
+        <Icon name="mdi:emoticon-happy-outline" width="96" height="96" />
       </div>
-      
+
       <h1>Good News!</h1>
       <p class="already-registered-message">
-        <span id="participant-name">This participant</span> is already registered for <span id="activity-name">this activity</span>.
+        <span id="participant-name">This participant</span> is already registered
+        for <span id="activity-name">this activity</span>.
       </p>
-      
+
       <div class="info-box">
         <h2>What This Means</h2>
         <ul>
@@ -25,9 +26,11 @@ import { Icon } from 'astro-icon/components';
           <li>If you have any questions, please contact us</li>
         </ul>
       </div>
-      
+
       <div class="action-buttons">
-        <a href="/activities" class="btn btn-primary oswald-cta">View More Activities</a>
+        <a href="/activities" class="btn btn-primary oswald-cta"
+          >View More Activities</a
+        >
         <a href="/" class="btn btn-secondary oswald-cta">Return Home</a>
       </div>
     </div>
@@ -52,7 +55,7 @@ import { Icon } from 'astro-icon/components';
   .info-icon {
     margin-bottom: 1.5rem;
     svg {
-      color: #2196F3;
+      color: #2196f3;
     }
   }
 
@@ -97,10 +100,10 @@ import { Icon } from 'astro-icon/components';
   }
 
   .info-box li:before {
-    content: "✓";
+    content: '✓';
     position: absolute;
     left: 0;
-    color: #2196F3;
+    color: #2196f3;
     font-weight: bold;
   }
 

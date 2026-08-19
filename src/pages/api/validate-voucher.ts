@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const { code, registrationIds } = body;
+    const { code } = body;
 
     // Validate input
     if (!code) {

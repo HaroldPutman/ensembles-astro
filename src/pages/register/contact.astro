@@ -2,87 +2,74 @@
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
-
 ---
 
 <Layout>
   <section class="contact-section">
     <h1>Contact Information</h1>
-    <p class="intro">Great! We're signing <strong class="student-firstname"></strong> <strong class="student-lastname"></strong> up for <strong class="activity-name"></strong>. 
-      Please provide <strong>YOUR</strong> contact information.</p>
-    
+    <p class="intro">
+      Great! We're signing <strong class="student-firstname"></strong>
+      <strong class="student-lastname"></strong> up for <strong
+        class="activity-name"></strong>. Please provide <strong>YOUR</strong> contact
+      information.
+    </p>
+
     <form id="contact-form" class="contact-form">
-      
       <div class="form-group">
         <label for="firstName">Your First Name</label>
-        <input 
-          type="text" 
-          id="firstName" 
-          name="firstName" 
-          required 
+        <input
+          type="text"
+          id="firstName"
+          name="firstName"
+          required
           class="form-input"
         />
       </div>
 
       <div class="form-group">
         <label for="lastName">Your Last Name</label>
-        <input 
-          type="text" 
-          id="lastName" 
-          name="lastName" 
-          required 
+        <input
+          type="text"
+          id="lastName"
+          name="lastName"
+          required
           class="form-input"
         />
       </div>
 
       <div class="form-group">
         <label for="email">Email</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          required 
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
           class="form-input"
         />
       </div>
 
       <div class="form-group">
         <label for="phone">Phone (optional)</label>
-        <input 
-          type="tel" 
-          id="phone" 
-          name="phone" 
-          class="form-input"
-        />
+        <input type="tel" id="phone" name="phone" class="form-input" />
       </div>
 
       <div class="form-group">
         <label for="address">Address (optional)</label>
-        <input 
-          type="text" 
-          id="address" 
-          name="address" 
-          class="form-input"
-        />
+        <input type="text" id="address" name="address" class="form-input" />
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="city">City (optional)</label>
-          <input 
-            type="text" 
-            id="city" 
-            name="city" 
-            class="form-input"
-          />
+          <input type="text" id="city" name="city" class="form-input" />
         </div>
 
         <div class="form-group">
           <label for="state">State (optional)</label>
-          <input 
-            type="text" 
-            id="state" 
-            name="state" 
+          <input
+            type="text"
+            id="state"
+            name="state"
             class="form-input"
             maxlength="2"
           />
@@ -90,18 +77,20 @@ import Layout from '../../layouts/Layout.astro';
 
         <div class="form-group">
           <label for="zip">ZIP Code (optional)</label>
-          <input 
-            type="text" 
-            id="zip" 
-            name="zip" 
+          <input
+            type="text"
+            id="zip"
+            name="zip"
             class="form-input"
             maxlength="10"
           />
         </div>
       </div>
 
-      <button type="submit" class="submit-button oswald-cta">Next: Additional Information</button>
-      
+      <button type="submit" class="submit-button oswald-cta"
+        >Next: Additional Information</button
+      >
+
       <div id="form-message" class="form-message"></div>
     </form>
   </section>
@@ -110,38 +99,39 @@ import Layout from '../../layouts/Layout.astro';
 <script>
   const form = document.getElementById('contact-form') as HTMLFormElement;
   const messageDiv = document.getElementById('form-message');
-  const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement;
+  const submitButton = form?.querySelector(
+    'button[type="submit"]'
+  ) as HTMLButtonElement;
 
-    // Get query parameters
-    const searchParams = new URLSearchParams(window.location.search);
-    const registrationId = searchParams.get('rid');
-    const studentId = searchParams.get('sid');
-    const activityName = sessionStorage.getItem('activityName');
-    let participant = null;
-    try {
-      participant = JSON.parse(sessionStorage.getItem('participant') || 'null');
-    } catch (e) {
-      console.error('Error parsing participant:', e);
-    }
-    const studentFirstName = participant?.firstName;
-    const studentLastName = participant?.lastName;
-    const firstNameEls = document.querySelectorAll('.student-firstname');
-    firstNameEls.forEach(el => el.textContent = studentFirstName);
-    const lastNameEls = document.querySelectorAll('.student-lastname');
-    lastNameEls.forEach(el => el.textContent = studentLastName);
-    const activityNameEls = document.querySelectorAll('.activity-name');
-    activityNameEls.forEach(el => el.textContent = activityName);
-    
-    // Validate required parameters
-    if (!registrationId ) {
-      console.error('Missing required parameters');
-      window.location.href = '/activities';
-    }
-   
+  // Get query parameters
+  const searchParams = new URLSearchParams(window.location.search);
+  const registrationId = searchParams.get('rid');
+  const studentId = searchParams.get('sid');
+  const activityName = sessionStorage.getItem('activityName');
+  let participant = null;
+  try {
+    participant = JSON.parse(sessionStorage.getItem('participant') || 'null');
+  } catch (e) {
+    console.error('Error parsing participant:', e);
+  }
+  const studentFirstName = participant?.firstName;
+  const studentLastName = participant?.lastName;
+  const firstNameEls = document.querySelectorAll('.student-firstname');
+  firstNameEls.forEach(el => (el.textContent = studentFirstName));
+  const lastNameEls = document.querySelectorAll('.student-lastname');
+  lastNameEls.forEach(el => (el.textContent = studentLastName));
+  const activityNameEls = document.querySelectorAll('.activity-name');
+  activityNameEls.forEach(el => (el.textContent = activityName));
 
-  form?.addEventListener('submit', async (e) => {
+  // Validate required parameters
+  if (!registrationId) {
+    console.error('Missing required parameters');
+    window.location.href = '/activities';
+  }
+
+  form?.addEventListener('submit', async e => {
     e.preventDefault();
-    
+
     if (!form || !messageDiv || !submitButton) return;
 
     // Disable the submit button and show loading state
@@ -149,9 +139,9 @@ import Layout from '../../layouts/Layout.astro';
     submitButton.textContent = 'Saving...';
     messageDiv.className = 'form-message';
     messageDiv.textContent = '';
-    
+
     const formData = new FormData(form);
-    
+
     // Format phone number as nnn-nnn-nnnn
     function formatPhone(phone: string | null): string | null {
       if (!phone) return null;
@@ -161,7 +151,7 @@ import Layout from '../../layouts/Layout.astro';
       }
       return phone.trim() || null;
     }
-    
+
     const data = {
       firstName: (formData.get('firstName') as string)?.trim(),
       lastName: (formData.get('lastName') as string)?.trim(),
@@ -172,7 +162,7 @@ import Layout from '../../layouts/Layout.astro';
       state: (formData.get('state') as string)?.trim().toUpperCase() || null,
       zip: (formData.get('zip') as string)?.trim() || null,
       registrationId,
-      studentId
+      studentId,
     };
 
     try {
@@ -191,22 +181,28 @@ import Layout from '../../layouts/Layout.astro';
       } else {
         result = { message: 'Server error occurred' };
       }
-    
+
       if (response.ok) {
         // Store contact info in sessionStorage for potential email subscription
-        sessionStorage.setItem('contactInfo', JSON.stringify({
-          email: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName
-        }));
-        
+        sessionStorage.setItem(
+          'contactInfo',
+          JSON.stringify({
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+          })
+        );
+
         window.location.href = `/register/info/${sessionStorage.getItem('activityId')}`;
       } else {
         throw new Error(result.message || 'Something went wrong');
       }
     } catch (error) {
       console.error('Error:', error);
-      messageDiv.textContent = error instanceof Error ? error.message : 'Failed to save contact information. Please try again.';
+      messageDiv.textContent =
+        error instanceof Error
+          ? error.message
+          : 'Failed to save contact information. Please try again.';
       messageDiv.className = 'form-message error';
     } finally {
       // Re-enable the submit button and restore its text
@@ -340,4 +336,5 @@ import Layout from '../../layouts/Layout.astro';
       gap: 0;
     }
   }
-</style> 
+</style>
+

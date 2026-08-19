@@ -20,7 +20,8 @@ export default defineConfig({
     '/contact-us': '/contact',
     '/mission': '/about',
     '/events': '/activities?kind=event',
-    '/pirate-auditions': 'https://cal.com/charlestown-ensembles/pirates-musical?month=2026-05&overlayCalendar=true',
+    '/pirate-auditions':
+      'https://cal.com/charlestown-ensembles/pirates-musical?month=2026-05&overlayCalendar=true',
   },
 
   markdown: {

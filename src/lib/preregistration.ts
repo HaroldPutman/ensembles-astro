@@ -28,3 +28,17 @@ export function enablePreregistration(
 ): void {
   storage.setItem(PREREGISTRATION_STORAGE_KEY, 'true');
 }
+
+export const SITE_ORIGIN = 'https://charlestownensembles.com';
+
+/**
+ * Class-page URL that unlocks pre-registration for the browser session.
+ * Uses a bare `?preregister` flag (no value), matching the public link format.
+ */
+export function buildPreregistrationActivityUrl(
+  activityId: string,
+  origin: string = SITE_ORIGIN
+): string {
+  const path = `/activities/${activityId.replace(/^\/+|\/+$/g, '')}`;
+  return `${origin.replace(/\/+$/, '')}${path}?${PREREGISTRATION_PARAM}`;
+}

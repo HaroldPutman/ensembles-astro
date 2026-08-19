@@ -7,39 +7,42 @@ const currentYear = new Date().getFullYear();
 <footer class="footer">
   <div class="footer-container">
     <div class="footer-content">
-        <div class="footer-section">
-            <p class="copyright">
-              © {currentYear} Ensembles, Inc. All rights reserved.
-            </p>
-            <p class="footer-text">
-                Ensembles, Inc. is a registered 501(c)(3) organization based in Charlestown, IN
-              </p>
-              <div class="legal-links">
-              <a href="/privacy-policy" class="footer-link">Privacy Policy</a>
-              <span class="separator">|</span>
-              <a href="/terms-of-use" class="footer-link">Terms of Use</a>
-            </div>
-          </div>
-    
-        <div class="footer-section">
+      <div class="footer-section">
+        <p class="copyright">
+          © {currentYear} Ensembles, Inc. All rights reserved.
+        </p>
+        <p class="footer-text">
+          Ensembles, Inc. is a registered 501(c)(3) organization based in
+          Charlestown, IN
+        </p>
+        <div class="legal-links">
+          <a href="/privacy-policy" class="footer-link">Privacy Policy</a>
+          <span class="separator">|</span>
+          <a href="/terms-of-use" class="footer-link">Terms of Use</a>
+        </div>
+      </div>
+
+      <div class="footer-section">
         <a href="/contact" class="footer-link">
           <Icon name="mdi:email" width="28" height="28" />
           Contact Us
         </a>
-        <a 
-          href="https://facebook.com/charlestownensembles" 
+        <a
+          href="https://facebook.com/charlestownensembles"
           class="footer-link"
           target="_blank"
           rel="noopener noreferrer"
         >
-         <Icon name="mdi:facebook" width="28" height="28" /> Facebook
+          <Icon name="mdi:facebook" width="28" height="28" /> Facebook
         </a>
         <div id="clerk-user-button"></div>
       </div>
 
       <div class="footer-section newsletter">
         <h2 class="footer-heading">Stay Updated</h2>
-        <p class="footer-text">Subscribe to our newsletter for the latest updates and activities.</p>
+        <p class="footer-text">
+          Subscribe to our newsletter for the latest updates and activities.
+        </p>
         <form id="newsletter-form" class="newsletter-form">
           <div class="form-group">
             <input
@@ -63,10 +66,10 @@ const currentYear = new Date().getFullYear();
   const form = document.getElementById('newsletter-form');
   const messageDiv = document.getElementById('form-message');
 
-  form?.addEventListener('submit', async (e) => {
+  form?.addEventListener('submit', async e => {
     e.preventDefault();
     const email = (document.getElementById('email') as HTMLInputElement).value;
-    
+
     try {
       const response = await fetch('/api/subscribe', {
         method: 'POST',
@@ -77,7 +80,7 @@ const currentYear = new Date().getFullYear();
       });
 
       const data = await response.json();
-    
+
       if (response.ok) {
         messageDiv!.textContent = 'Thank you for subscribing!';
         messageDiv!.className = 'form-message success';
@@ -86,7 +89,10 @@ const currentYear = new Date().getFullYear();
         throw new Error(data.message || 'Something went wrong');
       }
     } catch (error) {
-      messageDiv!.textContent = error instanceof Error ? error.message : 'Failed to subscribe. Please try again.';
+      messageDiv!.textContent =
+        error instanceof Error
+          ? error.message
+          : 'Failed to subscribe. Please try again.';
       messageDiv!.className = 'form-message error';
     }
   });
@@ -256,7 +262,7 @@ const currentYear = new Date().getFullYear();
   }
 
   :global(.clerk-sign-in-link:visited) {
-    color:#888;
+    color: #888;
   }
   :global(.clerk-sign-in-link:hover) {
     text-decoration: underline;
@@ -291,15 +297,20 @@ const currentYear = new Date().getFullYear();
     // @ts-ignore - Clerk is loaded globally by the integration
     if (typeof window.Clerk === 'undefined') {
       currentAttempt++;
-      
+
       if (currentAttempt >= MAX_ATTEMPTS) {
-        console.warn('Clerk failed to load after maximum attempts. Showing fallback UI.');
+        console.warn(
+          'Clerk failed to load after maximum attempts. Showing fallback UI.'
+        );
         showFallbackUI(container);
         return;
       }
 
       // Exponential backoff: 100ms, 200ms, 400ms... capped at 2s
-      const delay = Math.min(INITIAL_DELAY * Math.pow(2, currentAttempt - 1), 2000);
+      const delay = Math.min(
+        INITIAL_DELAY * Math.pow(2, currentAttempt - 1),
+        2000
+      );
       retryTimeoutId = setTimeout(initClerkUI, delay) as unknown as number;
       return;
     }
@@ -308,24 +319,26 @@ const currentYear = new Date().getFullYear();
     currentAttempt = 0;
 
     // @ts-ignore
-    window.Clerk.load().then(() => {
-      // @ts-ignore
-      const user = window.Clerk.user;
-      
-      if (user) {
-        // User is signed in - mount UserButton
+    window.Clerk.load()
+      .then(() => {
         // @ts-ignore
-        window.Clerk.mountUserButton(container, {
-          afterSignOutUrl: '/',
-        });
-      } else {
-        // User is signed out - show sign in link
+        const user = window.Clerk.user;
+
+        if (user) {
+          // User is signed in - mount UserButton
+          // @ts-ignore
+          window.Clerk.mountUserButton(container, {
+            afterSignOutUrl: '/',
+          });
+        } else {
+          // User is signed out - show sign in link
+          showFallbackUI(container);
+        }
+      })
+      .catch((err: Error) => {
+        console.error('Clerk load error:', err);
         showFallbackUI(container);
-      }
-    }).catch((err: Error) => {
-      console.error('Clerk load error:', err);
-      showFallbackUI(container);
-    });
+      });
   }
 
   // Run on page load and after navigation
@@ -338,4 +351,3 @@ const currentYear = new Date().getFullYear();
     initClerkUI();
   });
 </script>
- 
