@@ -14,54 +14,83 @@ const isCheck = paymentMethod === 'check';
   <section class="success-section">
     <div class="success-content">
       <div class="success-icon">
-        <Icon name="mdi:checkbox-marked-circle-outline" width="96" height="96"/>
+        <Icon
+          name="mdi:checkbox-marked-circle-outline"
+          width="96"
+          height="96"
+        />
       </div>
-      
+
       <h1>
-        {isFree ? 'Registration Complete!' : 
-         isCheck ? 'Registration Submitted!' : 
-         'Payment Successful!'}
+        {
+          isFree
+            ? 'Registration Complete!'
+            : isCheck
+              ? 'Registration Submitted!'
+              : 'Payment Successful!'
+        }
       </h1>
       <p class="success-message">
-        {isFree 
-          ? 'Thank you for your registration. Your enrollment has been confirmed!'
-          : isCheck
-          ? 'Thank you for your registration. Your enrollment will be completed when we receive your check payment.'
-          : 'Thank you for your registration. Your payment has been processed successfully.'
+        {
+          isFree
+            ? 'Thank you for your registration. Your enrollment has been confirmed!'
+            : isCheck
+              ? 'Thank you for your registration. Your enrollment will be completed when we receive your check payment.'
+              : 'Thank you for your registration. Your payment has been processed successfully.'
         }
       </p>
 
       <div id="confirmation-code-container" class="confirmation-code">
         <p>Confirmation code: <span class="confirmation-value"></span></p>
       </div>
-      
-      {isCheck && (
-        <div class="check-payment-info">
-          <h3>Payment Instructions</h3>
-          <p>Please mail a check for <strong class="check-amount">the amount shown in your confirmation email</strong> to:</p>
-          <address>
-            <strong>Ensembles, Inc.</strong><br/>
-            1120 Monroe St.<br/>
-            Charlestown, IN
-          </address>
-          <p class="check-note">
-            <strong>Important:</strong> Please include your confirmation code 
-            <span class="confirmation-value"></span> or participant name on the check memo line.
-          </p>
-        </div>
-      )}
-      
+
+      {
+        isCheck && (
+          <div class="check-payment-info">
+            <h3>Payment Instructions</h3>
+            <p>
+              Please mail a check for{' '}
+              <strong class="check-amount">
+                the amount shown in your confirmation email
+              </strong>{' '}
+              to:
+            </p>
+            <address>
+              <>
+                <strong>Ensembles, Inc.</strong>
+                <br />
+              </>
+              1120 Monroe St.
+              <br />
+              Charlestown, IN
+            </address>
+            <p class="check-note">
+              <strong>Important:</strong> Please include your confirmation code
+              <span class="confirmation-value" /> or participant name on the
+              check memo line.
+            </p>
+          </div>
+        )
+      }
+
       <div class="next-steps">
         <h2>What's Next?</h2>
         <ul>
           <li>You will receive a confirmation email shortly</li>
-          <li>Please arrive no earlier than 10 minutes before the scheduled start time</li>
-          <li>If you have any questions, please <a href="/contact">contact us</a></li>
+          <li>
+            Please arrive no earlier than 10 minutes before the scheduled start
+            time
+          </li>
+          <li>
+            If you have any questions, please <a href="/contact">contact us</a>
+          </li>
         </ul>
       </div>
-      
+
       <div class="action-buttons">
-        <a href="/activities" class="btn btn-primary oswald-cta">View More Activities</a>
+        <a href="/activities" class="btn btn-primary oswald-cta"
+          >View More Activities</a
+        >
         <a href="/" class="btn btn-secondary oswald-cta">Return Home</a>
       </div>
     </div>
@@ -73,7 +102,8 @@ const isCheck = paymentMethod === 'check';
   const confirmationCode = sessionStorage.getItem('confirmationCode');
   if (confirmationCode) {
     const codeElements = document.querySelectorAll('.confirmation-value');
-    const formatted = confirmationCode.length === 6 
+    const formatted =
+      confirmationCode.length === 6
         ? `${confirmationCode.slice(0, 3)}-${confirmationCode.slice(3)}`
         : confirmationCode;
     codeElements.forEach(element => {
@@ -110,7 +140,7 @@ const isCheck = paymentMethod === 'check';
   .success-icon {
     margin-bottom: 1.5rem;
     svg {
-      color: #4CAF50;
+      color: #4caf50;
     }
   }
   h1 {
@@ -216,10 +246,10 @@ const isCheck = paymentMethod === 'check';
   }
 
   .next-steps li:before {
-    content: "✓";
+    content: '✓';
     position: absolute;
     left: 0;
-    color: #4CAF50;
+    color: #4caf50;
     font-weight: bold;
   }
 
@@ -283,4 +313,5 @@ const isCheck = paymentMethod === 'check';
       text-align: center;
     }
   }
-</style> 
+</style>
+

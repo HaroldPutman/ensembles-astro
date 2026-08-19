@@ -10,7 +10,7 @@ const { name, position, image } = Astro.props;
 
 <article class="staff-bio">
   <div class="bio-image">
-    <img src={image} alt={name}/>
+    <img src={image} alt={name} />
   </div>
   <div class="bio-content">
     <h2>{name}</h2>
@@ -28,7 +28,7 @@ const { name, position, image } = Astro.props;
     gap: 1rem;
     align-items: start;
   }
-  
+
   @media (max-width: 768px) {
     .staff-bio {
       grid-template-columns: 1fr;
@@ -65,4 +65,5 @@ const { name, position, image } = Astro.props;
   .content :global(p:last-child) {
     margin-bottom: 0;
   }
-</style> 
+</style>
+

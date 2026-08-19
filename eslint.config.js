@@ -53,6 +53,14 @@ export default [
     },
   },
   {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
     plugins: { jest },
     languageOptions: {
