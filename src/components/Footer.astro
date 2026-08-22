@@ -17,10 +17,14 @@ const currentYear = new Date().getFullYear();
         </p>
         <div class="legal-links">
           <a href="/privacy-policy" class="footer-link">Privacy Policy</a>
-          <span class="separator">|</span>
-          <a href="/terms-of-use" class="footer-link">Terms of Use</a>
-          <span class="separator">|</span>
-          <a href="/accessibility" class="footer-link">Accessibility</a>
+          <span class="legal-item">
+            <span class="separator">|</span>
+            <a href="/terms-of-use" class="footer-link">Terms of Use</a>
+          </span>
+          <span class="legal-item">
+            <span class="separator">|</span>
+            <a href="/accessibility" class="footer-link">Accessibility</a>
+          </span>
         </div>
       </div>
 
@@ -163,6 +167,12 @@ const currentYear = new Date().getFullYear();
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+  }
+
+  .legal-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .separator {
