@@ -153,5 +153,22 @@ const banners = defineCollection({
     }),
 });
 
+const supporters = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './collections/supporters' }),
+  schema: z.object({
+    name: z.string(),
+    logo: z.string(),
+    website: z.string().url().optional(),
+    /** Last day to list this supporter (M/D/YYYY). Omit for no expiration. */
+    expires: bannerDateSchema.optional(),
+  }),
+});
+
 // 4. Export a single `collections` object to register your collection(s)
-export const collections = { board, activities, instructors, banners };
+export const collections = {
+  board,
+  activities,
+  instructors,
+  banners,
+  supporters,
+};

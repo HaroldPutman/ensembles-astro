@@ -246,7 +246,25 @@ const isLow =
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--radius-button);
     text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    background: var(--color-button-primary-background);
+    color: var(--color-button-primary-text);
+    border: 1px solid var(--color-button-primary-border);
+    transition: all 0.2s ease;
+    align-self: flex-start;
+  }
+
+  .preregister-btn:hover {
+    background: var(--color-button-primary-hover-background);
+    color: var(--color-button-primary-hover-text);
+    border-color: var(--color-button-primary-hover-border);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   .preregister-btn[hidden] {

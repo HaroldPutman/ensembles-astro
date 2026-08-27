@@ -1,0 +1,207 @@
+---
+export const prerender = true;
+
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import { filterActiveSupporters } from '../lib/supporters';
+
+const allSupporters = await getCollection('supporters');
+const supporters = filterActiveSupporters(allSupporters).sort(
+  (a: CollectionEntry<'supporters'>, b: CollectionEntry<'supporters'>) =>
+    a.data.name.localeCompare(b.data.name)
+);
+---
+
+<Layout title="Ensembles - Supporters">
+  <div class="supporters-page">
+    <section class="hero">
+      <h1>Our Supporters</h1>
+      <p class="subtitle">
+        Organizations and people who help make Ensembles possible
+      </p>
+    </section>
+
+    <section class="intro-section">
+      <p>
+        Ensembles is a community effort. We are grateful to the partners,
+        sponsors, and individuals whose generosity keeps music and art
+        accessible for everyone.
+      </p>
+    </section>
+
+    {
+      supporters.length > 0 ? (
+        <section class="supporters-section" aria-label="Supporters">
+          <ul class="supporters-grid">
+            {supporters.map(supporter => (
+              <li class="supporter">
+                {supporter.data.website ? (
+                  <a
+                    href={supporter.data.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="supporter-link"
+                  >
+                    <div class="supporter-logo-wrap">
+                      <img
+                        src={supporter.data.logo}
+                        alt={supporter.data.name}
+                        class="supporter-logo"
+                        loading="lazy"
+                      />
+                    </div>
+                    <span class="supporter-name">{supporter.data.name}</span>
+                  </a>
+                ) : (
+                  <div class="supporter-content">
+                    <div class="supporter-logo-wrap">
+                      <img
+                        src={supporter.data.logo}
+                        alt=""
+                        class="supporter-logo"
+                        loading="lazy"
+                      />
+                    </div>
+                    <span class="supporter-name">{supporter.data.name}</span>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <section class="empty-section">
+          <p>Supporter listings will appear here soon.</p>
+        </section>
+      )
+    }
+  </div>
+</Layout>
+
+<style>
+  .supporters-page {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+    color: #333;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    color: #666;
+    margin: 0;
+  }
+
+  .intro-section {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .intro-section p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #444;
+    margin: 0;
+  }
+
+  .supporters-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 2.5rem 2rem;
+    align-items: stretch;
+  }
+
+  .supporter {
+    display: flex;
+    height: 100%;
+    min-height: 11rem;
+    text-align: center;
+  }
+
+  .supporter-link,
+  .supporter-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100%;
+  }
+
+  .supporter-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .supporter-link:hover .supporter-name {
+    color: var(--color-tertiary, #203f9a);
+  }
+
+  .supporter-logo-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 6.25rem;
+    padding-bottom: 1rem;
+  }
+
+  .supporter-logo {
+    display: block;
+    max-width: 160px;
+    max-height: 100px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .supporter-name {
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.3;
+  }
+
+  .empty-section {
+    text-align: center;
+    color: #666;
+    padding: 2rem 0 4rem;
+  }
+
+  @media (max-width: 640px) {
+    .hero h1 {
+      font-size: 2.25rem;
+    }
+
+    .supporters-grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 2rem 1.25rem;
+    }
+
+    .supporter {
+      min-height: 9.5rem;
+    }
+
+    .supporter-logo-wrap {
+      min-height: 5rem;
+    }
+
+    .supporter-logo {
+      max-width: 130px;
+      max-height: 80px;
+    }
+  }
+</style>

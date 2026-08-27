@@ -1,18 +1,49 @@
 ---
-import logoImage from '../assets/ensembles-black-logo.svg';
+type NavLink = {
+  href: string;
+  label: string;
+};
 
-const menuItems = [
-  { href: '/about', label: 'About' },
+type NavItem =
+  | NavLink
+  | {
+      label: string;
+      children: NavLink[];
+    };
+
+const aboutPaths = ['/about', '/supporters', '/board'];
+const currentPath = Astro.url.pathname;
+const isAboutSection = aboutPaths.includes(currentPath);
+
+const menuItems: NavItem[] = [
+  {
+    label: 'About',
+    children: [
+      { href: '/about', label: 'Our Mission' },
+      { href: '/supporters', label: 'Our Supporters' },
+      { href: '/board', label: 'Our Board of Directors' },
+    ],
+  },
   { href: '/activities', label: 'Activities' },
   { href: '/art-gallery', label: 'Art Gallery' },
   { href: '/get-involved', label: 'Get Involved' },
 ];
+
+function isNavLink(item: NavItem): item is NavLink {
+  return 'href' in item;
+}
 ---
 
 <header class="header">
   <div class="header-container">
     <a href="/" class="logo" aria-label="Home">
-      <img src={logoImage.src} alt="Ensembles Logo" class="logo-image" />
+      <img
+        src="/image/ensembles-black-logo.svg"
+        alt="Ensembles Logo"
+        class="logo-image"
+        width="305"
+        height="115"
+      />
     </a>
 
     <nav class="nav">
@@ -30,16 +61,50 @@ const menuItems = [
 
       <ul class="nav-menu">
         {
-          menuItems.map(({ href, label }) => (
-            <li>
-              <a
-                href={href}
-                aria-current={Astro.url.pathname === href ? 'page' : undefined}
-              >
-                {label}
-              </a>
-            </li>
-          ))
+          menuItems.map(item => {
+            if (isNavLink(item)) {
+              return (
+                <li>
+                  <a
+                    href={item.href}
+                    aria-current={
+                      currentPath === item.href ? 'page' : undefined
+                    }
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              );
+            }
+
+            return (
+              <li class="nav-dropdown">
+                <button
+                  type="button"
+                  class="nav-dropdown-trigger"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  aria-current={isAboutSection ? 'page' : undefined}
+                >
+                  {item.label}
+                </button>
+                <ul class="nav-submenu">
+                  {item.children.map(child => (
+                    <li>
+                      <a
+                        href={child.href}
+                        aria-current={
+                          currentPath === child.href ? 'page' : undefined
+                        }
+                      >
+                        {child.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })
         }
       </ul>
     </nav>
@@ -63,12 +128,15 @@ const menuItems = [
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
   }
 
   .logo {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
     font-size: 1.5rem;
     color: black;
-    z-index: 1;
     background-color: white;
   }
 
@@ -78,28 +146,49 @@ const menuItems = [
     display: block;
   }
 
+  .nav {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
   .nav-menu {
     display: flex;
     list-style: none;
     margin: 0;
     padding: 0;
     gap: 2rem;
+    align-items: center;
   }
 
-  .nav-menu a {
+  .nav-menu > li {
+    list-style: none;
+  }
+
+  .nav-menu a,
+  .nav-dropdown-trigger {
     color: black;
     text-decoration: none;
     padding: 0.5rem;
     transition: background-color 0.3s;
     border-radius: 4px;
+    font: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
   }
 
   .nav-menu a:hover,
-  .nav-menu a:focus {
+  .nav-menu a:focus,
+  .nav-dropdown-trigger:hover,
+  .nav-dropdown-trigger:focus-visible {
     background-color: #f5f5f5;
   }
 
-  .nav-menu a[aria-current='page'] {
+  .nav-menu a[aria-current='page'],
+  .nav-dropdown-trigger[aria-current='page'] {
     font-weight: bold;
   }
 
@@ -109,6 +198,57 @@ const menuItems = [
     position: relative;
     z-index: 1;
     background-color: white;
+  }
+
+  /* Desktop dropdown */
+  @media (min-width: 769px) {
+    .nav-dropdown {
+      position: relative;
+    }
+
+    .nav-dropdown-trigger::after {
+      content: '';
+      display: inline-block;
+      width: 0;
+      height: 0;
+      margin-left: 0.4rem;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid currentColor;
+      vertical-align: middle;
+      transform: translateY(-1px);
+    }
+
+    .nav-submenu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.15rem);
+      left: 0;
+      min-width: 15rem;
+      margin: 0;
+      padding: 0.35rem 0;
+      list-style: none;
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      z-index: var(--z-index-dropdown);
+    }
+
+    .nav-submenu li {
+      list-style: none;
+    }
+
+    .nav-submenu a {
+      display: block;
+      white-space: nowrap;
+      padding: 0.625rem 1rem;
+    }
+
+    .nav-dropdown:hover .nav-submenu,
+    .nav-dropdown:focus-within .nav-submenu {
+      display: block;
+    }
   }
 
   /* Mobile styles */
@@ -138,7 +278,6 @@ const menuItems = [
       opacity: 1;
     }
 
-    /* Animation for the menu lines */
     .nav-toggle:checked ~ .nav-toggle-label .menu-line:first-child {
       transform-origin: center;
       transform: scaleX(1.2) rotate(54deg) translate(10px, 8px);
@@ -147,48 +286,68 @@ const menuItems = [
     .nav-toggle:checked ~ .nav-toggle-label .menu-text {
       opacity: 0;
     }
+
     .nav-toggle:checked ~ .nav-toggle-label .menu-line:last-child {
       transform-origin: center;
       transform: scaleX(1.2) rotate(-54deg) translate(10px, -8px);
     }
 
     .nav-menu {
+      display: none;
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
       flex-direction: column;
+      align-items: stretch;
       gap: 0;
       background: white;
-      transform: translateY(-110%);
-      opacity: 0;
-      visibility: hidden;
-      transition:
-        transform 0.5s,
-        opacity 0.5s;
       box-shadow: 0 4px 4px rgba(0, 0, 0, 0.1);
       z-index: var(--z-index-dropdown);
     }
 
-    .nav-menu li {
+    .nav-menu > li {
       width: 100%;
       border-top: 1px solid #eee;
     }
 
-    .nav-menu a {
+    .nav-menu a,
+    .nav-dropdown-trigger {
       display: block;
+      width: 100%;
+      text-align: left;
       padding: 1rem;
     }
 
+    .nav-dropdown-trigger {
+      font-weight: bold;
+    }
+
+    .nav-submenu {
+      display: block;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-submenu li {
+      list-style: none;
+      border-top: 1px solid #eee;
+    }
+
+    .nav-submenu a {
+      display: block;
+      padding: 0.875rem 1rem 0.875rem 2rem;
+    }
+
     .nav-toggle:checked ~ .nav-menu {
-      transform: translateY(0);
-      visibility: visible;
-      opacity: 1;
+      display: flex;
     }
 
     .logo-image {
       height: 2.3rem;
     }
+
     .header-container {
       padding: 0 1rem;
     }
@@ -199,7 +358,8 @@ const menuItems = [
   }
 
   /* Focus styles for accessibility */
-  .nav-menu a:focus,
+  .nav-menu a:focus-visible,
+  .nav-dropdown-trigger:focus-visible,
   .nav-toggle-label:focus-within {
     outline: 2px solid #000;
     outline-offset: 2px;
@@ -209,9 +369,9 @@ const menuItems = [
   @media (prefers-reduced-motion: reduce) {
     .nav-menu,
     .nav-menu a,
+    .nav-submenu,
     .nav-toggle-label span {
       transition: none;
     }
   }
 </style>
-
