@@ -1,4 +1,6 @@
 ---
+import logoImage from '../assets/ensembles-black-logo.svg';
+
 type NavLink = {
   href: string;
   label: string;
@@ -37,13 +39,7 @@ function isNavLink(item: NavItem): item is NavLink {
 <header class="header">
   <div class="header-container">
     <a href="/" class="logo" aria-label="Home">
-      <img
-        src="/image/ensembles-black-logo.svg"
-        alt="Ensembles Logo"
-        class="logo-image"
-        width="305"
-        height="115"
-      />
+      <img src={logoImage.src} alt="Ensembles Logo" class="logo-image" />
     </a>
 
     <nav class="nav">
