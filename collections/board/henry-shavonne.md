@@ -1,7 +1,7 @@
 ---
 name: Shavonne Henry
-position: Director
-image: /profile/shavonne.jpg
+position: Assistant Director
+image: /profile/henry-shavonne.jpg
 ---
 
 Shavonne was raised on music in Charlestown. Throughout middle and high school, music was
