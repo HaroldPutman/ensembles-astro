@@ -107,6 +107,60 @@ function isNavLink(item: NavItem): item is NavLink {
   </div>
 </header>
 
+<script>
+  const DESKTOP_MQ = '(min-width: 769px)';
+
+  function isDesktopNav() {
+    return window.matchMedia(DESKTOP_MQ).matches;
+  }
+
+  function syncDropdownExpanded(dropdown: Element) {
+    const trigger = dropdown.querySelector('.nav-dropdown-trigger');
+    if (!(trigger instanceof HTMLButtonElement)) return;
+
+    const navToggle = document.getElementById('nav-toggle');
+    const expanded = isDesktopNav()
+      ? dropdown.matches(':hover, :focus-within')
+      : navToggle instanceof HTMLInputElement && navToggle.checked;
+
+    trigger.setAttribute('aria-expanded', String(expanded));
+  }
+
+  function initNavDropdowns() {
+    const nav = document.querySelector('.nav');
+    if (!(nav instanceof HTMLElement) || nav.dataset.dropdownsReady) return;
+    nav.dataset.dropdownsReady = 'true';
+
+    const dropdowns = [...nav.querySelectorAll('.nav-dropdown')];
+    const navToggle = document.getElementById('nav-toggle');
+    const syncAll = () => {
+      dropdowns.forEach(syncDropdownExpanded);
+    };
+
+    for (const dropdown of dropdowns) {
+      dropdown.addEventListener('mouseenter', () =>
+        syncDropdownExpanded(dropdown)
+      );
+      dropdown.addEventListener('mouseleave', () =>
+        syncDropdownExpanded(dropdown)
+      );
+      dropdown.addEventListener('focusin', () =>
+        syncDropdownExpanded(dropdown)
+      );
+      dropdown.addEventListener('focusout', () => {
+        requestAnimationFrame(() => syncDropdownExpanded(dropdown));
+      });
+    }
+
+    navToggle?.addEventListener('change', syncAll);
+    window.matchMedia(DESKTOP_MQ).addEventListener('change', syncAll);
+    syncAll();
+  }
+
+  initNavDropdowns();
+  document.addEventListener('astro:page-load', initNavDropdowns);
+</script>
+
 <style>
   .header {
     position: relative;
