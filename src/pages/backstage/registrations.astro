@@ -146,7 +146,7 @@ try {
       s.firstname,
       s.lastname,
       s.dob,
-      CONCAT(c.firstname, ' ', c.lastname) as contact_name,
+      (c.firstname || '') || (CASE WHEN NULLIF(BTRIM(c.lastname), '') IS NOT NULL THEN ' ' || BTRIM(c.lastname) ELSE '' END) as contact_name,
       c.email as contact_email,
       r.created_at,
       r.answer,
