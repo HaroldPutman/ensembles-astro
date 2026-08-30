@@ -16,6 +16,7 @@ export function isSupporterActive(
   );
 }
 
+/** Keep supporters that have not expired as of `today`. */
 export function filterActiveSupporters<T extends SupporterExpiration>(
   supporters: T[],
   today: Date = todayLocal()

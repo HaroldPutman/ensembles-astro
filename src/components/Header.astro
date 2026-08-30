@@ -31,6 +31,7 @@ const menuItems: NavItem[] = [
   { href: '/get-involved', label: 'Get Involved' },
 ];
 
+/** Type guard for top-level nav items that are a single link. */
 function isNavLink(item: NavItem): item is NavLink {
   return 'href' in item;
 }
@@ -110,10 +111,12 @@ function isNavLink(item: NavItem): item is NavLink {
 <script>
   const DESKTOP_MQ = '(min-width: 769px)';
 
+  /** True when the header uses the desktop hover/focus dropdown. */
   function isDesktopNav() {
     return window.matchMedia(DESKTOP_MQ).matches;
   }
 
+  /** Keep the trigger's aria-expanded in sync with hover, focus, and mobile menu. */
   function syncDropdownExpanded(dropdown: Element) {
     const trigger = dropdown.querySelector('.nav-dropdown-trigger');
     if (!(trigger instanceof HTMLButtonElement)) return;
@@ -126,6 +129,7 @@ function isNavLink(item: NavItem): item is NavLink {
     trigger.setAttribute('aria-expanded', String(expanded));
   }
 
+  /** Wire hover, focus, and mobile-toggle listeners for each dropdown. */
   function initNavDropdowns() {
     const nav = document.querySelector('.nav');
     if (!(nav instanceof HTMLElement) || nav.dataset.dropdownsReady) return;
