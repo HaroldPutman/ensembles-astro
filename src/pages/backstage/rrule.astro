@@ -3,6 +3,11 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import { Icon } from 'astro-icon/components';
+
+const { isAuthenticated, redirectToSignIn } = Astro.locals.auth();
+if (!isAuthenticated) {
+  return redirectToSignIn({ returnBackUrl: Astro.request.url });
+}
 ---
 
 <Layout title="Ensembles - RRule Tester">
@@ -131,9 +136,12 @@ import { Icon } from 'astro-icon/components';
 </Layout>
 
 <script>
-  import { RRuleTemporal } from 'rrule-temporal';
   import { toText } from 'rrule-temporal/totext';
-  import { buildRRuleString, getFirstAndLastDates } from '../../lib/datelib';
+  import {
+    buildRRuleString,
+    createRRuleFromString,
+    getFirstAndLastDates,
+  } from '../../lib/datelib';
 
   const form = document.getElementById('rrule-form') as HTMLFormElement;
   const resultsDiv = document.getElementById('results') as HTMLDivElement;
@@ -208,7 +216,7 @@ import { Icon } from 'astro-icon/components';
       rruleStringPre.textContent = rruleString;
 
       // Parse with RRuleTemporal
-      const rruleTemporal = new RRuleTemporal({ rruleString });
+      const rruleTemporal = createRRuleFromString(rruleString);
 
       // Display the human-readable text
       textDescription.textContent = toText(rruleString);

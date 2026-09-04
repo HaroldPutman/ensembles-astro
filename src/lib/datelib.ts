@@ -1,6 +1,11 @@
 import { RRuleTemporal } from 'rrule-temporal';
 import { Temporal } from '@js-temporal/polyfill';
 
+/** RRuleTemporal configured to return @js-temporal/polyfill ZonedDateTime values. */
+export function createRRuleFromString(rruleString: string) {
+  return new RRuleTemporal({ rruleString, temporal: Temporal });
+}
+
 /**
  * Make a duration string in the format of PT10M, PT1H30M, P1D, P1DT10H, P1W, P1WT1D, P1WT1DT10H.
  * Possible input formats are:
@@ -257,9 +262,7 @@ export function getFirstDate(
   repeat: string
 ): Temporal.ZonedDateTime {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
-  const rruleTemporal = new RRuleTemporal({
-    rruleString,
-  });
+  const rruleTemporal = createRRuleFromString(rruleString);
   const rruleDates = rruleTemporal.all((_dt, i) => i < 1); // just first date
   return rruleDates[0];
 }
@@ -284,9 +287,7 @@ export function getFirstAndLastDates(
   string | undefined,
 ] {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
-  const rruleTemporal = new RRuleTemporal({
-    rruleString,
-  });
+  const rruleTemporal = createRRuleFromString(rruleString);
   const options = rruleTemporal.options();
   const hasEnd = options.until !== undefined || options.count !== undefined;
   let deviationNote = undefined;
