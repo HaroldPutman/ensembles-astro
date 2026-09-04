@@ -7,9 +7,9 @@ import ActivityStatus from '../../components/ActivityStatus.astro';
 import { formatAgeRange } from '../../lib/agelib';
 import { Icon } from 'astro-icon/components';
 import { Temporal } from '@js-temporal/polyfill';
-import { RRuleTemporal } from 'rrule-temporal';
 import {
   buildRRuleString,
+  createRRuleFromString,
   makeICalDuration,
   getDayOfWeek,
   mergeActivityScheduleDates,
@@ -61,7 +61,7 @@ function getAllDates(
   repeat: string
 ) {
   const rruleString = buildRRuleString(startDate, startTime, duration, repeat);
-  const rruleTemporal = new RRuleTemporal({ rruleString });
+  const rruleTemporal = createRRuleFromString(rruleString);
   return rruleTemporal.all((_dt, i) => i < 100); // Limit to 100 occurrences
 }
 
