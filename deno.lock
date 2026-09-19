@@ -11,10 +11,11 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@astrojs/mdx@6",
-        "npm:@astrojs/netlify@7",
-        "npm:@astrojs/sitemap@^3.7.3",
-        "npm:@clerk/astro@^3.4.17",
+        "npm:@astrojs/markdown-remark@^7.3.0",
+        "npm:@astrojs/mdx@8",
+        "npm:@astrojs/netlify@^8.2.5",
+        "npm:@astrojs/sitemap@^3.7.4",
+        "npm:@clerk/astro@^4.1.0",
         "npm:@eslint/js@^9.30.0",
         "npm:@fontsource/public-sans@^5.2.7",
         "npm:@getbrevo/brevo@^3.0.1",
@@ -26,7 +27,7 @@
         "npm:@typescript-eslint/eslint-plugin@^8.35.0",
         "npm:@typescript-eslint/parser@^8.35.0",
         "npm:astro-icon@^1.1.5",
-        "npm:astro@^6.4.8",
+        "npm:astro@^7.3.1",
         "npm:dayjs@^1.11.13",
         "npm:dotenv@^17.4.2",
         "npm:eslint-config-prettier@^10.1.5",

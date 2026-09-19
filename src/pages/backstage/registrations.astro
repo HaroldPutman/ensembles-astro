@@ -9,6 +9,11 @@ import { getFirstAndLastDates } from '../../lib/datelib';
 import { isActivityCancelled } from '../../lib/activityStatus';
 import { Temporal } from '@js-temporal/polyfill';
 
+const { isAuthenticated, redirectToSignIn } = Astro.locals.auth();
+if (!isAuthenticated) {
+  return redirectToSignIn({ returnBackUrl: Astro.request.url });
+}
+
 // Get all activities with their schedule info
 const activities = await getCollection('activities');
 const now = Temporal.Now.zonedDateTimeISO('America/Louisville');

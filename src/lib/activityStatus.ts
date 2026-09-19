@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
-import { RRuleTemporal } from 'rrule-temporal';
 import {
   buildRRuleString,
+  createRRuleFromString,
   timeNowIsAfter,
   timeNowIsBefore,
   makeICalDuration,
@@ -120,7 +120,7 @@ export function isActivityEnded(
     data.duration,
     data.repeat
   );
-  const rruleTemporal = new RRuleTemporal({ rruleString });
+  const rruleTemporal = createRRuleFromString(rruleString);
   const options = rruleTemporal.options();
   const hasEnd = options.until !== undefined || options.count !== undefined;
   if (!hasEnd) return false;
